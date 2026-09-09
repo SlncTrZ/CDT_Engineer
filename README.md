@@ -1,6 +1,6 @@
 # CDT_Engineer
 
-> Bộ MCP providers cho phần mềm kỹ thuật/CAD, cho phép AI agent đọc, tạo, sửa, kiểm tra và tự động hoá mô hình/bản vẽ qua MCP chuẩn.
+> Architecture/specification hub cho họ MCP provider kỹ thuật/CAD, cho phép AI agent đọc, tạo, sửa, kiểm tra và tự động hoá mô hình/bản vẽ qua MCP chuẩn.
 
 ## Mục tiêu
 
@@ -13,46 +13,36 @@ Biến AI thành một **kỹ sư CAD đa nền tảng** nhưng không ép mọi
 
 Chi tiết: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) và [`docs/CONTRACTS.md`](docs/CONTRACTS.md).
 
-## Thứ tự triển khai chính thức
+## Triển khai chính thức — 4 lane song song
 
-| Thứ tự | Provider | Mục tiêu chính |
-| ---: | --- | --- |
-| 1 | **AutoCAD** | 2D/3D drafting, DWG/DXF, layout, block, dimension; dual-engine COM + ezdxf |
-| 2 | **SketchUp** | Concept/modeling kiến trúc, groups/components, tags, materials, scenes |
-| 3 | **Blender** | **Modeling + Sculpting** là capability hạng nhất; thêm scene/material/render |
-| 4 | **SolidWorks** | Parametric mechanical CAD: sketches, features, parts, assemblies, mates, drawings |
+| Lane | Target repo | Mục tiêu chính |
+| --- | --- | --- |
+| A | **CDT-AutoCAD** | 2D/3D drafting, DWG/DXF, layout, block, dimension; dual-engine COM + ezdxf |
+| S | **CDT-SketchUp** | Concept/modeling kiến trúc, groups/components, tags, materials, scenes |
+| B | **CDT-Blender** | **Modeling + Sculpting** là capability hạng nhất; thêm scene/material/render |
+| W | **CDT-SolidWorks** | Parametric mechanical CAD: sketches, features, parts, assemblies, mates, drawings |
 
-AutoCAD là **reference provider đầu tiên** để chứng minh common contract và SlncTrZ compliance trước khi extract phần reusable vào `servers/core/`.
+Bốn provider phát triển độc lập và song song theo native capability. `CDT_Engineer` giữ architecture/contracts/roadmap/conformance. AutoCAD được migration trước vì runtime đã tồn tại; không phải dependency chặn ba lane còn lại. Xem [`docs/REPO_SPLIT_PLAN.md`](docs/REPO_SPLIT_PLAN.md).
 
-## Cấu trúc dự kiến
+## Repository topology
 
 ```text
-CDT_Engineer/
-├── README.md
-├── MCP_PROVIDER_STANDARD.md
-├── docs/
-│   ├── ARCHITECTURE.md
-│   ├── CONTRACTS.md
-│   ├── PLAN.md
-│   ├── PLAN_AUTOCAD.md
-│   ├── PLAN_SKETCHUP.md
-│   ├── PLAN_BLENDER.md
-│   └── PLAN_SOLIDWORKS.md
-├── servers/
-│   ├── core/          # chỉ extract sau khi có >=2 provider chứng minh reuse
-│   ├── autocad/
-│   ├── sketchup/
-│   ├── blender/
-│   └── solidworks/
-└── _private/
-    └── reference/     # repo tham khảo, gitignored
+CDT_Engineer/       # architecture / contracts / ADR / roadmap / conformance
+CDT-AutoCAD/        # runtime product
+CDT-SketchUp/       # runtime product
+CDT-Blender/        # runtime product
+CDT-SolidWorks/     # runtime product
+CDT-Provider-Kit/   # CHƯA TẠO; chỉ sau Rule-of-Two evidence
 ```
+
+Trong giai đoạn migration, `servers/autocad/` vẫn tạm nằm trong repo hiện tại cho tới khi A2/A3 có checkpoint sạch. Không dùng Git submodule để ghép source provider.
 
 ## Nguyên tắc bắt buộc
 
 - Mọi provider first-class phải tuân thủ [`MCP_PROVIDER_STANDARD.md`](MCP_PROVIDER_STANDARD.md).
 - Provider expose **bare MCP tool names**; SlncTrZ-MCP sở hữu namespace canonical `<provider>.<tool>`.
 - Common contract chỉ chứa semantics thực sự chung; không tạo lowest-common-denominator giả tạo.
+- Provider repositories version/release/CI độc lập; không provider nào import runtime code trực tiếp từ provider khác.
 - Khả năng riêng phải được khai báo qua capability map và refusal có cấu trúc khi engine không hỗ trợ.
 - Provider sở hữu business logic; gateway không chứa CAD logic.
 - Mặc định fail closed, validate trước side effect, timeout bounded, không lộ secret.
@@ -62,7 +52,7 @@ CDT_Engineer/
 
 ## Trạng thái
 
-✅ **AutoCAD A1 headless production baseline đã triển khai và kiểm chứng** (`cdt-autocad-provider 0.2.0`, contract `autocad-a1-v1`): 42 MCP tools, DXF lifecycle, object transforms/properties, blocks, layouts, linear/aligned dimensions, hatch, audit/purge, compressed transaction + undo/redo, optional PDF export, capability honesty, path containment, timeout quarantine và HTTP `/mcp` Bearer auth đều qua gate. SketchUp/Blender/SolidWorks chưa triển khai runtime. AutoCAD **A2 COM/live AutoCAD** là bước kế tiếp.
+✅ **AutoCAD A0+A1 đã CLOSED**. **A2 COM/live hiện là release candidate** (`cdt-autocad-provider 0.3.0rc1`, contract `autocad-a2-v1-rc1`) với 50 MCP tools: native DWG/DXF, A0/A1 ActiveX parity, viewport management, live zoom, PNG capture, native plotting và COM timeout/document-scope safety. A2 live acceptance còn OPEN vì PC Windows hiện không cài AutoCAD nên chưa thể chạy ActiveX gate thật. **A3.1 3D ACIS đã staged ở backend**: box/cylinder/sphere/cone, 3D polyline path, extrude/sweep/revolve, Boolean, Move/Rotate3D, volume/centroid/bounds và 3D view. SketchUp/Blender/SolidWorks chưa triển khai runtime.
 
 ---
 *Wing: ops | Topic: CDT_Engineer | Updated: 2026-09-09*

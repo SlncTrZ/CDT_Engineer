@@ -15,6 +15,8 @@ L2 — Provider Extension Contract
 
 Backend APIs are implementation details below these layers.
 
+Repository topology does not change these contract layers. Each runtime provider is independently versioned and depends on versioned CDT contracts rather than importing runtime code from another provider repository.
+
 ## 2. L0 — SlncTrZ Provider Contract
 
 Source of truth: root `MCP_PROVIDER_STANDARD.md`.
@@ -379,7 +381,7 @@ Test categories:
 8. MCP discovery/help;
 9. provider-specific correctness.
 
-A common test harness may later be extracted into `servers/core/` after AutoCAD + SketchUp demonstrate the need.
+A common test harness may later be extracted into `CDT-Provider-Kit` only after at least two independent provider repositories demonstrate equivalent behavior and Rule-of-Two evidence justifies the dependency. Until then, common conformance remains specification/test-definition work owned by `CDT_Engineer`.
 
 ## 12. Contract Promotion Rule
 
