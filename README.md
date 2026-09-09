@@ -35,7 +35,7 @@ CDT-SolidWorks/     # runtime product
 CDT-Provider-Kit/   # CHƯA TẠO; chỉ sau Rule-of-Two evidence
 ```
 
-Trong giai đoạn migration, `servers/autocad/` vẫn tạm nằm trong repo hiện tại cho tới khi A2/A3 có checkpoint sạch. Không dùng Git submodule để ghép source provider.
+Repository split đã hoàn tất: runtime AutoCAD ở `CDT-AutoCAD`; SketchUp/Blender/SolidWorks có skeleton độc lập và pinned spec baseline. `CDT_Engineer` không chứa provider runtime business logic. Không dùng Git submodule để ghép source provider. Repo map canonical: [`docs/PROVIDER_REPO_MAP.md`](docs/PROVIDER_REPO_MAP.md).
 
 ## Nguyên tắc bắt buộc
 
@@ -52,7 +52,7 @@ Trong giai đoạn migration, `servers/autocad/` vẫn tạm nằm trong repo hi
 
 ## Trạng thái
 
-✅ **AutoCAD A0+A1 đã CLOSED**. **A2 COM/live hiện là release candidate** (`cdt-autocad-provider 0.3.0rc1`, contract `autocad-a2-v1-rc1`) với 50 MCP tools: native DWG/DXF, A0/A1 ActiveX parity, viewport management, live zoom, PNG capture, native plotting và COM timeout/document-scope safety. A2 live acceptance còn OPEN vì PC Windows hiện không cài AutoCAD nên chưa thể chạy ActiveX gate thật. **A3.1 3D ACIS đã staged ở backend**: box/cylinder/sphere/cone, 3D polyline path, extrude/sweep/revolve, Boolean, Move/Rotate3D, volume/centroid/bounds và 3D view. SketchUp/Blender/SolidWorks chưa triển khai runtime.
+✅ **Repository split hoàn tất và 4 lane đã agent-ready.** AutoCAD được tách history-preserving sang `CDT-AutoCAD` và giữ nguyên generic regression `54 passed, 2 skipped`; A2 COM/live vẫn là RC `0.3.0rc1 / autocad-a2-v1-rc1`, A3.1 ACIS vẫn staged cho tới khi có AutoCAD thật. `CDT-SketchUp`, `CDT-Blender`, `CDT-SolidWorks` đã có repo độc lập, ownership `AGENTS.md`, pinned specs và initial handoff; chưa claim runtime capability.
 
 ---
 *Wing: ops | Topic: CDT_Engineer | Updated: 2026-09-09*
