@@ -1,15 +1,15 @@
-map_version: 0.3.0
+map_version: 0.4.0
 software_id: sketchup
 purpose: Current public-contract semantic capability map for Site and Building 3D handoff.
 source_snapshot:
   repository: CDT-SketchUp
-  head: 6a035e58d4c2cec8317aab6d40dad8dcf7f16975
+  head: f54cdd247f9dc39878c4cf2eca46c68e3e38be50
   provider_version: 0.1.0
-  contract_version: '0.21'
+  contract_version: '0.25'
   public_tool_count: 64
   measured_application_version: 24.0.594
   measured_ruby_version: 3.2.2
-  working_tree_dirty_at_inspection: true
+  working_tree_dirty_at_inspection: false
   runtime_proof: false
 runtime_preflight:
   required: true
@@ -22,12 +22,12 @@ runtime_preflight:
 capability_mappings:
 - semantic: model_3d.create
   support: expected
-  expected_public_tools: [execute_geometry, create_component, place_instance, create_polyline, create_rectangle, create_circle, create_arc, create_polygon]
+  expected_public_tools: [execute_geometry, create_component, place_instance, place_asset, create_polyline, create_rectangle, create_circle, create_arc, create_polygon]
   verification: strict operation receipt with affected PIDs and semantic read-back
 - semantic: component.library_resolve
-  support: blocked
-  expected_public_tools: []
-  verification: current public contract can create a component and place an instance by an existing definition GUID, but exposes no semantic asset-key/native-library load or registry-resolution route
+  support: unproven
+  expected_public_tools: [asset_list, place_asset, definition_info, get_entity_state]
+  verification: public registry enumeration and strict asset-key placement exist, but registry output does not cryptographically bind SHA-256 and native_version to the bytes loaded into the native definition; strong Engineering Asset Catalog resolution therefore remains blocked
 - semantic: model_3d.transform
   support: expected
   expected_public_tools: [transform_entity, move_entity, rotate_entity, scale_entity, mirror_entity]
@@ -38,8 +38,8 @@ capability_mappings:
   verification: strict assignment/read-back; texture scale explicit where used
 - semantic: model.query
   support: expected
-  expected_public_tools: [object_list, object_get, get_entity_state, definition_info]
-  verification: persistent-ID/context-bound semantic state
+  expected_public_tools: [object_list, object_get, get_entity_state, definition_info, asset_list]
+  verification: persistent-ID/context-bound semantic state plus neutral registry listing where applicable
 - semantic: model.measure
   support: expected
   expected_public_tools: [measure_distance, query_topology, query_overlap, get_entity_state]
@@ -51,11 +51,11 @@ capability_mappings:
 - semantic: artifact.native_save
   support: expected
   expected_public_tools: [model_save, model_save_as]
-  verification: rooted SKP save lifecycle is live-accepted; runtime observed capability still required
+  verification: rooted SKP save lifecycle is live-accepted historically; current observed runtime capability is still required
 - semantic: artifact.reopen
   support: expected
   expected_public_tools: [model_open, model_list]
-  verification: rooted SKP open lifecycle is live-accepted; independent post-open measurements required
+  verification: rooted SKP open lifecycle is live-accepted historically; independent post-open measurements are required
 - semantic: artifact.hash
   support: unproven
   expected_public_tools: []
@@ -73,8 +73,8 @@ known_blockers:
   effect: Step-0 runtime discovery remains mandatory
 - code: artifact_seal_missing
   effect: native SKP lifecycle is available, but content-addressed seal/manifest remains external or blocked by release policy
-- code: native_component_registry_route_missing
-  effect: Building catalog assets cannot be resolved/imported by semantic asset key through the current public contract; create_component/place_instance alone do not satisfy catalog-native mapping
+- code: native_component_registry_identity_metadata_missing
+  effect: asset_list/place_asset provide an allowlisted registry route and native definition identity, but do not expose or verify the SHA-256/native_version pair required to release strong Engineering Asset Catalog mappings
 - code: model_world_coordinate_input_unclaimed
   effect: strict mutation currently accepts active_context coordinate space only
 - code: legacy_mutation_paths_deprecated

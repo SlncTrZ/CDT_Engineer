@@ -1,7 +1,7 @@
 # Building Architecture v1 — Benchmark Pack
 
 > Documentation class: PUBLIC_DOMAIN
-Version: 0.1.0 · Primary negative case: townhouse image reconstruction · Status: benchmark definition; native acceptance pending.
+Version: 0.2.0 · Primary negative case: townhouse image reconstruction · Status: benchmark definition; native acceptance pending.
 
 ## Scope
 
@@ -29,13 +29,14 @@ Expected:
 
 - level/space/wall/opening/stair graph validates;
 - repeated semantic objects resolve through reusable component definitions/instances where mapped;
-- native component resolution proves exact `asset_key`, catalog hash/version, current registry availability/hash/version and runtime library capability before placement;
+- native component resolution proves exact `asset_key`, catalog SHA-256, `native_version`, current registry availability and runtime library capability before placement;
+- the accepted public route is registry discovery (`asset_list`) → identity verification → strict native placement (`place_asset`) → independent entity/definition read-back;
 - openings are hosted and bounded;
 - visible/required feature inventory is fully accounted for;
 - structural-role unknowns remain unknown;
 - native chunks preserve semantic IDs and relationships;
 - independent QA queries relationships/topology and dimensions;
-- final native artifact is saved, reopened, independently remeasured and hash-bound.
+- final native artifact is saved, reopened, independently remeasured and externally hash-bound when provider-native sealing is unavailable.
 
 ## Benchmark C — Primitive-substitution negative
 
@@ -62,6 +63,17 @@ Leave structural system/load/material/interface state unresolved and request a c
 
 Expected: ARCH-09 and release-scope dependency gate BLOCK; architecture output may still be valid for an explicitly weaker scope.
 
+## Benchmark F — Native failure / recovery
+
+Exercise failure at dependency boundaries without weakening professional gates:
+
+- **early failure:** unknown asset key, missing/mismatched identity, corrupt asset, path escape, unsupported extension or size violation must fail before native placement;
+- **middle failure:** force a strict component/geometry chunk failure and verify rollback/reconciliation restores the pre-chunk semantic state before any dependent chunk is released;
+- **late failure:** save, reopen, independent-measurement or external-hash failure invalidates final artifact evidence and blocks release even when earlier mutation receipts passed;
+- **uncertain completion / timeout:** reconcile current model/context/entity/definition state before retry; non-idempotent placement must never be blindly replayed and duplicate instances must be detected/prevented.
+
+For every injected case, record predecessor checkpoint/context identity, expected state, observed state, recovery action, recovered state and whether dependent chunks remained blocked.
+
 ## Measurement / evidence
 
 Freeze before each run:
@@ -80,10 +92,12 @@ Record native receipts, semantic IDs, independent measurements, reopen evidence,
 
 ## Current native blocker
 
-The current SketchUp public contract can create components and place instances by an existing definition GUID, but the inspected public map has no semantic asset-key/native-library load or registry-resolution route. Therefore `component.library_resolve` is currently mapped `blocked`, and every Building catalog native mapping remains `unresolved`. Generic `create_component`/`place_instance` capability must not be treated as equivalent evidence.
+The current SketchUp public contract exposes an owner-curated registry route through `asset_list` plus strict `place_asset`, and native definition/entity identity can be queried after placement. Therefore the old `native_component_registry_route_missing` statement is closed.
 
-The blocker is cleared only when a public provider route exists and the Building catalog is populated with validated `asset_key`/hash/native-version mappings backed by current registry evidence. `execution.catalog_resolver.resolve_catalog_assets` then must return `resolved` for all required assets.
+Strong Building catalog resolution is still BLOCKED by `native_component_registry_identity_metadata_missing`: the public registry does not yet bind a provider-verified SHA-256 and `native_version` to the exact `.skp` bytes loaded into the native definition. `execution.catalog_resolver.resolve_catalog_assets` already requires those exact fields and must continue returning `blocked` until catalog mapping, registry evidence and current runtime capability all match.
+
+The blocker is cleared only when a public provider route returns/verifies the required asset identity fields, the Building catalog is populated with matching validated mappings, current Step-0 runtime evidence releases `component.library_resolve`, and save/reopen read-back preserves the accepted native identity/instance evidence.
 
 ## Acceptance
 
-Building Architecture v1 is not production-accepted from offline tests alone. Native design-review acceptance requires Benchmark B plus C/D/E negative cases on the declared runtime, with resolved component mappings, verified native registry evidence and an independent Checker. Higher release classes require additional structural, standards, detail/document and responsible-review evidence.
+Building Architecture v1 is not production-accepted from offline tests alone. Native Benchmark B execution remains blocked until the registry identity blocker above is cleared and current SketchUp runtime Step-0 passes. Native design-review acceptance then requires Benchmark B plus C/D/E/F negative cases on the declared runtime, resolved component mappings, verified registry evidence and an independent Checker. Higher release classes require additional structural, standards, detail/document and responsible-review evidence.
