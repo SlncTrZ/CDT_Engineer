@@ -1,7 +1,7 @@
 # CDT_Engineer — Gitignore
 # Wing: ops | Topic: gitignore | Updated: 2026-09-08
 
-# ===== Private (KHÔNG BAO GIỜ commit) =====
+# ===== Internal plans, CAD fixtures, evidence, references (never commit) =====
 _private/
 
 # ===== Environment / Secrets =====

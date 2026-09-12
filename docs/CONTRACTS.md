@@ -1,11 +1,11 @@
 # CDT_Engineer — Contract Model
 
-> Updated: 2026-09-09
+> Updated: 2026-09-11
 > Scope: common CAD contract, provider extensions, capability/refusal semantics
 
 ## 1. Contract Layers
 
-CDT_Engineer uses three public contract layers:
+Generic Engine integration retains three public contract layers; Production Domain packaging is separately defined in [PRODUCTION_DOMAIN_CONTRACT.md](PRODUCTION_DOMAIN_CONTRACT.md):
 
 ```text
 L0 — SlncTrZ Provider Contract
@@ -33,7 +33,7 @@ Every first-class provider must implement:
 - provider software + contract versioning;
 - deterministic contract fingerprint;
 - no secret leakage;
-- provider-owned business logic.
+- provider-owned generic native execution logic; domain engineering logic belongs to CDT_Engineer.
 
 Provider exposes bare tool names. Gateway canonicalizes `<provider>.<tool>`.
 
@@ -181,7 +181,7 @@ inspect_object
 measure_bounds
 ```
 
-Engineering-specific validation remains extension-specific.
+Native geometry/annotation inspection remains provider-specific. Engineering interpretation, standard applicability and compliance validation belong to CDT_Engineer Production Domains.
 
 ## 4. L2 — AutoCAD Extension Contract
 

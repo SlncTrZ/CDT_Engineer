@@ -1,0 +1,73 @@
+# Agent Operational Profile Contract
+
+Version: 1.0.0 · Updated: 2026-09-12 · Status: Engineering OS execution-profile baseline.
+
+## Purpose
+
+An Agent Operational Profile converts a production domain into an executable professional sequence without embedding native CAD/DCC implementation. It binds domain stages to roles, rule IDs, semantic capabilities, software candidates, stop conditions, checkpoints, recovery actions and QA gates.
+
+Machine-readable profiles conform to [`schemas/agent-profile.schema.json`](schemas/agent-profile.schema.json).
+
+## Required invariants
+
+Every profile:
+
+- starts with `environment_preflight` and consumes the [Execution Environment Contract](EXECUTION_ENVIRONMENT_CONTRACT.md);
+- targets a declared release class and exact profile version;
+- assigns at least one accountable role to every stage;
+- links applicable domain rule IDs rather than reproducing rule logic in the profile;
+- asks for semantic capabilities, never private/native implementation details;
+- identifies software candidates explicitly when software execution is needed;
+- declares stage dependencies and uses Feature-based Chunk Streaming for mutation-heavy work;
+- provides a checkpoint/evidence identity for each stage;
+- declares non-empty stop conditions, recovery actions and QA gates;
+- stops dependent stages when predecessor evidence is failed, unknown or stale.
+
+## Capability resolution
+
+A profile capability can be either:
+
+1. an Engineering OS/domain-local semantic such as environment classification, dimension-ledger reasoning or feature-DAG validation; or
+2. a software semantic that must resolve through one of the stage's software `engine-map.yaml` files.
+
+A software semantic is not considered available merely because it appears in source code or an engine map. Engine maps describe expected public capability and known blockers. Step-0 runtime discovery must prove the selected application's/provider's current version and capability surface.
+
+If no selected software map covers a required software semantic, profile validation fails before execution planning. If the map marks the semantic `blocked` or `unproven`, execution yields a typed blocker unless current runtime evidence legitimately upgrades that state under the applicable Software Operating Guide.
+
+## Stage lifecycle
+
+```text
+preconditions
+→ Step-0/runtime capability resolution
+→ stage plan
+→ optional semantic feature chunks
+→ execute
+→ read-after-write / independent measurement
+→ checkpoint
+→ QA gate
+→ release dependents
+```
+
+On timeout or uncertain mutation, do not release dependents. Reconcile actual state and choose only from the profile's declared recovery actions.
+
+## Profile vs workflow vs software map
+
+- **Workflow Contract:** defines reusable professional flow semantics across jobs/disciplines.
+- **Agent Profile:** instantiates the domain's operational stages, rules, roles and blockers.
+- **Software engine map:** resolves software semantics to expected public engine surfaces and records source-level support/blockers.
+- **Software Operating Guide:** explains version-specific professional operation, transaction/recovery behavior and measured runtime acceptance.
+
+None of these grants tool authority or replaces runtime discovery.
+
+## Initial profiles
+
+- [`domains/site-reconstruction/agent-profile.json`](../domains/site-reconstruction/agent-profile.json)
+- [`domains/mechanical-reconstruction/agent-profile.json`](../domains/mechanical-reconstruction/agent-profile.json)
+
+These are operational baselines, not production PASS evidence for the mapped engines.
+
+## Software capability resolution
+
+Runtime capability facts are bound to the selected `software_id`; equal semantic names from different engines must not be flattened into one global truth value. For a stage with multiple `software_candidates`, candidates are alternatives only for semantics that the stage genuinely allows any one candidate to satisfy. A BLOCKED capability on one alternative must not poison a runtime-proven PASS on another alternative. Conversely, requirements that apply to distinct artifacts/engines must be represented in separate dependency stages or explicit local evidence gates rather than hidden inside a multi-engine union.
+
+Source-derived engine maps remain fail-closed: `expected` is not runtime PASS. Step-0/runtime evidence supplies the actual per-software capability facts consumed by the Stage Runner. `blocked` and `unproven` are typed blockers at source-map projection; only current runtime evidence accepted under the Software Operating Guide may upgrade them. Global/domain-local facts must not override a semantic that is explicitly software-bound for the selected stage. A multi-candidate stage selects one candidate that satisfies the stage's software-bound requirements as a set; the runner must not synthesize PASS by mixing different engines per semantic.

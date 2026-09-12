@@ -1,0 +1,82 @@
+map_version: 0.1.0
+software_id: solidworks
+purpose: Source-derived semantic capability expectations for Mechanical reconstruction.
+source_snapshot:
+  repository: solidworks-automation-skill/reference
+  head: 5287d2e3d100dedb10e94910523f294a46176c54
+  package_version: 1.3.0
+  working_tree_dirty_at_inspection: true
+  runtime_proof: false
+runtime_preflight:
+  required: true
+  discover:
+  - SolidWorks installation path/version/build/edition
+  - required add-in/COM host readiness
+  - provider version/contract
+  - runtime tool/capability surface
+  blocker_codes:
+  - software_not_installed
+  - provider_not_ready
+  - configuration_required
+  - version_mismatch
+  - capability_missing
+  - runtime_unknown
+capability_mappings:
+- semantic: solid.feature.create
+  support: expected
+  expected_public_tools:
+  - solidworks_create_basic_part
+  - solidworks_create_hole_feature
+  - solidworks_update_dimension
+  verification: inspect native feature/dimension state
+- semantic: solid.boolean
+  support: unproven
+  expected_public_tools: []
+  verification: required Boolean semantic must be discovered in the selected public
+    runtime
+- semantic: model.query
+  support: expected
+  expected_public_tools:
+  - solidworks_review_active
+  - solidworks_inspect_hole_features
+  verification: inspect native model/feature state
+- semantic: checkpoint.create
+  support: expected
+  expected_public_tools:
+  - solidworks_save_document
+  verification: saved native checkpoint; exact recovery semantics remain runtime-dependent
+- semantic: model_3d.measure
+  support: expected
+  expected_public_tools:
+  - solidworks_review_active
+  - solidworks_inspect_hole_features
+  verification: independent feature measurements
+- semantic: topology.inspect
+  support: unproven
+  expected_public_tools:
+  - solidworks_review_active
+  verification: body/topology evidence depth must be proven for selected runtime
+- semantic: artifact.native_save
+  support: expected
+  expected_public_tools:
+  - solidworks_save_document
+  verification: saved document identity
+- semantic: artifact.reopen
+  support: expected
+  expected_public_tools:
+  - solidworks_open_document
+  verification: reopen disposable artifact and inspect
+- semantic: artifact.exchange_export
+  support: expected
+  expected_public_tools:
+  - solidworks_export_active
+  verification: typed export plus round-trip verification
+- semantic: artifact.seal
+  support: unproven
+  expected_public_tools: []
+  verification: content-addressed seal semantics require separate proof
+known_blockers:
+- code: source_snapshot_not_runtime_proof
+  effect: dirty source reference requires runtime discovery
+- code: exact_transaction_mode_unproven
+  effect: feature chunks must use only runtime-proven recovery/checkpoint semantics

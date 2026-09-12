@@ -1,0 +1,91 @@
+map_version: 0.2.0
+software_id: autocad
+purpose: Current public-contract semantic capability map for CDT_Engineer workflows.
+source_snapshot:
+  repository: CDT-AutoCAD
+  head: 98bced282ca32adaa8c2418120a8c89047354c46
+  provider_version: 0.4.0rc1
+  contract_version: autocad-generic-v1-rc1
+  public_tool_count: 86
+  primary_certification: AutoCAD 2027 Windows x64 / AutoCAD.Application.26
+  working_tree_dirty_at_inspection: true
+  runtime_proof: false
+runtime_preflight:
+  required: true
+  discover:
+  - application installation path/version/build
+  - provider version/contract and contract hash
+  - system_status and system_capabilities runtime result
+  - native_integrity_status when strong-integrity mutation is required
+  - backend mode and required path policy
+  blocker_codes: [software_not_installed, provider_not_ready, configuration_required, version_mismatch, capability_missing, runtime_unknown]
+capability_mappings:
+- semantic: source.inventory
+  support: expected
+  expected_public_tools: [document_info, layer_list, block_list, object_list]
+  verification: bounded source inventory from current document state
+- semantic: dependency.inspect
+  support: expected
+  expected_public_tools: [document_dependencies, xref_list]
+  verification: contained/resolved/loaded dependency and XREF state
+- semantic: technical_2d.inspect
+  support: expected
+  expected_public_tools: [object_list, object_get, object_measure]
+  verification: inspect actual object state and measured geometry
+- semantic: dimension.ledger
+  support: expected
+  expected_public_tools: [object_list, object_get, object_measure]
+  verification: read source-linked dimension/object evidence; engineering reconciliation remains domain-local
+- semantic: coordinate.transform.inspect
+  support: expected
+  expected_public_tools: [object_get, object_measure, drawing_extents]
+  verification: inspect coordinates/extents and independently validate transform evidence
+- semantic: technical_2d.create
+  support: expected
+  expected_public_tools: [feature_execute, batch_create_entities, entity_create_line, entity_create_polyline, block_insert]
+  verification: prefer feature_execute for accepted strong-integrity action families; read-after-write required
+- semantic: technical_2d.modify
+  support: expected
+  expected_public_tools: [feature_execute, batch_transform_entities, object_move, object_rotate, object_scale, object_set_properties]
+  verification: capability-specific strong-integrity or compatibility path plus read-after-write
+- semantic: model.query
+  support: expected
+  expected_public_tools: [object_get, object_list, object_query]
+  verification: bounded query of actual drawing state
+- semantic: model.measure
+  support: expected
+  expected_public_tools: [object_measure, drawing_extents, object_intersections]
+  verification: target-unit deterministic measurement where supported
+- semantic: checkpoint.create
+  support: expected
+  expected_public_tools: [feature_execute, document_save, artifact_seal]
+  verification: feature predecessor recovery or persisted checkpoint identity according to selected path
+- semantic: artifact.hash
+  support: expected
+  expected_public_tools: [artifact_seal]
+  verification: artifact_seal returns SHA-256/provenance for accepted persisted DWG
+- semantic: artifact.seal
+  support: expected
+  expected_public_tools: [artifact_seal]
+  verification: content-addressed accepted copy + manifest; post-seal drift still requires downstream stale-evidence enforcement
+- semantic: solid.feature.create
+  support: expected
+  expected_public_tools: [solid_create_primitive, solid_extrude, solid_sweep, solid_revolve]
+  verification: ACIS operation receipt plus independent solid inspection
+- semantic: solid.boolean
+  support: expected
+  expected_public_tools: [solid_boolean, solid_inspect]
+  verification: historical/native acceptance is narrower than full PID/fingerprint topology loop; verify current runtime and output independently
+- semantic: artifact.exchange_export
+  support: expected
+  expected_public_tools: [solid_export]
+  verification: current verified 3D exchange path is SAT; verify hash and downstream reader as required
+known_blockers:
+- code: source_snapshot_not_runtime_proof
+  effect: Step-0 runtime discovery remains mandatory
+- code: broad_com_surface_not_full_g3
+  effect: do not infer all 86 tools have strong-integrity G3 semantics
+- code: acis_topology_not_authoritative
+  effect: ActiveX solid inspection does not provide authoritative face/edge topology
+- code: post_seal_staleness_external
+  effect: CDT_Engineer must invalidate prior QA if an accepted artifact changes after seal

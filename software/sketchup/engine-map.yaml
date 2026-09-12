@@ -1,0 +1,75 @@
+map_version: 0.2.0
+software_id: sketchup
+purpose: Current public-contract semantic capability map for Site/3D handoff.
+source_snapshot:
+  repository: CDT-SketchUp
+  head: 6a035e58d4c2cec8317aab6d40dad8dcf7f16975
+  provider_version: 0.1.0
+  contract_version: '0.21'
+  public_tool_count: 64
+  measured_application_version: 24.0.594
+  measured_ruby_version: 3.2.2
+  working_tree_dirty_at_inspection: true
+  runtime_proof: false
+runtime_preflight:
+  required: true
+  discover:
+  - SketchUp installation path/version
+  - extension/plugin loaded state
+  - provider version/contract and capability fingerprint
+  - system_status and exact system_capabilities observed_runtime
+  blocker_codes: [software_not_installed, provider_not_ready, configuration_required, version_mismatch, capability_missing, runtime_unknown]
+capability_mappings:
+- semantic: model_3d.create
+  support: expected
+  expected_public_tools: [execute_geometry, create_component, place_instance, create_polyline, create_rectangle, create_circle, create_arc, create_polygon]
+  verification: strict operation receipt with affected PIDs and semantic read-back
+- semantic: model_3d.transform
+  support: expected
+  expected_public_tools: [transform_entity, move_entity, rotate_entity, scale_entity, mirror_entity]
+  verification: strict receipt, context/fingerprint guards and transform read-back
+- semantic: model_3d.material
+  support: expected
+  expected_public_tools: [material_assign, material_apply_texture, material_info]
+  verification: strict assignment/read-back; texture scale explicit where used
+- semantic: model.query
+  support: expected
+  expected_public_tools: [object_list, object_get, get_entity_state, definition_info]
+  verification: persistent-ID/context-bound semantic state
+- semantic: model.measure
+  support: expected
+  expected_public_tools: [measure_distance, query_topology, query_overlap, get_entity_state]
+  verification: explicit-unit measurement/topology facts
+- semantic: artifact.exchange_export
+  support: expected
+  expected_public_tools: [model_export]
+  verification: rooted DAE/KMZ export; round-trip acceptance remains workflow responsibility
+- semantic: artifact.native_save
+  support: expected
+  expected_public_tools: [model_save, model_save_as]
+  verification: rooted SKP save lifecycle is live-accepted; runtime observed capability still required
+- semantic: artifact.reopen
+  support: expected
+  expected_public_tools: [model_open, model_list]
+  verification: rooted SKP open lifecycle is live-accepted; independent post-open measurements required
+- semantic: artifact.hash
+  support: unproven
+  expected_public_tools: []
+  verification: provider has no content-addressed native artifact hash primitive; hash externally after stable save if workflow permits
+- semantic: artifact.seal
+  support: blocked
+  expected_public_tools: []
+  verification: no provider content-addressed seal/manifest primitive equivalent to AutoCAD artifact_seal
+- semantic: topology.inspect
+  support: expected
+  expected_public_tools: [query_topology, integrity_report]
+  verification: bounded generic topology/integrity facts, not discipline conclusions
+known_blockers:
+- code: source_snapshot_not_runtime_proof
+  effect: Step-0 runtime discovery remains mandatory
+- code: artifact_seal_missing
+  effect: native SKP lifecycle is available, but content-addressed seal/manifest remains external or blocked by release policy
+- code: model_world_coordinate_input_unclaimed
+  effect: strict mutation currently accepts active_context coordinate space only
+- code: legacy_mutation_paths_deprecated
+  effect: autonomous workflows must prefer strict_mutation tools advertised by system_capabilities

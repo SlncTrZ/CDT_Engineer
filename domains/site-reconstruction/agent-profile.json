@@ -1,0 +1,230 @@
+{
+  "schema_version": "0.1.0",
+  "profile_id": "site-reconstruction.default",
+  "domain_id": "site-reconstruction",
+  "version": "1.0.0",
+  "release_target": "ready_for_professional_review",
+  "stages": [
+    {
+      "stage_id": "environment_preflight",
+      "purpose": "Discover target host software and provider readiness",
+      "owning_roles": [
+        "Chief / Lead Engineer"
+      ],
+      "rule_ids": [],
+      "required_capabilities": [
+        "execution_environment.compatible_or_typed_blocker"
+      ],
+      "software_candidates": [
+        "autocad",
+        "sketchup"
+      ],
+      "depends_on": [],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "environment_inventory",
+      "stop_conditions": [
+        "required software state unknown",
+        "required provider state unknown",
+        "version mismatch unresolved"
+      ],
+      "recovery_actions": [
+        "rediscover_environment",
+        "request_installation",
+        "request_configuration",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "Step-0 inventory is current and compatibility is typed"
+      ]
+    },
+    {
+      "stage_id": "source_closure",
+      "purpose": "Freeze source/dependency scope and hashes",
+      "owning_roles": [
+        "Chief / Lead Engineer",
+        "CAD/BIM Technician"
+      ],
+      "rule_ids": [
+        "SITE-01"
+      ],
+      "required_capabilities": [
+        "source.inventory",
+        "dependency.inspect",
+        "evidence.source_hashes_verified"
+      ],
+      "software_candidates": [
+        "autocad"
+      ],
+      "depends_on": [
+        "environment_preflight"
+      ],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "source_manifest",
+      "stop_conditions": [
+        "required source missing",
+        "available source lacks verified hash"
+      ],
+      "recovery_actions": [
+        "scope_reduce_with_approval",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "SITE-01 disposition recorded"
+      ]
+    },
+    {
+      "stage_id": "registration",
+      "purpose": "Resolve units, frames, controls and holdout registration",
+      "owning_roles": [
+        "Landscape Engineer",
+        "CAD/BIM Technician"
+      ],
+      "rule_ids": [
+        "SITE-02",
+        "SITE-03"
+      ],
+      "required_capabilities": [
+        "model.measure",
+        "coordinate.transform.inspect"
+      ],
+      "software_candidates": [
+        "autocad"
+      ],
+      "depends_on": [
+        "source_closure"
+      ],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "registration_evidence",
+      "stop_conditions": [
+        "registration tolerance unresolved",
+        "degenerate controls",
+        "holdout/residual exceeds approved tolerance"
+      ],
+      "recovery_actions": [
+        "replan",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "SITE-02 and SITE-03 pass or typed unknown/block"
+      ]
+    },
+    {
+      "stage_id": "site_2d_reconstruction",
+      "purpose": "Reconstruct bounded 2D semantic features",
+      "owning_roles": [
+        "Landscape Engineer",
+        "CAD/BIM Technician"
+      ],
+      "rule_ids": [
+        "SITE-04",
+        "SITE-05",
+        "SITE-06"
+      ],
+      "required_capabilities": [
+        "technical_2d.create",
+        "technical_2d.modify",
+        "model.query",
+        "checkpoint.create"
+      ],
+      "software_candidates": [
+        "autocad"
+      ],
+      "depends_on": [
+        "registration"
+      ],
+      "chunk_policy": "feature_based_chunk_streaming",
+      "checkpoint": "autocad_site_checkpoint",
+      "stop_conditions": [
+        "required semantic capability missing",
+        "chunk postcondition fails",
+        "mutation state uncertain"
+      ],
+      "recovery_actions": [
+        "reconcile_state",
+        "compensate",
+        "restart_from_checkpoint",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "read-after-write geometry/state verification"
+      ]
+    },
+    {
+      "stage_id": "sketchup_handoff",
+      "purpose": "Create/reconstruct native SketchUp deliverable",
+      "owning_roles": [
+        "3D / Visualization Engineer",
+        "CAD/BIM Technician"
+      ],
+      "rule_ids": [
+        "SITE-07"
+      ],
+      "required_capabilities": [
+        "model_3d.create",
+        "model_3d.transform",
+        "artifact.native_save",
+        "artifact.reopen",
+        "evidence.artifact_hash_bound"
+      ],
+      "software_candidates": [
+        "sketchup"
+      ],
+      "depends_on": [
+        "site_2d_reconstruction"
+      ],
+      "chunk_policy": "feature_based_chunk_streaming",
+      "checkpoint": "sketchup_native_checkpoint",
+      "stop_conditions": [
+        "native save/reopen unavailable",
+        "scale/hierarchy verification fails",
+        "saved SKP lacks verified external content hash"
+      ],
+      "recovery_actions": [
+        "replan",
+        "restart_from_checkpoint",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "SITE-07 native reopen, independent measurements and external artifact hash"
+      ]
+    },
+    {
+      "stage_id": "final_qa_and_seal",
+      "purpose": "Independent QA and artifact seal",
+      "owning_roles": [
+        "Checker / QA Engineer",
+        "Documentation Engineer"
+      ],
+      "rule_ids": [
+        "SITE-08"
+      ],
+      "required_capabilities": [
+        "artifact.seal",
+        "artifact.hash",
+        "qa.independent_measure",
+        "evidence.sketchup_hash_current",
+        "evidence.sketchup_reopen_verified"
+      ],
+      "software_candidates": [
+        "autocad"
+      ],
+      "depends_on": [
+        "sketchup_handoff"
+      ],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "sealed_handoff",
+      "stop_conditions": [
+        "AutoCAD accepted artifact cannot be sealed",
+        "critical QA gate unknown/fail",
+        "artifact hash drift",
+        "SketchUp handoff evidence stale or missing"
+      ],
+      "recovery_actions": [
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "review rubric hard gates pass; AutoCAD is sealed; SketchUp is reopen-verified and externally hash-bound"
+      ]
+    }
+  ]
+}

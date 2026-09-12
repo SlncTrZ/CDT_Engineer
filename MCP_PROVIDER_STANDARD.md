@@ -1,5 +1,7 @@
 # SlncTrZ-MCP Provider Standard
 
+> CDT CAD applicability (2026-09-11): In Generic CAD Engines, provider-owned logic means native execution mechanics. Discipline rules, standards interpretation and engineering Audit Reports belong to CDT_Engineer Production Domains. This clarification does not change the ecosystem-wide transport/auth standard.
+
 > Status: Draft v0.2
 > Scope: SlncTrZ provider-integration convention for MCP servers connected through SlncTrZ-MCP
 

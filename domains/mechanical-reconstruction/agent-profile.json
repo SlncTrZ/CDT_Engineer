@@ -1,0 +1,225 @@
+{
+  "schema_version": "0.1.0",
+  "profile_id": "mechanical-reconstruction.default",
+  "domain_id": "mechanical-reconstruction",
+  "version": "1.0.0",
+  "release_target": "ready_for_professional_review",
+  "stages": [
+    {
+      "stage_id": "environment_preflight",
+      "purpose": "Discover target host software and provider readiness",
+      "owning_roles": [
+        "Chief / Lead Engineer"
+      ],
+      "rule_ids": [],
+      "required_capabilities": [
+        "execution_environment.compatible_or_typed_blocker"
+      ],
+      "software_candidates": [
+        "autocad",
+        "solidworks"
+      ],
+      "depends_on": [],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "environment_inventory",
+      "stop_conditions": [
+        "required software state unknown",
+        "required provider state unknown",
+        "version mismatch unresolved"
+      ],
+      "recovery_actions": [
+        "rediscover_environment",
+        "request_installation",
+        "request_configuration",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "Step-0 inventory is current and compatibility is typed"
+      ]
+    },
+    {
+      "stage_id": "drawing_interpretation",
+      "purpose": "Resolve projection, source dimensions and critical ambiguity",
+      "owning_roles": [
+        "Mechanical Design Engineer",
+        "Manufacturing Engineer"
+      ],
+      "rule_ids": [
+        "MECH-01",
+        "MECH-02"
+      ],
+      "required_capabilities": [
+        "technical_2d.inspect",
+        "dimension.ledger",
+        "evidence.source_hashes_verified"
+      ],
+      "software_candidates": [
+        "autocad"
+      ],
+      "depends_on": [
+        "environment_preflight"
+      ],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "dimension_ledger",
+      "stop_conditions": [
+        "projection ambiguity critical",
+        "critical dimension conflict",
+        "critical tolerance unresolved for requested release"
+      ],
+      "recovery_actions": [
+        "replan",
+        "scope_reduce_with_approval",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "MECH-01/02 disposition recorded"
+      ]
+    },
+    {
+      "stage_id": "feature_plan",
+      "purpose": "Freeze feature DAG and exactness requirements",
+      "owning_roles": [
+        "Mechanical Design Engineer",
+        "Manufacturing Engineer"
+      ],
+      "rule_ids": [
+        "MECH-03",
+        "MECH-04"
+      ],
+      "required_capabilities": [
+        "feature.plan",
+        "dependency.validate"
+      ],
+      "software_candidates": [
+        "solidworks"
+      ],
+      "depends_on": [
+        "drawing_interpretation"
+      ],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "feature_plan",
+      "stop_conditions": [
+        "feature dependency invalid",
+        "required exact geometry unsupported"
+      ],
+      "recovery_actions": [
+        "replan",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "MECH-03/04 pass"
+      ]
+    },
+    {
+      "stage_id": "native_part_execution",
+      "purpose": "Build native part by semantic feature chunks",
+      "owning_roles": [
+        "Mechanical Design Engineer",
+        "CAD/BIM Technician"
+      ],
+      "rule_ids": [
+        "MECH-05"
+      ],
+      "required_capabilities": [
+        "solid.feature.create",
+        "solid.boolean",
+        "model.query",
+        "checkpoint.create"
+      ],
+      "software_candidates": [
+        "solidworks"
+      ],
+      "depends_on": [
+        "feature_plan"
+      ],
+      "chunk_policy": "feature_based_chunk_streaming",
+      "checkpoint": "native_part_checkpoint",
+      "stop_conditions": [
+        "required native capability missing",
+        "boolean result uncertain",
+        "chunk postcondition fails"
+      ],
+      "recovery_actions": [
+        "reconcile_state",
+        "compensate",
+        "restart_from_checkpoint",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "native state receipts and expected body state verified"
+      ]
+    },
+    {
+      "stage_id": "independent_measurement",
+      "purpose": "Measure holes, dimensions and topology independently",
+      "owning_roles": [
+        "Checker / QA Engineer"
+      ],
+      "rule_ids": [
+        "MECH-06",
+        "MECH-07"
+      ],
+      "required_capabilities": [
+        "model_3d.measure",
+        "topology.inspect"
+      ],
+      "software_candidates": [
+        "solidworks"
+      ],
+      "depends_on": [
+        "native_part_execution"
+      ],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "inspection_evidence",
+      "stop_conditions": [
+        "critical feature unmeasurable",
+        "dimension outside approved tolerance",
+        "unexpected topology"
+      ],
+      "recovery_actions": [
+        "replan",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "MECH-06/07 pass"
+      ]
+    },
+    {
+      "stage_id": "neutral_export_and_release",
+      "purpose": "Export/reopen neutral artifact and close QA",
+      "owning_roles": [
+        "Checker / QA Engineer",
+        "Documentation Engineer"
+      ],
+      "rule_ids": [
+        "MECH-08"
+      ],
+      "required_capabilities": [
+        "artifact.exchange_export",
+        "artifact.reopen",
+        "artifact.seal",
+        "evidence.artifact_hash_bound",
+        "evidence.round_trip_verified"
+      ],
+      "software_candidates": [
+        "solidworks"
+      ],
+      "depends_on": [
+        "independent_measurement"
+      ],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "sealed_handoff",
+      "stop_conditions": [
+        "required exporter unavailable",
+        "round-trip verification fails",
+        "artifact hash drift"
+      ],
+      "recovery_actions": [
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "MECH-08 and review rubric hard gates pass"
+      ]
+    }
+  ]
+}

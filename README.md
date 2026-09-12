@@ -1,58 +1,78 @@
-# CDT_Engineer
+# CDT_Engineer — Engineering OS for Agents
 
-> Architecture/specification hub cho họ MCP provider kỹ thuật/CAD, cho phép AI agent đọc, tạo, sửa, kiểm tra và tự động hoá mô hình/bản vẽ qua MCP chuẩn.
+CDT_Engineer là **Engineering Operating System / Virtual Engineering Office cho AI Agents**: một đầu mối nghiệp vụ để Agent hiểu mục đích dự án, chọn đúng chuyên ngành/role, áp dụng skill và quy chuẩn kỹ thuật, dùng đúng phần mềm, kiểm tra độc lập và bàn giao hồ sơ có thể truy vết.
 
-## Mục tiêu
+Mục tiêu không phải chỉ làm ra geometry hoặc hình ảnh đẹp. CDT_Engineer phải giúp Agent tạo đúng loại sản phẩm cho mục đích thực tế: concept, thiết kế kỹ thuật, chế tạo, thi công, shop drawing, hồ sơ hạ tầng, mô hình 3D hay render — với mức kiểm chứng phù hợp cho từng release class.
 
-Biến AI thành một **kỹ sư CAD đa nền tảng** nhưng không ép mọi phần mềm vào cùng một tập lệnh nghèo nàn. CDT_Engineer dùng kiến trúc phân tầng:
-
-1. **SlncTrZ Provider Contract** — transport, auth, help, namespace, error, versioning, security.
-2. **CDT Common CAD Contract** — semantics thật sự dùng chung giữa các phần mềm CAD/DCC.
-3. **Provider Extension Contract** — khả năng riêng của AutoCAD, SketchUp, Blender, SolidWorks…
-4. **Backend/Engine** — cách thực thi cụ thể: COM, ezdxf, Ruby API, bpy, SolidWorks COM…
-
-Chi tiết: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) và [`docs/CONTRACTS.md`](docs/CONTRACTS.md).
-
-## Triển khai chính thức — 4 lane song song
-
-| Lane | Target repo | Mục tiêu chính |
-| --- | --- | --- |
-| A | **CDT-AutoCAD** | 2D/3D drafting, DWG/DXF, layout, block, dimension; dual-engine COM + ezdxf |
-| S | **CDT-SketchUp** | Concept/modeling kiến trúc, groups/components, tags, materials, scenes |
-| B | **CDT-Blender** | **Modeling + Sculpting** là capability hạng nhất; thêm scene/material/render |
-| W | **CDT-SolidWorks** | Parametric mechanical CAD: sketches, features, parts, assemblies, mates, drawings |
-
-Bốn provider phát triển độc lập và song song theo native capability. `CDT_Engineer` giữ architecture/contracts/roadmap/conformance. AutoCAD được migration trước vì runtime đã tồn tại; không phải dependency chặn ba lane còn lại. Xem [`docs/REPO_SPLIT_PLAN.md`](docs/REPO_SPLIT_PLAN.md).
-
-## Repository topology
+## Mô hình
 
 ```text
-CDT_Engineer/       # architecture / contracts / ADR / roadmap / conformance
-CDT-AutoCAD/        # runtime product
-CDT-SketchUp/       # runtime product
-CDT-Blender/        # runtime product
-CDT-SolidWorks/     # runtime product
-CDT-Provider-Kit/   # CHƯA TẠO; chỉ sau Rule-of-Two evidence
+Yêu cầu / nguồn đầu vào
+→ Step 0: Execution Environment Discovery
+→ Design Basis
+→ Engineering Roles + Skills + Standards
+→ Workflow đa ngành
+→ Capability preflight
+→ CDT-AutoCAD / CDT-SketchUp / CDT-Blender / CDT-SolidWorks
+→ QA / Checker độc lập
+→ Artifact seal + handoff
+→ ready_for_professional_review
 ```
 
-Repository split đã hoàn tất: runtime AutoCAD ở `CDT-AutoCAD`; SketchUp/Blender/SolidWorks có skeleton độc lập và pinned spec baseline. `CDT_Engineer` không chứa provider runtime business logic. Không dùng Git submodule để ghép source provider. Repo map canonical: [`docs/PROVIDER_REPO_MAP.md`](docs/PROVIDER_REPO_MAP.md).
+CDT_Engineer không chứa native COM/Ruby/bpy/SolidWorks backend. Các repository engine vẫn là Generic Execution Engines; CDT_Engineer chứa **chuyên môn kỹ sư và phương pháp làm việc**.
 
-## Nguyên tắc bắt buộc
+## Golden verticals đầu tiên
 
-- Mọi provider first-class phải tuân thủ [`MCP_PROVIDER_STANDARD.md`](MCP_PROVIDER_STANDARD.md).
-- Provider expose **bare MCP tool names**; SlncTrZ-MCP sở hữu namespace canonical `<provider>.<tool>`.
-- Common contract chỉ chứa semantics thực sự chung; không tạo lowest-common-denominator giả tạo.
-- Provider repositories version/release/CI độc lập; không provider nào import runtime code trực tiếp từ provider khác.
-- Khả năng riêng phải được khai báo qua capability map và refusal có cấu trúc khi engine không hỗ trợ.
-- Provider sở hữu business logic; gateway không chứa CAD logic.
-- Mặc định fail closed, validate trước side effect, timeout bounded, không lộ secret.
-- Không ghi đè file gốc mặc định; destructive operations phải tách riêng và có semantics rõ ràng.
-- **Reuse-first:** học từ reference code, test và edge cases đã được chứng minh; chuẩn hoá lại theo CDT/SlncTrZ thay vì copy nguyên monolith.
-- Code từ reference chỉ được tái sử dụng trực tiếp khi license cho phép và attribution được giữ đúng. Reference chưa xác minh license chỉ dùng để học pattern/behavior, không copy code.
+| Vertical | Vai trò trong roadmap |
+| --- | --- |
+| [Site / Landscape / Architectural Base Reconstruction](domains/site-reconstruction/benchmark-pack.md) | BeachSquare chứng minh source/elevation/registration/2D→3D/SketchUp và QA workflow |
+| [Mechanical Part Reconstruction](domains/mechanical-reconstruction/benchmark-pack.md) | Chứng minh đọc bản vẽ, feature/dimension/tolerance, manufacturability và shop/neutral outputs |
+
+Hai vertical này là bằng chứng đầu tiên để xây OS; không giới hạn sản phẩm ở hai ngành đó.
+
+Roadmap đích mở rộng tới Architecture, Interior, Landscape, Civil/Infrastructure, Structural, Mechanical/Manufacturing, Electrical, Electronics, Embedded và Visualization/Rendering.
+
+## Contract nền
+
+- [Execution Environment Contract](docs/EXECUTION_ENVIRONMENT_CONTRACT.md)
+- [Agent Operational Profile Contract](docs/AGENT_PROFILE_CONTRACT.md)
+- [Design Basis Contract](docs/DESIGN_BASIS_CONTRACT.md)
+- [Engineering Skill Contract](docs/ENGINEERING_SKILL_CONTRACT.md)
+- [Engineering Role Contract](docs/ROLE_CONTRACT.md)
+- [Workflow Contract](docs/WORKFLOW_CONTRACT.md)
+- [Feature-based Chunk Streaming Contract](docs/FEATURE_CHUNK_STREAMING_CONTRACT.md)
+- [Software Operating Guide Contract](docs/SOFTWARE_OPERATING_GUIDE_CONTRACT.md)
+  - [AutoCAD Operating Guide](software/autocad/OPERATING_GUIDE.md)
+  - [SketchUp Operating Guide](software/sketchup/OPERATING_GUIDE.md)
+  - [SolidWorks Operating Guide](software/solidworks/OPERATING_GUIDE.md)
+- [QA / Checker Model](docs/QA_CHECKER_MODEL.md)
+- [Foundation Validation](docs/FOUNDATION_VALIDATION.md)
+- [Production Domain Contract](docs/PRODUCTION_DOMAIN_CONTRACT.md)
+- [Standards Governance & Registry](docs/STANDARDS_GOVERNANCE.md)
+
+## Ranh giới sản phẩm
+
+- **CDT_Engineer:** Design Basis, domain interpretation, roles, Engineering Skills, deterministic engineering algorithms, standards/rules, professional software guidance, workflows, QA/QC và engineering handoff.
+- **CDT-AutoCAD / CDT-SketchUp / CDT-Blender / CDT-SolidWorks:** native execution, query/mutation, geometry/topology, document lifecycle, transaction/recovery, import/export và capability declaration.
+- **SlncTrZ-MCP:** authority, routing, namespace và connection surface; không sở hữu engineering business logic.
+- **Domain SDK** khác **CDT-Provider-Kit** và đều phải qua Rule of Two riêng.
+
+## Nguyên tắc nghề nghiệp
+
+- Step 0 phải discover software/version/path và provider/runtime capability trước mọi hướng dẫn version-specific hoặc native execution; không giả định môi trường.
+- Purpose và Design Basis phải có trước software choice.
+- `unknown` phải được giữ là unknown; không bịa kích thước, tolerance, cao độ, tải, vật liệu hay compliance.
+- Tool chạy thành công không đồng nghĩa thiết kế đúng.
+- Mutation-heavy work phải dùng **Feature-based Chunk Streaming**: không bắn cả dự án trong một call, cũng không stream từng LINE/ARC/primitive qua từng Agent turn; chia theo semantic feature, commit/verify từng chunk, rồi mới mở dependency tiếp theo.
+- `ui_yield`/redraw/cursor-visible progress chỉ tạo presentation effect tại safe committed boundary; không được làm yếu transaction, recovery hay QA.
+- Render đẹp không đồng nghĩa chế tạo/thi công được.
+- Bản vẽ dành cho con người phải được kiểm view/section/dimension/note/revision/readability, không chỉ dữ liệu máy.
+- Compliance cần exact standard edition + applicability + derived rule + evidence.
+- QA độc lập và artifact identity là hard requirement cho release mạnh.
+- CDT_Engineer chuẩn bị hồ sơ `ready_for_professional_review`; quyền ký/phát hành chuyên môn vẫn là hành động chịu trách nhiệm bên ngoài hệ thống.
 
 ## Trạng thái
 
-✅ **Repository split hoàn tất và 4 lane đã agent-ready.** AutoCAD được tách history-preserving sang `CDT-AutoCAD` và giữ nguyên generic regression `54 passed, 2 skipped`; A2 COM/live vẫn là RC `0.3.0rc1 / autocad-a2-v1-rc1`, A3.1 ACIS vẫn staged cho tới khi có AutoCAD thật. `CDT-SketchUp`, `CDT-Blender`, `CDT-SolidWorks` đã có repo độc lập, ownership `AGENTS.md`, pinned specs và initial handoff; chưa claim runtime capability.
+Ngày 2026-09-12: Engineering OS offline foundation đã có Step-0, Agent Profiles, deterministic Site/Mechanical guards, Rule-of-Two primitives, Stage Runner, QA/artifact identity và Software Operating Guides. AutoCAD integration đã được đồng bộ với public contract `0.4.0rc1 / autocad-generic-v1-rc1 / 86 tools`; SketchUp integration đồng bộ với provider `0.1.0`, contract `0.21`, 64 tools và native save/open/export hiện hành. Stage Runner giữ capability facts theo software, chọn một software candidate cho toàn bộ software-bound requirements của stage, không trộn capability giữa nhiều engine và không cho global fact bypass blocker của engine. Release-critical source/artifact hash, reopen và round-trip evidence đã được đưa thành machine-required profile gates thay vì chỉ nằm trong prose. Public test suite đứng độc lập, không đọc customer/raw fixture trong `_private/`. Native/runtime acceptance vẫn phải qua Step-0 và evidence thực tế.
 
----
-*Wing: ops | Topic: CDT_Engineer | Updated: 2026-09-09*
+Public repository chỉ giữ product-facing contracts, rules, skills/guides/workflows và benchmark definitions đã sanitize. Mọi tài liệu nghiên cứu, phát triển, roadmap, ADR/định hướng dự án, handoff nội bộ, customer/source CAD, raw evidence, protected references và run workspaces nằm trong `_private/`; không force-add dữ liệu private.
