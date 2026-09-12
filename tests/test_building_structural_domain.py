@@ -19,7 +19,7 @@ class BuildingStructuralDomainTests(unittest.TestCase):
 
     def make_job(self):
         return {
-            'schema_version':'0.1.0',
+            'schema_version':'0.2.0',
             'job_id':'struct-01',
             'domain_id':'building-structural',
             'release_target':'design_review',
@@ -73,7 +73,7 @@ class BuildingStructuralDomainTests(unittest.TestCase):
     def test_five_pack_and_initial_skills_exist(self):
         for name in ['domain.schema.json','rule-pack.md','template-pack.md','benchmark-pack.md','review-rubric.md','agent-profile.json']:
             self.assertTrue((DOMAIN/name).is_file(),name)
-        for skill in ['structural-system-intent','load-path-check','architecture-structural-coordination','structural-qa']:
+        for skill in ['structural-system-intent','load-path-check','architecture-structural-coordination','structural-qa','load-combination-check','member-demand-capacity-check','structural-standards-applicability']:
             path=DOMAIN/'skills'/skill/'SKILL.md'
             self.assertTrue(path.is_file(),str(path))
             text=path.read_text(encoding='utf-8')

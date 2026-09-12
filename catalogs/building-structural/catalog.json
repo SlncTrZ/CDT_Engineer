@@ -1,0 +1,60 @@
+{
+  "schema_version": "0.1.0",
+  "catalog_id": "building-structural.semantic-components.v1",
+  "version": "0.1.0",
+  "domain_id": "building-structural",
+  "maturity": "pilot",
+  "assets": [
+    {
+      "asset_id": "structural.member.prismatic.rectangular.generic.v1",
+      "version": "0.1.0",
+      "family": "structural_member",
+      "semantic_intent": "Generic prismatic rectangular structural-member intent for coordination, section-property handoff and bounded analytical references; capacity is never inferred from geometry alone.",
+      "provenance": {"type": "generic", "source": "CDT_Engineer internal semantic baseline", "status": "internal_baseline"},
+      "applicability": {"release_classes": ["concept", "technical_draft", "design_review"], "notes": "Not a member-capacity, reinforcement, stability or code-compliance claim without exact section/material/load/standard calculation evidence."},
+      "parameters": {"structural_role": "project_required", "width": "project_required", "depth": "project_required", "material_ref": "project_required", "section_property_source_ref": "required_before_capacity_check"},
+      "interfaces": {"host_types": ["structural_grid", "level", "support_node"], "rules": ["member role and end/support relationships must be explicit", "section and material identity must remain source-bound", "geometry alone must not activate capacity claims"]},
+      "allowed_transforms": ["translate", "rotate", "mirror", "parameterized_resize"],
+      "substitution_policy": {"allowed": true, "conditions": ["same structural role", "section/material requirements preserved", "no capacity claim broadened", "interface relationships reverified"]},
+      "qa_checks": ["member semantic identity", "grid/level relation", "section dimensions when specified", "material reference state", "support/interface state"],
+      "native_mappings": {
+        "autocad": {"state": "unresolved", "reason": "No approved block/native member identity is hash-bound."},
+        "sketchup": {"state": "unresolved", "reason": "No validated native structural component is hash-bound."}
+      }
+    },
+    {
+      "asset_id": "structural.connection.interface.generic.v1",
+      "version": "0.1.0",
+      "family": "connection_interface",
+      "semantic_intent": "Connection-interface intent capturing connected member identities, force-transfer role, ownership and unresolved design dependency without inventing connection geometry or resistance.",
+      "provenance": {"type": "generic", "source": "CDT_Engineer internal semantic baseline", "status": "internal_baseline"},
+      "applicability": {"release_classes": ["concept", "technical_draft", "design_review"], "notes": "Not a designed or adequate connection; fasteners, welds, plates, anchors, stiffness and resistance require an implemented connection-design route with exact evidence."},
+      "parameters": {"connected_member_refs": "project_required", "transfer_role": "project_required", "design_owner": "project_required", "connection_design_state": "project_required"},
+      "interfaces": {"host_types": ["structural_member", "support_node"], "rules": ["all connected semantic members must be identified", "open connection design remains a release blocker where adequacy is required", "native placeholder geometry cannot be treated as connection design"]},
+      "allowed_transforms": ["translate", "rotate", "mirror"],
+      "substitution_policy": {"allowed": false, "conditions": ["a generic interface marker is not a substitute for a designed connection"]},
+      "qa_checks": ["connected member identity", "force-transfer intent", "design owner", "connection design state", "unresolved dependency visibility"],
+      "native_mappings": {
+        "autocad": {"state": "unresolved", "reason": "No approved connection-detail mapping is frozen."},
+        "sketchup": {"state": "unresolved", "reason": "No approved native connection asset is frozen."}
+      }
+    },
+    {
+      "asset_id": "structural.foundation.interface.generic.v1",
+      "version": "0.1.0",
+      "family": "foundation_interface",
+      "semantic_intent": "Foundation/support interface intent linking superstructure load-path terminals to a declared foundation/geotechnical dependency without inventing footing, pile or soil capacity.",
+      "provenance": {"type": "generic", "source": "CDT_Engineer internal semantic baseline", "status": "internal_baseline"},
+      "applicability": {"release_classes": ["concept", "technical_draft", "design_review"], "notes": "Not a foundation or geotechnical adequacy claim; exact reactions, foundation system, soil/geotechnical data and applicable design rules remain separate required evidence."},
+      "parameters": {"supported_member_refs": "project_required", "reaction_evidence_ref": "required_before_foundation_design", "foundation_system_state": "project_required", "geotechnical_dependency_state": "project_required"},
+      "interfaces": {"host_types": ["load_path_terminal", "foundation_system", "ground"], "rules": ["superstructure terminal identity must be explicit", "foundation/geotechnical unknowns remain explicit", "support geometry must not imply soil or foundation capacity"]},
+      "allowed_transforms": ["translate", "rotate"],
+      "substitution_policy": {"allowed": false, "conditions": ["a foundation-interface marker cannot replace geotechnical/foundation design"]},
+      "qa_checks": ["supported member/load-path identity", "reaction evidence state", "foundation system state", "geotechnical dependency state"],
+      "native_mappings": {
+        "autocad": {"state": "unresolved", "reason": "No approved foundation-detail mapping is frozen."},
+        "sketchup": {"state": "unresolved", "reason": "No approved native foundation asset is frozen."}
+      }
+    }
+  ]
+}

@@ -18,6 +18,8 @@ May identify geometric/interface clashes and request/recommend coordination chan
 
 ## Deterministic checks
 
+- `domains.building_structural.interfaces.evaluate_architecture_structural_interfaces` requires typed Architecture↔Structural ownership, source revision, disposition, verification state and evidence references;
+
 - `evaluate_architecture_clashes` detects simplified member/opening plan conflicts with explicit clearance;
 - grid/level identities across disciplines must be reconciled;
 - stair/slab opening, facade support, shaft/penetration and cantilever interfaces remain explicit when in scope;
@@ -34,7 +36,7 @@ Use public query/measure capabilities for native evidence when needed. CAD/model
 
 ## QA / outputs
 
-Output: cross-discipline interface register, measured clashes/clearances, disposition owner/state, revisions and downstream blockers.
+Output: typed cross-discipline interface register, measured clashes/clearances, disposition owner/state, source revisions, evidence refs and downstream blockers.
 
 ## Negative cases
 

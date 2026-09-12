@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Building Structural v1 job",
-  "description": "Structural intent, load-path and architecture-coordination schema for low-rise buildings. Unknown loads/materials/standards remain valid evidence states but block stronger adequacy claims.",
+  "title": "Building Structural v0.2 job",
+  "description": "Structural intent, coordination and bounded source-bound calculation evidence for low-rise buildings. Unknown or unverified engineering inputs remain valid evidence states but block dependent adequacy/compliance claims.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schema_version", "job_id", "domain_id", "release_target", "source_manifest", "units", "scope", "assumptions", "standards", "structural_basis", "grid", "members", "load_path", "architecture_interface"],
   "properties": {
-    "schema_version": {"const": "0.1.0"},
+    "schema_version": {"const": "0.2.0"},
     "job_id": {"type": "string", "minLength": 1},
     "domain_id": {"const": "building-structural"},
     "release_target": {"$ref": "#/$defs/releaseTarget"},
@@ -50,14 +50,19 @@
       "type": "array",
       "items": {
         "type": "object", "additionalProperties": false,
-        "required": ["standard_id", "record_version", "source", "edition", "applicability", "status"],
+        "required": ["standard_id", "record_version", "designation", "issuer", "source", "edition", "verification_status", "applicability_state", "clause_refs", "reviewer", "decision_reason"],
         "properties": {
           "standard_id": {"type": "string", "minLength": 1},
           "record_version": {"type": "string", "minLength": 1},
+          "designation": {"type": "string", "minLength": 1},
+          "issuer": {"type": "string", "minLength": 1},
           "source": {"type": "string", "minLength": 1},
           "edition": {"type": "string", "minLength": 1},
-          "applicability": {"type": "string", "minLength": 1},
-          "status": {"enum": ["proposed", "verified", "excluded"]}
+          "verification_status": {"enum": ["metadata_only", "source_verified", "content_verified", "superseded", "unavailable"]},
+          "applicability_state": {"enum": ["applicable", "not_applicable", "unknown", "conflict"]},
+          "clause_refs": {"type": "array", "items": {"type": "string", "minLength": 1}},
+          "reviewer": {"type": "string", "minLength": 1},
+          "decision_reason": {"type": "string", "minLength": 1}
         }
       }
     },
@@ -69,6 +74,83 @@
         "materials": {"$ref": "#/$defs/evidenceValue"},
         "loads": {"$ref": "#/$defs/evidenceValue"},
         "standards_state": {"$ref": "#/$defs/evidenceValue"}
+      }
+    },
+    "analysis_evidence": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "load_cases": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["case_id", "evidence_status", "effects", "source_refs"],
+            "properties": {
+              "case_id": {"type": "string", "minLength": 1},
+              "evidence_status": {"$ref": "#/$defs/evidenceStatus"},
+              "effects": {"type": "object", "minProperties": 1, "additionalProperties": {"type": "number"}},
+              "source_refs": {"type": "array", "items": {"type": "string", "minLength": 1}}
+            }
+          }
+        },
+        "load_combinations": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["combination_id", "factors", "basis"],
+            "properties": {
+              "combination_id": {"type": "string", "minLength": 1},
+              "factors": {"type": "object", "minProperties": 1, "additionalProperties": {"type": "number"}},
+              "basis": {"$ref": "#/$defs/calculationBasis"}
+            }
+          }
+        },
+        "materials": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["material_id", "evidence_status", "source_ref", "properties"],
+            "properties": {
+              "material_id": {"type": "string", "minLength": 1},
+              "evidence_status": {"$ref": "#/$defs/evidenceStatus"},
+              "source_ref": {"type": "string", "minLength": 1},
+              "properties": {"type": "object"}
+            }
+          }
+        },
+        "sections": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["section_id", "evidence_status", "source_ref", "material_ref", "properties"],
+            "properties": {
+              "section_id": {"type": "string", "minLength": 1},
+              "evidence_status": {"$ref": "#/$defs/evidenceStatus"},
+              "source_ref": {"type": "string", "minLength": 1},
+              "material_ref": {"type": "string", "minLength": 1},
+              "properties": {"type": "object"}
+            }
+          }
+        },
+        "demand_capacity_checks": {
+          "type": "array",
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["check_id", "member_id", "demand", "capacity", "unit", "limit", "demand_evidence_status", "capacity_evidence_status", "section_ref", "material_ref", "basis"],
+            "properties": {
+              "check_id": {"type": "string", "minLength": 1},
+              "member_id": {"type": "string", "minLength": 1},
+              "demand": {"type": "number"},
+              "capacity": {"type": "number", "exclusiveMinimum": 0},
+              "unit": {"type": "string", "minLength": 1},
+              "limit": {"type": "number", "exclusiveMinimum": 0},
+              "demand_evidence_status": {"$ref": "#/$defs/evidenceStatus"},
+              "capacity_evidence_status": {"$ref": "#/$defs/evidenceStatus"},
+              "section_ref": {"type": "string", "minLength": 1},
+              "material_ref": {"type": "string", "minLength": 1},
+              "basis": {"$ref": "#/$defs/calculationBasis"}
+            }
+          }
+        }
       }
     },
     "grid": {
@@ -125,6 +207,17 @@
     "evidenceValue": {
       "type": "object", "additionalProperties": false, "required": ["status", "value"],
       "properties": {"status": {"$ref": "#/$defs/evidenceStatus"}, "value": {}, "source_ref": {"type": ["string", "null"]}}
+    },
+    "calculationBasis": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_class", "record_id", "record_version", "clause_or_rule_ref", "verification_state"],
+      "properties": {
+        "source_class": {"enum": ["standard_derived", "project_rule", "manufacturer", "calculation_method", "test_evidence"]},
+        "record_id": {"type": "string", "minLength": 1},
+        "record_version": {"type": "string", "minLength": 1},
+        "clause_or_rule_ref": {"type": "string", "minLength": 1},
+        "verification_state": {"enum": ["verified", "metadata_only", "unverified"]}
+      }
     },
     "bounds2d": {"type": "array", "prefixItems": [{"type": "number"}, {"type": "number"}, {"type": "number"}, {"type": "number"}], "items": false, "minItems": 4, "maxItems": 4}
   }

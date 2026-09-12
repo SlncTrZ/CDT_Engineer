@@ -2,7 +2,7 @@
   "schema_version": "0.1.0",
   "profile_id": "building-structural.low-rise-intent-v1",
   "domain_id": "building-structural",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "release_target": "design_review",
   "stages": [
     {
@@ -99,20 +99,23 @@
       "stage_id": "release_gate",
       "purpose": "Enforce evidence required by requested structural release class",
       "owning_roles": ["Checker / QA Engineer", "Structural Engineer"],
-      "rule_ids": ["STR-06", "STR-08"],
+      "rule_ids": ["STR-06", "STR-08", "STR-09", "STR-10", "STR-11", "STR-12", "STR-13"],
       "required_capabilities": ["qa.independent_measure"],
       "software_candidates": [],
       "depends_on": ["independent_qa"],
       "dependency_requirements": [
         {"dependency_id": "analysis.structural-capacity-route", "required_from_release": "fabrication_or_construction_candidate"},
         {"dependency_id": "evidence.structural-materials-loads", "required_from_release": "fabrication_or_construction_candidate"},
-        {"dependency_id": "standards.structural-applicability", "required_from_release": "fabrication_or_construction_candidate"}
+        {"dependency_id": "standards.structural-applicability", "required_from_release": "fabrication_or_construction_candidate"},
+        {"dependency_id": "domain.skill.load-combination-check", "required_from_release": "fabrication_or_construction_candidate"},
+        {"dependency_id": "domain.skill.member-demand-capacity-check", "required_from_release": "fabrication_or_construction_candidate"},
+        {"dependency_id": "domain.skill.structural-standards-applicability", "required_from_release": "fabrication_or_construction_candidate"}
       ],
       "chunk_policy": "not_applicable",
       "checkpoint": "structural_release_verdict",
       "stop_conditions": ["requested release exceeds evidence", "structural adequacy claim unsupported"],
       "recovery_actions": ["scope_reduce_with_approval", "block_for_review"],
-      "qa_gates": ["STR-06 release-evidence guard and STR-08 handoff limitations pass"]
+      "qa_gates": ["STR-06/09/10/11/12/13 release-evidence gates and STR-08 handoff limitations pass for the requested scope"]
     }
   ]
 }

@@ -1,15 +1,16 @@
-# Building Structural v1 — Review Rubric
+# Building Structural v0.2 — Review Rubric
 
 > Documentation class: PUBLIC_DOMAIN
-Version: 0.1.0 · Scope: structural intent + architecture coordination / design review.
+Version: 0.2.0 · Scope: structural intent, coordination and bounded calculation evidence.
 
 | Criterion | Weight | Full-credit evidence |
 | --- | ---: | --- |
-| Structural basis/provenance | 20 | System/material/load/standard states are explicit and source-bound |
-| Grid/member semantic consistency | 15 | Stable grid/member/reference identities independently verified |
-| Load-path intent | 25 | Every loaded branch reaches foundation/ground; no cycle |
-| Architecture coordination | 20 | Openings/stairs/facade/support interfaces checked and critical clashes dispositioned |
-| Release-boundary honesty | 10 | Adequacy/construction claims blocked unless required analysis/evidence exists |
+| Structural basis/provenance | 15 | System/material/load/standard states are explicit and source-bound |
+| Grid/member semantic consistency | 10 | Stable grid/member/reference identities independently verified |
+| Load-path intent | 15 | Every loaded branch reaches foundation/ground; no cycle |
+| Architecture coordination | 15 | Openings/stairs/facade/support interfaces checked and critical clashes dispositioned |
+| Calculation / standards provenance | 20 | Any numerical check uses explicit factors, material/section refs, exact source basis and standards applicability evidence |
+| Release-boundary honesty | 15 | Local checks never become unsupported global adequacy/construction claims; connection/foundation dependencies stay visible |
 | Independent QA/handoff | 10 | Checker evidence, limitations and artifact identity are current |
 
 Hard gates dominate score.
@@ -26,6 +27,6 @@ Hard gates dominate score.
 
 ## Stronger release hard gates
 
-`fabrication_or_construction_candidate` additionally requires, at minimum, resolved materials, loads, exact structural standard applicability and an accepted analysis/capacity route. Future final-design skills/rubrics must add member/serviceability/stability/connection/foundation/reinforcement gates as applicable.
+`fabrication_or_construction_candidate` additionally requires STR-09 through STR-13 where applicable: resolved load cases/combinations, source-bound material/section evidence, accepted demand/capacity calculation route, exact structural standard applicability, and resolved required connection/foundation/geotechnical interfaces. These bounded checks do not by themselves establish final adequacy. Final-design skills/rubrics must also cover the complete analysis model, stability, serviceability, connection/foundation/reinforcement and other applicable gates.
 
 A visual/native member model cannot earn structural adequacy by score. Unknown critical evidence blocks the release class that depends on it.

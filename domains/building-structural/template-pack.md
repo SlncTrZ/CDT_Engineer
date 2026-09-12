@@ -1,7 +1,7 @@
-# Building Structural v1 — Template Pack
+# Building Structural v0.2 — Template Pack
 
 > Documentation class: PUBLIC_DOMAIN
-Version: 0.1.0 · Scope: structural intent + architecture coordination / design review.
+Version: 0.2.0 · Scope: structural intent, architecture coordination and bounded calculation evidence.
 
 ## Structural basis record
 
@@ -38,6 +38,27 @@ The graph represents structural intent, not numerical analysis or member capacit
 ## Architecture interface record
 
 Record opening/member bounds; explicit clearance; stair/slab opening; facade support interface; cantilever/balcony support intent; shafts/penetrations; unresolved clashes; owner/action.
+
+
+## Calculation evidence record
+
+Record load-case IDs and evidence states; effect components/units; combination ID and **explicit** factors; exact basis source class, record ID/version and clause/rule reference; calculation receipt; assumptions/limitations. Factors are inputs, never guessed by the calculator.
+
+## Material / section evidence record
+
+Record stable `material_id` / `section_id`; source reference; evidence state; property names, values and units; member binding; revision. Geometry alone must not create resistance evidence.
+
+## Demand / capacity check record
+
+Record check/member ID; supplied demand and capacity in the same declared unit; limit; section/material refs; demand/capacity evidence states; exact check basis; utilization/result; independent review. A local PASS is not whole-structure adequacy.
+
+## Connection / foundation interface record
+
+Record semantic interface/catalog ID; connected members or load-path terminal; transfer/reaction intent; owner; design state; geotechnical dependency state where applicable; disposition/evidence. Placeholder geometry must not be promoted to connection/foundation design.
+
+## Standards applicability record
+
+Record exact standard ID/version/designation/issuer/edition/source; source verification state; applicable/not-applicable/unknown/conflict decision; clause refs; reviewer and rationale. Unknown/conflict blocks compliance-dependent checks.
 
 ## Execution record
 
