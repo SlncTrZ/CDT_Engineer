@@ -1,6 +1,8 @@
 # Engineering Role Contract
 
-Version: 0.1.0 · Updated: 2026-09-12 · Status: architecture baseline.
+> Documentation class: PUBLIC_CONTRACT
+
+Version: 0.1.0 · Updated: 2026-09-12 · Status: public contract baseline.
 
 ## Purpose
 

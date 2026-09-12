@@ -1,5 +1,7 @@
 # Feature-based Chunk Streaming Contract
 
+> Documentation class: PUBLIC_CONTRACT
+
 Version: 0.1.0 · Updated: 2026-09-12 · Status: Engineering OS execution invariant.
 
 ## 1. Purpose

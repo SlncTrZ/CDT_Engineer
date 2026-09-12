@@ -1,6 +1,6 @@
-map_version: 0.2.0
+map_version: 0.3.0
 software_id: sketchup
-purpose: Current public-contract semantic capability map for Site/3D handoff.
+purpose: Current public-contract semantic capability map for Site and Building 3D handoff.
 source_snapshot:
   repository: CDT-SketchUp
   head: 6a035e58d4c2cec8317aab6d40dad8dcf7f16975
@@ -24,6 +24,10 @@ capability_mappings:
   support: expected
   expected_public_tools: [execute_geometry, create_component, place_instance, create_polyline, create_rectangle, create_circle, create_arc, create_polygon]
   verification: strict operation receipt with affected PIDs and semantic read-back
+- semantic: component.library_resolve
+  support: blocked
+  expected_public_tools: []
+  verification: current public contract can create a component and place an instance by an existing definition GUID, but exposes no semantic asset-key/native-library load or registry-resolution route
 - semantic: model_3d.transform
   support: expected
   expected_public_tools: [transform_entity, move_entity, rotate_entity, scale_entity, mirror_entity]
@@ -69,6 +73,8 @@ known_blockers:
   effect: Step-0 runtime discovery remains mandatory
 - code: artifact_seal_missing
   effect: native SKP lifecycle is available, but content-addressed seal/manifest remains external or blocked by release policy
+- code: native_component_registry_route_missing
+  effect: Building catalog assets cannot be resolved/imported by semantic asset key through the current public contract; create_component/place_instance alone do not satisfy catalog-native mapping
 - code: model_world_coordinate_input_unclaimed
   effect: strict mutation currently accepts active_context coordinate space only
 - code: legacy_mutation_paths_deprecated

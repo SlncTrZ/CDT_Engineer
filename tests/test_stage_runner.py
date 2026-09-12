@@ -41,6 +41,25 @@ class StageRunnerTests(unittest.TestCase):
   r=run_profile(PROFILE,capabilities=caps,stage_checks=checks)
   self.assertEqual('fail',r['stages'][1]['assessment_result'])
 
+ def test_not_applicable_dependency_does_not_block_dependents(self):
+  profile={'profile_id':'na','release_target':'x','stages':[
+   {'stage_id':'optional','depends_on':[],'required_capabilities':['local.optional'],'checkpoint':'a'},
+   {'stage_id':'required','depends_on':['optional'],'required_capabilities':['local.required'],'checkpoint':'b'},
+  ]}
+  caps={'local.optional':{'result':'not_applicable'},'local.required':{'result':'pass'}}
+  checks={'optional':{'result':'not_applicable'},'required':{'result':'pass'}}
+  r=run_profile(profile,capabilities=caps,stage_checks=checks)
+  self.assertEqual('pass',r['stages'][1]['release_result'])
+  self.assertEqual('pass',r['result'])
+
+ def test_released_failure_is_not_masked_by_downstream_dependency_block(self):
+  caps={'env.ready':{'result':'pass'},'model.measure':{'result':'pass'},'artifact.reopen':{'result':'pass'}}
+  checks={'preflight':{'result':'pass'},'registration':{'result':'fail','reason_codes':['measured_failure']},'handoff':{'result':'pass'}}
+  r=run_profile(PROFILE,capabilities=caps,stage_checks=checks)
+  self.assertEqual('fail',r['stages'][1]['release_result'])
+  self.assertEqual('blocked',r['stages'][2]['release_result'])
+  self.assertEqual('fail',r['result'])
+
 if __name__=='__main__': unittest.main()
 
 class EngineMapFactTests(unittest.TestCase):
@@ -49,7 +68,14 @@ class EngineMapFactTests(unittest.TestCase):
   maps=[{'software_id':'cad','source_snapshot':{'runtime_proof':False},'capability_mappings':[{'semantic':'model.query','support':'expected'}]}]
   facts=capability_facts_from_engine_maps(maps)
   self.assertEqual('unknown',facts['model.query']['result'])
-  self.assertIn('runtime_proof_missing:cad:model.query',facts['model.query']['reason_codes'])
+  self.assertIn('runtime_fact_required:cad:model.query',facts['model.query']['reason_codes'])
+
+ def test_source_map_runtime_flag_cannot_promote_expected_capability_to_pass(self):
+  from execution.stage_runner import capability_facts_from_engine_maps
+  maps=[{'software_id':'cad','source_snapshot':{'runtime_proof':True},'capability_mappings':[{'semantic':'model.query','support':'expected'}]}]
+  facts=capability_facts_from_engine_maps(maps)
+  self.assertEqual('unknown',facts['model.query']['result'])
+  self.assertIn('runtime_fact_required:cad:model.query',facts['model.query']['reason_codes'])
 
  def test_source_blocked_remains_blocked(self):
   from execution.stage_runner import capability_facts_from_engine_maps
@@ -92,6 +118,12 @@ class ConflictRegressionTests(unittest.TestCase):
   by_sw={'sketchup':{'artifact.seal':{'result':'blocked','reason_codes':['artifact_seal_missing']}}}
   r=run_profile(profile,capabilities={'artifact.seal':{'result':'pass'}},capabilities_by_software=by_sw,stage_checks={'s':{'result':'pass'}})
   self.assertEqual('blocked',r['stages'][0]['assessment_result'])
+
+ def test_global_fact_cannot_override_missing_runtime_fact_for_software_semantic(self):
+  profile={'profile_id':'bound-missing','release_target':'x','stages':[{'stage_id':'s','depends_on':[],'software_candidates':['sketchup'],'required_capabilities':['artifact.seal'],'checkpoint':'c'}]}
+  r=run_profile(profile,capabilities={'artifact.seal':{'result':'pass'}},capabilities_by_software={'sketchup':{}},stage_checks={'s':{'result':'pass'}})
+  self.assertEqual('unknown',r['stages'][0]['assessment_result'])
+  self.assertNotEqual('pass',r['result'])
 
  def test_source_unproven_is_typed_blocker(self):
   from execution.stage_runner import capability_facts_from_engine_maps

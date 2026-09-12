@@ -1,4 +1,6 @@
 # Site Reconstruction — Template Pack
+
+> Documentation class: PUBLIC_DOMAIN
 Version: 0.2.0 · Status: specification templates.
 
 ## Intake record

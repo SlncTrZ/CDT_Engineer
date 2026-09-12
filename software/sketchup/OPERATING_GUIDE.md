@@ -1,5 +1,7 @@
 # SketchUp Operating Guide
-Version: 0.2.0 · Source contract: provider `0.1.0`, contract `0.21`, 64 tools · Measured SketchUp 2024 `24.0.594` / Ruby `3.2.2`.
+
+> Documentation class: PUBLIC_SOFTWARE_GUIDE
+Version: 0.3.0 · Source contract: provider `0.1.0`, contract `0.21`, 64 tools · Measured SketchUp 2024 `24.0.594` / Ruby `3.2.2`.
 
 ## Step-0
 Call `system_status` and `system_capabilities`; require a reachable bridge, active model, observed SketchUp/Ruby runtime, matching contract/capability fingerprint and the exact required tool descriptors. Source/live-acceptance history does not replace current runtime proof.
@@ -8,7 +10,7 @@ Call `system_status` and `system_capabilities`; require a reachable bridge, acti
 Use the measured 2024 runtime as the current accepted baseline. Other major releases remain unclaimed until separately tested. Prefer capability descriptors over prose: `read_only`, `strict_mutation`, and `deprecated_legacy` are materially different execution classes.
 
 ## Semantic capability map
-Current strict/public integration uses `execute_geometry`, `create_component`, `place_instance`, `transform_entity`/move/rotate/scale/mirror, `material_assign`, `get_entity_state`, `measure_distance`, `query_topology`, `model_save/model_save_as`, `model_open`, and `model_export`. Native save/open/export are no longer blockers. A true content-addressed `artifact.seal`/provider hash primitive is still absent.
+Current strict/public integration uses `execute_geometry`, `create_component`, `place_instance`, `transform_entity`/move/rotate/scale/mirror, `material_assign`, `get_entity_state`, `measure_distance`, `query_topology`, `model_save/model_save_as`, `model_open`, and `model_export`. Native save/open/export are no longer blockers. A true content-addressed `artifact.seal`/provider hash primitive is still absent. The current public contract also has no semantic asset-key/native-library load or registry-resolution route, so Building catalog resolution is a separate blocker from generic component creation.
 
 ## Feature chunks
 Execute one bounded semantic feature at a time and preserve receipt context:
@@ -19,7 +21,7 @@ get_entity_state / context query
 → independent query/measurement
 → next feature
 ```
-For component systems, compose/create once then place instances by exact definition GUID and absolute transforms.
+For component systems, compose/create once then place instances by exact definition GUID and absolute transforms. `create_component` may implement an explicitly approved bounded custom component recipe; it must not be treated as proof that an Engineering Asset Catalog entry was resolved. `place_instance` consumes an existing definition GUID, not a CDT_Engineer semantic `asset_key`.
 
 ## Transaction and recovery
 Strict mutations use the provider Semantic State Loop with native operation, semantic validation before commit, and verified rollback/compensation according to the capability descriptor. Do not treat deprecated legacy mutations as equivalent. On uncertain client state, query current context/entity fingerprints before retrying.
@@ -39,6 +41,7 @@ Camera/scene and viewport evidence are supplemental. Presentation state must not
 ## Known blockers
 - `source_snapshot_not_runtime_proof`
 - `artifact_seal_missing`
+- `native_component_registry_route_missing` — no public semantic asset-key/native-library load or registry-resolution route; Building `design_review` catalog mappings stay blocked until a validated native route exists
 - `model_world_coordinate_input_unclaimed`
 - `legacy_mutation_paths_deprecated`
 

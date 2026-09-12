@@ -1,6 +1,7 @@
 """Mechanical deterministic guard acceptance tests."""
 import unittest
 
+from domains.guard_primitives import GuardInputError
 from domains.mechanical_reconstruction.guards import (
     evaluate_dimension,
     evaluate_exactness,
@@ -42,6 +43,14 @@ class FeatureDagTests(unittest.TestCase):
         r=validate_feature_dag([{'id':'a','depends_on':[]},{'id':'a','depends_on':[]}])
         self.assertEqual('fail',r['result']); self.assertIn('duplicate_feature_id',r['reason_codes'])
 
+    def test_string_dependency_list_is_rejected_as_malformed_input(self):
+        with self.assertRaises(GuardInputError):
+            validate_feature_dag([{'id':'a','depends_on':[]},{'id':'b','depends_on':'a'}])
+
+    def test_duplicate_dependencies_are_rejected(self):
+        with self.assertRaises(GuardInputError):
+            validate_feature_dag([{'id':'a','depends_on':[]},{'id':'b','depends_on':['a','a']}])
+
 class ExactnessGuardTests(unittest.TestCase):
     def test_required_exact_sampled_geometry_blocks(self):
         r=evaluate_exactness(required='exact',representation='sampled',approved_max_deviation=None,measured_max_deviation=None)
@@ -63,5 +72,13 @@ class TopologyGuardTests(unittest.TestCase):
     def test_body_count_or_invalid_body_blocks(self):
         r=evaluate_topology(expected_body_count=1,observed_body_count=2,all_bodies_valid=False,unexpected_cavities=0,missing_required_treatments=[])
         self.assertEqual('fail',r['result']); self.assertIn('body_count_mismatch',r['reason_codes']); self.assertIn('invalid_solid_topology',r['reason_codes'])
+
+    def test_topology_rejects_truthy_string_instead_of_treating_it_as_valid(self):
+        with self.assertRaises(GuardInputError):
+            evaluate_topology(expected_body_count=1,observed_body_count=1,all_bodies_valid='false',unexpected_cavities=0,missing_required_treatments=[])
+
+    def test_topology_rejects_boolean_counts(self):
+        with self.assertRaises(GuardInputError):
+            evaluate_topology(expected_body_count=True,observed_body_count=1,all_bodies_valid=True,unexpected_cavities=0,missing_required_treatments=[])
 
 if __name__=='__main__': unittest.main()

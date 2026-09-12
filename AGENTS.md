@@ -1,12 +1,14 @@
 # AGENTS.md — CDT_Engineer Engineering OS
 
+> Documentation class: PUBLIC_ENTRYPOINT
+
 ## Product identity
 
 CDT_Engineer is the Engineering Operating System / Virtual Engineering Office for Agents. It owns professional engineering interpretation, roles, Engineering Skills, deterministic domain calculations, standards/rules, cross-discipline workflows, software operating guidance, QA/QC and engineering handoff evidence.
 
 It is not a native CAD/DCC engine and not a prompt-only skill collection.
 
-Before substantial work, read `README.md`, `docs/EXECUTION_ENVIRONMENT_CONTRACT.md`, `docs/AGENT_PROFILE_CONTRACT.md`, `docs/DESIGN_BASIS_CONTRACT.md`, `docs/ENGINEERING_SKILL_CONTRACT.md`, `docs/ROLE_CONTRACT.md`, `docs/WORKFLOW_CONTRACT.md`, `docs/FEATURE_CHUNK_STREAMING_CONTRACT.md`, `docs/SOFTWARE_OPERATING_GUIDE_CONTRACT.md`, `docs/QA_CHECKER_MODEL.md`, `docs/PRODUCTION_DOMAIN_CONTRACT.md` and `docs/STANDARDS_GOVERNANCE.md` as relevant to the task. Internal research, development, roadmap, ADR and project-direction material belongs only under ignored `_private/` and must never be required for public product semantics.
+Before substantial work, read `README.md`, `docs/README.md`, `docs/ARCHITECTURE.md`, `docs/DOCUMENTATION_POLICY.md`, `docs/EXECUTION_ENVIRONMENT_CONTRACT.md`, `docs/AGENT_PROFILE_CONTRACT.md`, `docs/DESIGN_BASIS_CONTRACT.md`, `docs/ENGINEERING_SKILL_CONTRACT.md`, `docs/ROLE_CONTRACT.md`, `docs/WORKFLOW_CONTRACT.md`, `docs/FEATURE_CHUNK_STREAMING_CONTRACT.md`, `docs/SOFTWARE_OPERATING_GUIDE_CONTRACT.md`, `docs/QA_CHECKER_MODEL.md`, `docs/PRODUCTION_DOMAIN_CONTRACT.md`, `docs/RELEASE_SCOPE_POLICY.md`, `catalogs/ENGINEERING_ASSET_CATALOG_CONTRACT.md` and `docs/STANDARDS_GOVERNANCE.md` as relevant to the task. `docs/ARCHITECTURE.md` is the canonical public architecture; private plans/ADRs/audits/history explain development context only and never override public product semantics.
 
 When working inside a domain, also read its five packs: domain schema, rule pack, template pack, benchmark pack and review rubric, plus any assigned skill/software mapping.
 
@@ -63,7 +65,9 @@ Every production domain requires at minimum:
 4. benchmark pack;
 5. review rubric.
 
-An Engineering Skill additionally defines intent, prerequisites, inputs/evidence states, decision boundary, deterministic checks, workflow/stages, required software semantics, QA/negative cases and technical delivery requirements.
+An Engineering Skill additionally defines intent, prerequisites, inputs/evidence states, decision boundary, deterministic checks, professional dependency/catalog states, workflow/stages, required software semantics, completeness inventory where applicable, QA/negative cases and technical delivery requirements.
+
+For production work, resolve professional semantics before native primitives. Missing skills/catalogs/standards/cross-discipline interfaces/calculation evidence must block, explicitly reduce scope or remain a declared proxy within its allowed release class. Never silently replace a missing professional dependency with primitive geometry/tool calls while retaining a stronger release verdict. Generic engine integrity does not override domain relationship/topology/interface/completeness gates.
 
 Do not build a shared Domain SDK before Rule-of-Two evidence from at least two implemented consumers and an extraction ADR. CDT-Provider-Kit has a separate provider reuse gate.
 
@@ -104,9 +108,13 @@ Rubric scores cannot override hard gates. After final artifact mutation, earlier
 
 CDT_Engineer may prepare `ready_for_professional_review` evidence. Do not claim legal/professional issue, certification or signature authority on behalf of the system.
 
-## Public and private files
+## Documentation and public/private files
 
-Public contracts, reusable skills/rules/software guides/workflows and sanitized benchmark definitions must stand alone without private dependencies. All research, development plans, roadmap, ADR/project-direction material, internal handoffs, customer fixtures, raw evidence, protected references and run workspaces belong in ignored `_private/`. Preserve existing contents. Never force-add `_private/`; Git ignore is not backup/access control.
+Follow `docs/DOCUMENTATION_POLICY.md`. Every public Markdown file declares one `PUBLIC_*` documentation class near the top. Stable architecture, contracts, policies, domains/skills, catalogs, software guides, integration standards and sanitized benchmark definitions must stand alone without private dependencies.
+
+Internal roadmaps, implementation ADR history, audits/closure reports, session handoffs, provider/product backlogs, customer fixtures, raw evidence, protected references, external reference snapshots and run workspaces belong in ignored `_private/`. They are development evidence, not product authority. When a private decision becomes stable product behavior, promote its normative result into the public architecture/contract/policy/domain/software/catalog surface and leave the private source as history.
+
+Preserve existing private contents unless the task explicitly reorganizes them. Never force-add `_private/`; Git ignore is not backup/access control.
 
 ## Change protocol
 

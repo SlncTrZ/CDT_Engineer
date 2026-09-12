@@ -1,5 +1,7 @@
 # CDT_Engineer — Contract Model
 
+> Documentation class: PUBLIC_CONTRACT
+
 > Updated: 2026-09-11
 > Scope: common CAD contract, provider extensions, capability/refusal semantics
 

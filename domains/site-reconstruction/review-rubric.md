@@ -1,4 +1,6 @@
 # Site Reconstruction — Review Rubric
+
+> Documentation class: PUBLIC_DOMAIN
 Version: 0.1.0 · Proposed release policy; apply only with frozen project tolerances.
 
 | Criterion | Weight | Full-credit evidence |

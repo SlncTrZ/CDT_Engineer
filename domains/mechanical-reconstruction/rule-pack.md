@@ -1,4 +1,6 @@
 # Mechanical Reconstruction — Rule Pack
+
+> Documentation class: PUBLIC_DOMAIN
 Version: 0.3.0 · Status: MECH-02/03/04/07 deterministic guards implemented; remaining rules specified · Origin: internal reconstruction policy.
 
 | Rule | Inputs and deterministic decision | Failure/severity | Required evidence |

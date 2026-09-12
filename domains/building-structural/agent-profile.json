@@ -1,0 +1,118 @@
+{
+  "schema_version": "0.1.0",
+  "profile_id": "building-structural.low-rise-intent-v1",
+  "domain_id": "building-structural",
+  "version": "0.1.0",
+  "release_target": "design_review",
+  "stages": [
+    {
+      "stage_id": "environment_preflight",
+      "purpose": "Discover software/provider readiness for structural coordination outputs",
+      "owning_roles": ["Chief / Lead Engineer"],
+      "rule_ids": [],
+      "required_capabilities": ["execution_environment.compatible_or_typed_blocker"],
+      "software_candidates": ["autocad", "sketchup"],
+      "depends_on": [],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "environment_inventory",
+      "stop_conditions": ["required software/provider state unknown", "version mismatch unresolved"],
+      "recovery_actions": ["rediscover_environment", "request_installation", "request_configuration", "block_for_review"],
+      "qa_gates": ["Step-0 inventory current and typed"]
+    },
+    {
+      "stage_id": "structural_basis",
+      "purpose": "Freeze structural intent evidence and explicit adequacy limitations",
+      "owning_roles": ["Structural Engineer", "Chief / Lead Engineer"],
+      "rule_ids": ["STR-01", "STR-03", "STR-06"],
+      "required_capabilities": ["evidence.source_hashes_verified", "feature.plan"],
+      "software_candidates": [],
+      "depends_on": ["environment_preflight"],
+      "dependency_requirements": [
+        {"dependency_id": "domain.skills.building-structural", "required_from_release": "technical_draft"}
+      ],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "structural_basis_checkpoint",
+      "stop_conditions": ["structural system intent unresolved for design review", "source identity not frozen"],
+      "recovery_actions": ["replan", "scope_reduce_with_approval", "block_for_review"],
+      "qa_gates": ["STR-01/03/06 evidence states and release limitations are explicit"]
+    },
+    {
+      "stage_id": "grid_and_load_path",
+      "purpose": "Define reference grid and structural load-path intent graph",
+      "owning_roles": ["Structural Engineer"],
+      "rule_ids": ["STR-02", "STR-04"],
+      "required_capabilities": ["feature.plan", "dependency.validate"],
+      "software_candidates": [],
+      "depends_on": ["structural_basis"],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "structural_intent_graph",
+      "stop_conditions": ["grid invalid", "loaded node has no path to foundation/ground", "load path cycle"],
+      "recovery_actions": ["replan", "block_for_review"],
+      "qa_gates": ["STR-02 grid and STR-04 load-path guards pass"]
+    },
+    {
+      "stage_id": "architecture_coordination",
+      "purpose": "Coordinate columns/members/openings and other declared architecture interfaces",
+      "owning_roles": ["Structural Engineer", "Architect / Spatial Designer"],
+      "rule_ids": ["STR-05"],
+      "required_capabilities": ["dependency.validate"],
+      "software_candidates": [],
+      "depends_on": ["grid_and_load_path"],
+      "dependency_requirements": [
+        {"dependency_id": "discipline.architecture-interface", "required_from_release": "design_review", "proxy_allowed_through": "concept"}
+      ],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "architecture_structural_interface",
+      "stop_conditions": ["architecture handoff missing", "critical column/opening clash unresolved", "stair/slab or facade support interface unresolved when in scope"],
+      "recovery_actions": ["replan", "scope_reduce_with_approval", "block_for_review"],
+      "qa_gates": ["STR-05 interface facts independently checked"]
+    },
+    {
+      "stage_id": "technical_representation",
+      "purpose": "Produce bounded structural intent/coordination drawings without claiming final analysis",
+      "owning_roles": ["Structural Engineer", "CAD/BIM Technician"],
+      "rule_ids": ["STR-02", "STR-03", "STR-05"],
+      "required_capabilities": ["technical_2d.create", "model.query", "model.measure"],
+      "software_candidates": ["autocad"],
+      "depends_on": ["architecture_coordination"],
+      "chunk_policy": "feature_based_chunk_streaming",
+      "checkpoint": "structural_coordination_drawing",
+      "stop_conditions": ["required public capability missing", "semantic identity lost", "mutation state uncertain"],
+      "recovery_actions": ["reconcile_state", "compensate", "restart_from_checkpoint", "block_for_review"],
+      "qa_gates": ["read-after-write member/grid/interface measurements"]
+    },
+    {
+      "stage_id": "independent_qa",
+      "purpose": "Independently verify grid, load path and architecture coordination evidence",
+      "owning_roles": ["Checker / QA Engineer"],
+      "rule_ids": ["STR-02", "STR-04", "STR-05", "STR-06"],
+      "required_capabilities": ["model.measure", "qa.independent_measure"],
+      "software_candidates": ["autocad"],
+      "depends_on": ["technical_representation"],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "structural_independent_qa",
+      "stop_conditions": ["load path evidence fails", "coordination clash unresolved", "release limitation absent"],
+      "recovery_actions": ["replan", "block_for_review"],
+      "qa_gates": ["Checker independently verifies STR-02/04/05/06"]
+    },
+    {
+      "stage_id": "release_gate",
+      "purpose": "Enforce evidence required by requested structural release class",
+      "owning_roles": ["Checker / QA Engineer", "Structural Engineer"],
+      "rule_ids": ["STR-06", "STR-08"],
+      "required_capabilities": ["qa.independent_measure"],
+      "software_candidates": [],
+      "depends_on": ["independent_qa"],
+      "dependency_requirements": [
+        {"dependency_id": "analysis.structural-capacity-route", "required_from_release": "fabrication_or_construction_candidate"},
+        {"dependency_id": "evidence.structural-materials-loads", "required_from_release": "fabrication_or_construction_candidate"},
+        {"dependency_id": "standards.structural-applicability", "required_from_release": "fabrication_or_construction_candidate"}
+      ],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "structural_release_verdict",
+      "stop_conditions": ["requested release exceeds evidence", "structural adequacy claim unsupported"],
+      "recovery_actions": ["scope_reduce_with_approval", "block_for_review"],
+      "qa_gates": ["STR-06 release-evidence guard and STR-08 handoff limitations pass"]
+    }
+  ]
+}

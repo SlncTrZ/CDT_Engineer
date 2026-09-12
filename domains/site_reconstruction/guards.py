@@ -8,14 +8,15 @@ from __future__ import annotations
 import math
 from typing import Iterable, Mapping, Sequence
 
-from domains.guard_primitives import GuardInputError, unit_ratio
+from domains.guard_primitives import GuardInputError, finite_number, unit_ratio
 
 _EPS=1e-12
 
 def _matrix4(values: Sequence[float]) -> tuple[tuple[float,...],...]:
-    if len(values)!=16 or any(not isinstance(x,(int,float)) or not math.isfinite(x) for x in values):
+    if len(values)!=16:
         raise GuardInputError('transform must contain 16 finite numeric values')
-    return tuple(tuple(float(values[r*4+c]) for c in range(4)) for r in range(4))
+    flat=[finite_number(x,f'transform[{i}]') for i,x in enumerate(values)]
+    return tuple(tuple(flat[r*4+c] for c in range(4)) for r in range(4))
 
 def _det3(m):
     return (m[0][0]*(m[1][1]*m[2][2]-m[1][2]*m[2][1])
@@ -27,6 +28,11 @@ def _column_norms(m):
 
 def inspect_affine(transform: Sequence[float], source_unit: str, target_unit: str, *, allow_reflection: bool=False, relative_scale_tolerance: float=1e-8) -> dict:
     """Validate row-major affine matrix, handedness, singularity and unit scale."""
+    if not isinstance(allow_reflection,bool):
+        raise GuardInputError('allow_reflection must be bool')
+    relative_scale_tolerance=finite_number(relative_scale_tolerance,'relative_scale_tolerance')
+    if relative_scale_tolerance<0:
+        raise GuardInputError('relative_scale_tolerance must be nonnegative')
     m=_matrix4(transform)
     homogeneous_ok=all(abs(m[3][i])<=_EPS for i in range(3)) and abs(m[3][3]-1.0)<=_EPS
     det=_det3(m); singular=abs(det)<=_EPS; reflection=det < -_EPS
@@ -49,9 +55,10 @@ def compose_affine(*transforms: Sequence[float]) -> list[float]:
     return [out[r][c] for r in range(4) for c in range(4)]
 
 def apply_affine_point(transform: Sequence[float], point: Sequence[float]) -> list[float]:
-    if len(point)!=3 or any(not isinstance(x,(int,float)) or not math.isfinite(x) for x in point):
+    if len(point)!=3:
         raise GuardInputError('point must contain 3 finite numeric values')
-    m=_matrix4(transform); v=(float(point[0]),float(point[1]),float(point[2]),1.0)
+    xyz=tuple(finite_number(x,f'point[{i}]') for i,x in enumerate(point))
+    m=_matrix4(transform); v=(*xyz,1.0)
     out=[sum(m[r][c]*v[c] for c in range(4)) for r in range(4)]
     if abs(out[3])<=_EPS: raise GuardInputError('transform produced invalid homogeneous point')
     return [out[i]/out[3] for i in range(3)]
@@ -71,7 +78,8 @@ def _residuals(transform, points):
     for p in points:
         actual=apply_affine_point(transform,p['source']); target=p['target']
         if len(target)!=3: raise GuardInputError('target point must have 3 values')
-        vals.append(math.sqrt(sum((actual[i]-float(target[i]))**2 for i in range(3))))
+        target_xyz=tuple(finite_number(x,f'target[{i}]') for i,x in enumerate(target))
+        vals.append(math.sqrt(sum((actual[i]-target_xyz[i])**2 for i in range(3))))
     return vals
 
 def evaluate_registration(transform: Sequence[float], controls: Sequence[Mapping], holdouts: Sequence[Mapping], tolerance: Mapping, target_unit: str) -> dict:
@@ -86,10 +94,10 @@ def evaluate_registration(transform: Sequence[float], controls: Sequence[Mapping
     elif tolerance.get('status')!='approved':
         result='unknown'; reasons.append('approved_tolerance_unresolved')
     else:
-        value=tolerance.get('value'); unit=tolerance.get('unit')
-        if not isinstance(value,(int,float)) or value<=0:
+        value=finite_number(tolerance.get('value'),'approved tolerance'); unit=tolerance.get('unit')
+        if value<=0:
             raise GuardInputError('approved tolerance requires positive value and supported unit')
-        limit=float(value)*unit_ratio(unit,target_unit)
+        limit=value*unit_ratio(unit,target_unit)
         if max_control>limit+_EPS: reasons.append('control_residual_exceeds_tolerance')
         if max_holdout>limit+_EPS: reasons.append('holdout_residual_exceeds_tolerance')
         result='fail' if reasons else 'pass'
@@ -97,7 +105,21 @@ def evaluate_registration(transform: Sequence[float], controls: Sequence[Mapping
 
 def validate_nested_graph(graph: Mapping[str, Sequence[str]], roots: Iterable[str], traversal_budget: int) -> dict:
     """Reject nested-block cycles and traversal truncation deterministically."""
-    if not isinstance(traversal_budget,int) or traversal_budget<=0: raise GuardInputError('traversal_budget must be a positive integer')
+    if isinstance(traversal_budget,bool) or not isinstance(traversal_budget,int) or traversal_budget<=0: raise GuardInputError('traversal_budget must be a positive integer')
+    if not isinstance(graph,Mapping):
+        raise GuardInputError('graph must be a mapping of node to child sequence')
+    if isinstance(roots,(str,bytes)) or not isinstance(roots,Iterable):
+        raise GuardInputError('roots must be an iterable of node ids')
+    root_list=list(roots)
+    if any(not isinstance(root,str) or not root for root in root_list):
+        raise GuardInputError('roots must contain non-empty string node ids')
+    for node,children in graph.items():
+        if not isinstance(node,str) or not node:
+            raise GuardInputError('graph node ids must be non-empty strings')
+        if isinstance(children,(str,bytes)) or not isinstance(children,Sequence):
+            raise GuardInputError('graph children must be a sequence of node ids')
+        if any(not isinstance(child,str) or not child for child in children):
+            raise GuardInputError('graph children must contain non-empty string node ids')
     visited=set(); active=set(); count=0; reasons=[]
     def walk(node):
         nonlocal count
@@ -110,7 +132,7 @@ def validate_nested_graph(graph: Mapping[str, Sequence[str]], roots: Iterable[st
         count+=1; active.add(node)
         for child in graph.get(node,[]): walk(child)
         active.remove(node); visited.add(node)
-    for root in roots:
+    for root in root_list:
         walk(root)
         if reasons: break
     return {'result':'pass' if not reasons else 'fail','reason_codes':reasons,'visited_count':count,'traversal_budget':traversal_budget}

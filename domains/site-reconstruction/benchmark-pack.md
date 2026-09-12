@@ -1,4 +1,6 @@
 # Site Reconstruction — Benchmark Pack
+
+> Documentation class: PUBLIC_DOMAIN
 Version: 0.1.0 · Primary case: BeachSquare · Status: inherited evidence, production gate pending.
 
 ## Evidence baseline

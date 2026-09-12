@@ -1,5 +1,7 @@
 # Agent Operational Profile Contract
 
+> Documentation class: PUBLIC_CONTRACT
+
 Version: 1.0.0 · Updated: 2026-09-12 · Status: Engineering OS execution-profile baseline.
 
 ## Purpose
@@ -19,6 +21,7 @@ Every profile:
 - asks for semantic capabilities, never private/native implementation details;
 - identifies software candidates explicitly when software execution is needed;
 - declares stage dependencies and uses Feature-based Chunk Streaming for mutation-heavy work;
+- declares professional/semantic `dependency_requirements` when a stage depends on a domain skill, catalog/library, standard/applicability decision, cross-discipline handoff, analysis route or other non-tool evidence;
 - provides a checkpoint/evidence identity for each stage;
 - declares non-empty stop conditions, recovery actions and QA gates;
 - stops dependent stages when predecessor evidence is failed, unknown or stale.
@@ -34,11 +37,28 @@ A software semantic is not considered available merely because it appears in sou
 
 If no selected software map covers a required software semantic, profile validation fails before execution planning. If the map marks the semantic `blocked` or `unproven`, execution yields a typed blocker unless current runtime evidence legitimately upgrades that state under the applicable Software Operating Guide.
 
+## Semantic dependency and release-scope resolution
+
+Software capability availability is only one dependency class. A stage may also require professional dependencies such as an implemented Engineering Skill, approved Engineering Asset Catalog family, standards/applicability decision, cross-discipline interface or analysis/evidence route.
+
+Profiles declare those requirements with `dependency_requirements` and the job/runtime supplies one explicit state from the [Release Scope & Semantic Dependency Policy](RELEASE_SCOPE_POLICY.md):
+
+```text
+resolved
+custom_allowed
+proxy_allowed_for_scope
+reduced_scope
+blocked
+```
+
+Missing dependency state fails closed. A proxy or reduced-scope dependency may recommend a weaker release target, but the requested stronger release remains blocked until the workflow is explicitly replanned/rerun at that weaker target. Native capability PASS, visual similarity or generic integrity PASS cannot override this gate.
+
 ## Stage lifecycle
 
 ```text
 preconditions
 → Step-0/runtime capability resolution
+→ semantic/professional dependency resolution
 → stage plan
 → optional semantic feature chunks
 → execute
@@ -63,11 +83,17 @@ None of these grants tool authority or replaces runtime discovery.
 
 - [`domains/site-reconstruction/agent-profile.json`](../domains/site-reconstruction/agent-profile.json)
 - [`domains/mechanical-reconstruction/agent-profile.json`](../domains/mechanical-reconstruction/agent-profile.json)
+- [`domains/building-architecture/agent-profile.json`](../domains/building-architecture/agent-profile.json)
+- [`domains/building-structural/agent-profile.json`](../domains/building-structural/agent-profile.json)
 
-These are operational baselines, not production PASS evidence for the mapped engines.
+These are operational baselines/pilots, not production PASS evidence for the mapped engines or discipline release classes.
 
 ## Software capability resolution
 
 Runtime capability facts are bound to the selected `software_id`; equal semantic names from different engines must not be flattened into one global truth value. For a stage with multiple `software_candidates`, candidates are alternatives only for semantics that the stage genuinely allows any one candidate to satisfy. A BLOCKED capability on one alternative must not poison a runtime-proven PASS on another alternative. Conversely, requirements that apply to distinct artifacts/engines must be represented in separate dependency stages or explicit local evidence gates rather than hidden inside a multi-engine union.
 
-Source-derived engine maps remain fail-closed: `expected` is not runtime PASS. Step-0/runtime evidence supplies the actual per-software capability facts consumed by the Stage Runner. `blocked` and `unproven` are typed blockers at source-map projection; only current runtime evidence accepted under the Software Operating Guide may upgrade them. Global/domain-local facts must not override a semantic that is explicitly software-bound for the selected stage. A multi-candidate stage selects one candidate that satisfies the stage's software-bound requirements as a set; the runner must not synthesize PASS by mixing different engines per semantic.
+Source-derived engine maps remain fail-closed: `expected` is not runtime PASS, even if source metadata contains a historical/runtime-looking flag. Step-0/runtime evidence supplies the actual per-software capability facts consumed by the Stage Runner. `blocked` and `unproven` are typed blockers at source-map projection; only current runtime evidence accepted under the Software Operating Guide may upgrade them. Global/domain-local facts must not override a semantic that is explicitly software-bound for the selected stage. A multi-candidate stage selects one candidate that satisfies the stage's software-bound requirements as a set; the runner must not synthesize PASS by mixing different engines per semantic.
+
+The executable runner keeps Engineering-OS/domain-local semantic names in the explicit `execution.stage_runner.LOCAL_CAPABILITIES` registry. Any required semantic on a stage with `software_candidates` that is not in this registry is treated as software-bound and resolves through one candidate, including when the runtime fact is missing. New local semantics must therefore be registered deliberately, and local names must not collide with engine-map semantics. This prevents an accidental global PASS fact from bypassing a missing or blocked software capability.
+
+A predecessor released as `not_applicable` is dependency-neutral; `fail`, `unknown` or `blocked` predecessors stop dependent release. When an actually released stage fails and later stages become blocked by that failure, the profile-level result remains `fail` rather than being masked by the derived downstream block.

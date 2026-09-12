@@ -1,6 +1,8 @@
 # QA / Checker Model
 
-Version: 0.1.0 · Updated: 2026-09-12 · Status: architecture baseline.
+> Documentation class: PUBLIC_POLICY
+
+Version: 0.1.0 · Updated: 2026-09-12 · Status: public policy baseline.
 
 ## Purpose
 
@@ -14,16 +16,21 @@ The Checker must not simply restate mutation receipts, screenshots or the produc
 
 ## Verification layers
 
+Checker evidence must preserve the difference between engine integrity and professional correctness. A native provider reporting a clean file/topology or successful save is not a domain PASS.
+
 A Checker evaluates, as applicable:
 
 1. **Intent correctness** — deliverable matches the Design Basis and intended use.
 2. **Source correctness** — source/dependency hashes, revisions and exclusions are correct.
-3. **Engineering correctness** — calculations, dimensions, geometry, topology, interfaces and domain rules are independently checked.
-4. **Standards applicability** — exact standard records/editions/applicability and unresolved compliance items are reviewed.
-5. **Manufacturability/constructability** — when required, process/access/tolerance/detailing and execution constraints are checked.
-6. **Drawing/document correctness** — views, sections, dimensions, notes, scale, legends, schedules/BOM, revisions and readability for the intended human consumer.
-7. **Artifact integrity** — native/exchange artifacts reopen as required, hashes are sealed and stale evidence is detected.
-8. **Handoff completeness** — unresolved findings, reproduction instructions and revision identity are explicit.
+3. **Engine integrity** — native object/document state, generic topology/integrity, receipts, save/reopen and runtime contract behavior are valid.
+4. **Domain engineering correctness** — semantic entities/systems, calculations, dimensions, domain relationships/topology and domain rules are independently checked.
+5. **Completeness** — the frozen requirement/feature/detail inventory is compared with final implementation/verification state so omitted critical content is detected.
+6. **Cross-discipline/interface correctness** — required discipline handoffs and relationships are independently checked rather than inferred from one model.
+7. **Standards applicability** — exact standard records/editions/applicability and unresolved compliance items are reviewed.
+8. **Manufacturability/constructability** — when required, process/access/tolerance/detailing and execution constraints are checked.
+9. **Drawing/document correctness** — views, sections, dimensions, notes, scale, legends, schedules/BOM, revisions and readability for the intended human consumer.
+10. **Artifact integrity** — native/exchange artifacts reopen as required, hashes are sealed and stale evidence is detected.
+11. **Handoff completeness** — unresolved findings, dependency/scope limitations, reproduction instructions and revision identity are explicit.
 
 ## Hard gates vs scores
 
@@ -38,7 +45,10 @@ Review rubrics may use scores for quality prioritization, but a score cannot ove
 - failed independent dimension/topology/level measurement;
 - stale artifact hash;
 - required drawing information missing;
-- unsupported public engine capability hidden by a bypass.
+- unsupported public engine capability hidden by a bypass;
+- missing required semantic skill/catalog/library/cross-discipline dependency hidden by primitive/proxy substitution;
+- required item omitted from the frozen feature/detail/requirement inventory;
+- generic engine integrity PASS while a domain relationship/interface hard gate fails.
 
 ## Evidence requirements
 
@@ -66,8 +76,9 @@ Screenshots are supplementary. Where a property can be measured deterministicall
 
 - coordinates, levels, scale and registration;
 - space/dimension/circulation requirements;
-- source completeness and exclusions;
-- hierarchy/tags/layers/components;
+- source/feature/detail completeness and exclusions;
+- semantic hierarchy, hosted openings, component/system resolution and repeated-instance identity;
+- architecture/structural and other declared discipline interfaces;
 - human-readable plans/sections/elevations where required;
 - native model reopen and transfer fidelity.
 
@@ -103,7 +114,7 @@ MINOR
 OBSERVATION
 ```
 
-`BLOCKER` prevents the requested release class. `MAJOR` disposition is controlled by the domain rubric/project authority. Unknown critical evidence is not downgraded merely because no failure has yet been observed.
+`BLOCKER` prevents the requested release class. `MAJOR` disposition is controlled by the domain rubric/project authority. The executable baseline has no waiver/disposition field, so an unresolved `MAJOR` finding returns `BLOCKED` until it is resolved, reclassified or dispositioned outside the checker and represented by a non-unknown finding. Unknown critical evidence is not downgraded merely because no failure has yet been observed.
 
 ## Release verdict
 
@@ -125,4 +136,4 @@ The Checker binds its verdict to exact artifact hashes/versions. If a checked ar
 
 ## Executable baseline
 
-`execution.qa_checker` provides deterministic aggregation for hash-bound findings and emits `PASS_FOR_DECLARED_SCOPE`, `BLOCKED`, `FAIL` or `STALE_EVIDENCE`. `PASS_WITH_DOCUMENTED_LIMITATIONS` remains a policy vocabulary item only; the current executable baseline does not emit it. `execution.artifact_evidence` creates minimal hash/version manifests and detects changed artifact identity. These helpers do not perform native measurements or sealing; they only enforce verdict/evidence invariants once real evidence is supplied.
+`execution.qa_checker` provides deterministic aggregation for hash-bound findings and emits `PASS_FOR_DECLARED_SCOPE`, `BLOCKED`, `FAIL` or `STALE_EVIDENCE`. Finding IDs must be unique within one checker run; duplicate IDs are rejected because they make evidence/reason references ambiguous. Unknown `BLOCKER` and `MAJOR` findings block the baseline release; any explicit `fail` remains `FAIL`. `PASS_WITH_DOCUMENTED_LIMITATIONS` remains a policy vocabulary item only; the current executable baseline does not emit it. `execution.artifact_evidence` creates minimal hash/version manifests and detects changed artifact identity. These helpers do not perform native measurements or sealing; they only enforce verdict/evidence invariants once real evidence is supplied.

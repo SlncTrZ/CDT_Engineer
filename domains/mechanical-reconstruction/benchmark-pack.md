@@ -1,4 +1,6 @@
 # Mechanical Reconstruction — Benchmark Pack
+
+> Documentation class: PUBLIC_DOMAIN
 Version: 0.1.0 · Status: inherited evidence, production gate pending.
 
 ## Baseline

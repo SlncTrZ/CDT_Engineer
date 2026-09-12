@@ -11,8 +11,8 @@ class SharedGuardPrimitiveTests(unittest.TestCase):
         self.assertIs(SiteGuardInputError, GuardInputError)
         self.assertIs(MechanicalGuardInputError, GuardInputError)
 
-    def test_finite_number_rejects_nan_and_infinity(self):
-        for value in [math.nan, math.inf, -math.inf, '1']:
+    def test_finite_number_rejects_nan_infinity_and_bool(self):
+        for value in [math.nan, math.inf, -math.inf, '1', True, False]:
             with self.assertRaises(GuardInputError):
                 finite_number(value,'value')
 

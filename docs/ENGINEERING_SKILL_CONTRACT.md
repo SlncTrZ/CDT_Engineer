@@ -1,6 +1,8 @@
 # Engineering Skill Contract
 
-Version: 0.1.0 · Updated: 2026-09-12 · Status: architecture baseline.
+> Documentation class: PUBLIC_CONTRACT
+
+Version: 0.1.0 · Updated: 2026-09-12 · Status: public contract baseline.
 
 ## Purpose
 
@@ -14,14 +16,16 @@ A production skill defines:
 | --- | --- |
 | Identity | `skill_id`, semantic version, owning domain, lifecycle status |
 | Intent | What problem it solves and which deliverable purposes it supports |
-| Preconditions | Required Design Basis fields, source authority, prerequisite skills/stages |
+| Preconditions | Required Design Basis fields, source authority, prerequisite skills/stages and professional dependency states |
 | Inputs | Typed inputs, units/frames, evidence status and allowed unresolved states |
 | Decisions | Which judgments are allowed, who may approve assumptions and stop conditions |
 | Rules | Domain rule IDs, severity, standard/applicability references and deterministic decision logic |
 | Calculations | Deterministic algorithms/validators with units, assumptions and tests |
 | Workflow | Ordered stages, expected state, Feature-based Chunk Streaming policy for mutation-heavy work, checkpoints, refusal/recovery actions |
 | Capabilities | Required semantic software capabilities; mappings live in software/domain maps |
-| QA | Positive/negative cases, independent measurements and hard gates |
+| Assets/dependencies | Required catalog/system/library/cross-discipline/analysis dependencies, substitution/proxy limits and release effect |
+| Completeness | Requirement/feature/detail inventory that lets the Checker detect omissions rather than only validate produced objects |
+| QA | Positive/negative cases, independent measurements, relationship/interface checks and hard gates |
 | Outputs | Required technical artifacts, drawings/models/documents and evidence |
 | Benchmark | Golden inputs, expected results, failure cases and environment/version binding |
 
@@ -73,6 +77,14 @@ Use LLM reasoning for interpretation, alternative generation, trade-off explanat
 A skill may reference a standard-derived rule only through a versioned standards record/applicability decision. It records the exact derived rule implementation and source reference needed for review. A standard name without edition/applicability does not activate compliance behavior.
 
 Protected normative text is not required in the public skill package; permitted metadata, clause references and original derived logic are sufficient when full text is access-controlled.
+
+## Semantic dependency and asset boundary
+
+A skill resolves professional meaning before native implementation. If it needs a reusable technical system/component, it selects through the applicable [Engineering Asset Catalog Contract](../catalogs/ENGINEERING_ASSET_CATALOG_CONTRACT.md) or an explicitly bounded custom path. Native files/blocks/components are software representations, not the source of professional applicability.
+
+Missing skill/catalog/standard/interface/calculation/evidence dependencies follow the [Release Scope & Semantic Dependency Policy](RELEASE_SCOPE_POLICY.md). A proxy may be valid for a weaker declared scope, but the skill must not silently substitute primitives or placeholders while retaining a stronger release target.
+
+When the task is source/reconstruction/detail heavy, the skill freezes a requirement/feature/detail inventory before mutation and makes final coverage a Checker input. A plausible output with a required item omitted is not a PASS.
 
 ## Software boundary
 

@@ -1,5 +1,7 @@
 # Execution Environment Contract
 
+> Documentation class: PUBLIC_CONTRACT
+
 Version: 0.1.0 · Updated: 2026-09-12 · Status: Engineering OS Step-0 baseline.
 
 ## Purpose

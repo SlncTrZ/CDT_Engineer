@@ -1,4 +1,6 @@
 # SolidWorks Operating Guide
+
+> Documentation class: PUBLIC_SOFTWARE_GUIDE
 Version: 0.1.0 · Status: source-derived baseline; mechanical runtime acceptance pending.
 
 ## Step-0

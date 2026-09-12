@@ -1,0 +1,93 @@
+{
+  "schema_version": "0.1.0",
+  "catalog_id": "building-components.v1",
+  "version": "0.1.0",
+  "domain_id": "building-architecture",
+  "maturity": "pilot",
+  "assets": [
+    {
+      "asset_id": "door.generic.single.v1",
+      "version": "0.1.0",
+      "family": "door",
+      "semantic_intent": "Generic single-leaf hosted door family for architectural planning/review; technical performance remains project-specific.",
+      "provenance": {"type": "generic", "source": "CDT_Engineer internal semantic baseline", "status": "internal_baseline"},
+      "applicability": {"release_classes": ["concept", "technical_draft", "design_review"], "notes": "Not a fire/acoustic/security-rated claim without project/manufacturer evidence."},
+      "parameters": {"width": "project_required", "height": "project_required", "swing": "project_required"},
+      "interfaces": {"host_types": ["wall_opening"], "rules": ["must fit hosted opening", "orientation and insertion side must be explicit"]},
+      "allowed_transforms": ["translate", "rotate", "mirror", "parameterized_resize"],
+      "substitution_policy": {"allowed": true, "conditions": ["same semantic family", "host and dimensional requirements satisfied", "release class supported"]},
+      "qa_checks": ["host opening identity", "width/height", "orientation", "component definition reuse"],
+      "native_mappings": {"sketchup": {"state": "unresolved", "reason": "Owner-curated native asset not yet hash-bound"}, "autocad": {"state": "unresolved", "reason": "Approved block mapping not yet frozen"}}
+    },
+    {
+      "asset_id": "window.generic.fixed.v1",
+      "version": "0.1.0",
+      "family": "window",
+      "semantic_intent": "Generic hosted fixed-window family for architectural planning/review.",
+      "provenance": {"type": "generic", "source": "CDT_Engineer internal semantic baseline", "status": "internal_baseline"},
+      "applicability": {"release_classes": ["concept", "technical_draft", "design_review"], "notes": "No thermal/water/structural rating without exact product evidence."},
+      "parameters": {"width": "project_required", "height": "project_required", "sill_height": "project_required"},
+      "interfaces": {"host_types": ["wall_opening"], "rules": ["must fit hosted opening", "sill/head relation must be measurable"]},
+      "allowed_transforms": ["translate", "rotate", "mirror", "parameterized_resize"],
+      "substitution_policy": {"allowed": true, "conditions": ["same semantic family", "host and dimensional requirements satisfied"]},
+      "qa_checks": ["host opening identity", "opening bounds", "orientation", "component definition reuse"],
+      "native_mappings": {"sketchup": {"state": "unresolved", "reason": "Owner-curated native asset not yet hash-bound"}, "autocad": {"state": "unresolved", "reason": "Approved block mapping not yet frozen"}}
+    },
+    {
+      "asset_id": "facade.louver.vertical.generic.v1",
+      "version": "0.1.0",
+      "family": "louver",
+      "semantic_intent": "Repeated vertical facade louver system with explicit profile/pitch/host intent.",
+      "provenance": {"type": "generic", "source": "CDT_Engineer internal semantic baseline", "status": "internal_baseline"},
+      "applicability": {"release_classes": ["concept", "technical_draft", "design_review"], "notes": "Support span, anchors and wind capacity require structural/manufacturer evidence."},
+      "parameters": {"profile": "project_required", "pitch": "project_required", "start_offset": "project_required", "end_offset": "project_required"},
+      "interfaces": {"host_types": ["facade_system", "subframe"], "rules": ["host/support intent must be explicit for design_review", "repeated instances preserve semantic identity"]},
+      "allowed_transforms": ["translate", "rotate", "uniform_scale"],
+      "substitution_policy": {"allowed": true, "conditions": ["profile/pitch/host intent preserved", "structural claim not broadened"]},
+      "qa_checks": ["instance count", "pitch", "orientation", "host/support state", "definition reuse"],
+      "native_mappings": {"sketchup": {"state": "unresolved", "reason": "Validated component definition/asset key not yet frozen"}}
+    },
+    {
+      "asset_id": "facade.breeze-block.panel.generic.v1",
+      "version": "0.1.0",
+      "family": "breeze_block_panel",
+      "semantic_intent": "Breeze-block screen/panel system preserving perforated/open-area intent rather than solid-box approximation.",
+      "provenance": {"type": "generic", "source": "CDT_Engineer internal semantic baseline", "status": "internal_baseline"},
+      "applicability": {"release_classes": ["concept", "technical_draft", "design_review"], "notes": "Module topology, joints, frame/support and manufacturer data remain project-specific."},
+      "parameters": {"module_size": "project_required", "open_area_behavior": "project_required", "joint": "project_or_manufacturer_required"},
+      "interfaces": {"host_types": ["facade_system", "screen_frame"], "rules": ["panel boundary/cut-module policy explicit", "support/frame state explicit for design_review"]},
+      "allowed_transforms": ["translate", "rotate", "mirror"],
+      "substitution_policy": {"allowed": false, "conditions": ["solid boxes are not semantic substitutes for perforated modules"]},
+      "qa_checks": ["module identity", "orientation", "panel boundary", "open-area representation state", "support state"],
+      "native_mappings": {"sketchup": {"state": "unresolved", "reason": "Validated perforated native module/panel not yet hash-bound"}}
+    },
+    {
+      "asset_id": "railing.generic.linear.v1",
+      "version": "0.1.0",
+      "family": "railing",
+      "semantic_intent": "Generic linear railing/guard intent for architectural design review.",
+      "provenance": {"type": "generic", "source": "CDT_Engineer internal semantic baseline", "status": "internal_baseline"},
+      "applicability": {"release_classes": ["concept", "technical_draft", "design_review"], "notes": "Height, opening limits, loads and anchorage require applicable project/standard evidence."},
+      "parameters": {"height": "project_required", "module_spacing": "project_required"},
+      "interfaces": {"host_types": ["slab_edge", "stair", "balcony", "parapet"], "rules": ["base/top support condition recorded"]},
+      "allowed_transforms": ["translate", "rotate", "mirror", "parameterized_resize"],
+      "substitution_policy": {"allowed": true, "conditions": ["host/support intent and explicit dimensions preserved"]},
+      "qa_checks": ["host continuity", "support state", "height when specified", "component identity"],
+      "native_mappings": {"sketchup": {"state": "unresolved", "reason": "Validated component family not yet hash-bound"}}
+    },
+    {
+      "asset_id": "stair.generic.straight.v1",
+      "version": "0.1.0",
+      "family": "stair",
+      "semantic_intent": "Straight stair semantic family parameterized by connected levels, riser count, riser height, going and width.",
+      "provenance": {"type": "generic", "source": "CDT_Engineer internal semantic baseline", "status": "internal_baseline"},
+      "applicability": {"release_classes": ["concept", "technical_draft", "design_review"], "notes": "Headroom, guards, structure and code thresholds require exact applicability evidence."},
+      "parameters": {"riser_count": "derived_or_project_required", "riser_height": "derived_or_project_required", "going": "project_required", "width": "project_required"},
+      "interfaces": {"host_types": ["level", "slab_opening"], "rules": ["must connect declared levels", "support/opening interface explicit for design_review"]},
+      "allowed_transforms": ["translate", "rotate", "mirror"],
+      "substitution_policy": {"allowed": true, "conditions": ["level connection and deterministic stair geometry remain valid"]},
+      "qa_checks": ["level rise reconciliation", "riser count", "going", "width", "opening/support interface state"],
+      "native_mappings": {"sketchup": {"state": "unresolved", "reason": "Validated parametric/native representation not yet frozen"}}
+    }
+  ]
+}

@@ -1,4 +1,6 @@
 # Site Reconstruction — Rule Pack
+
+> Documentation class: PUBLIC_DOMAIN
 Version: 0.3.0 · Status: SITE-02/03 and bounded SITE-04 guards implemented; remaining rules specified · Origin: internal reconstruction policy.
 
 | Rule | Inputs and deterministic decision | Failure/severity | Required evidence |

@@ -5,8 +5,11 @@ from pathlib import Path
 import yaml
 from jsonschema import Draft202012Validator
 
+from execution.stage_runner import LOCAL_CAPABILITIES
+
 ROOT=Path(__file__).resolve().parents[1]
 PROFILE_SCHEMA=ROOT/'docs'/'schemas'/'agent-profile.schema.json'
+PROFILE_PATHS=sorted(ROOT.glob('domains/*/agent-profile.json'))
 
 class AgentProfileAndMapTests(unittest.TestCase):
     @classmethod
@@ -16,15 +19,17 @@ class AgentProfileAndMapTests(unittest.TestCase):
         cls.validator=Draft202012Validator(cls.schema)
 
     def test_profiles_validate_and_begin_with_environment_preflight(self):
-        for rel in ['domains/site-reconstruction/agent-profile.json','domains/mechanical-reconstruction/agent-profile.json']:
-            data=json.loads((ROOT/rel).read_text(encoding='utf-8'))
+        self.assertGreaterEqual(len(PROFILE_PATHS),4)
+        for path in PROFILE_PATHS:
+            rel=str(path.relative_to(ROOT))
+            data=json.loads(path.read_text(encoding='utf-8'))
             self.assertEqual([],list(self.validator.iter_errors(data)),rel)
             self.assertEqual('environment_preflight',data['stages'][0]['stage_id'])
             self.assertIn('execution_environment.compatible_or_typed_blocker',data['stages'][0]['required_capabilities'])
 
     def test_every_stage_has_stop_recovery_and_qa_contract(self):
-        for rel in ['domains/site-reconstruction/agent-profile.json','domains/mechanical-reconstruction/agent-profile.json']:
-            data=json.loads((ROOT/rel).read_text(encoding='utf-8'))
+        for path in PROFILE_PATHS:
+            data=json.loads(path.read_text(encoding='utf-8'))
             for stage in data['stages']:
                 self.assertTrue(stage['stop_conditions'],stage['stage_id'])
                 self.assertTrue(stage['recovery_actions'],stage['stage_id'])
@@ -43,9 +48,10 @@ class AgentProfileAndMapTests(unittest.TestCase):
         for software in ['autocad','sketchup','solidworks']:
             data=yaml.safe_load((ROOT/'software'/software/'engine-map.yaml').read_text(encoding='utf-8'))
             maps[software]={x['semantic']:x for x in data['capability_mappings']}
-        local={'execution_environment.compatible_or_typed_blocker','feature.plan','dependency.validate','qa.independent_measure','evidence.source_hashes_verified','evidence.artifact_hash_bound','evidence.sketchup_hash_current','evidence.sketchup_reopen_verified','evidence.round_trip_verified'}
-        for rel in ['domains/site-reconstruction/agent-profile.json','domains/mechanical-reconstruction/agent-profile.json']:
-            data=json.loads((ROOT/rel).read_text(encoding='utf-8'))
+        local=set(LOCAL_CAPABILITIES)
+        for path in PROFILE_PATHS:
+            rel=str(path.relative_to(ROOT))
+            data=json.loads(path.read_text(encoding='utf-8'))
             for stage in data['stages']:
                 covered=set().union(*(set(maps.get(s,{})) for s in stage['software_candidates'])) if stage['software_candidates'] else set()
                 for capability in stage['required_capabilities']:
@@ -56,6 +62,7 @@ class AgentProfileAndMapTests(unittest.TestCase):
             data=yaml.safe_load((ROOT/'software'/software/'engine-map.yaml').read_text(encoding='utf-8'))
             for mapping in data['capability_mappings']:
                 self.assertIn(mapping['support'], {'expected','blocked','unproven'})
+                self.assertNotIn(mapping['semantic'], LOCAL_CAPABILITIES, f"{software}:{mapping['semantic']} collides with Engineering-OS local capability")
 
     def test_autocad_map_matches_current_public_contract_identity_and_tools(self):
         data=yaml.safe_load((ROOT/'software/autocad/engine-map.yaml').read_text(encoding='utf-8'))
@@ -79,11 +86,21 @@ class AgentProfileAndMapTests(unittest.TestCase):
         self.assertEqual('expected',by_semantic['artifact.reopen']['support'])
         self.assertIn('model_open',by_semantic['artifact.reopen']['expected_public_tools'])
         self.assertEqual('blocked',by_semantic['artifact.seal']['support'])
+        self.assertEqual('blocked',by_semantic['component.library_resolve']['support'])
+        self.assertEqual([],by_semantic['component.library_resolve']['expected_public_tools'])
         tools={t for row in data['capability_mappings'] for t in row.get('expected_public_tools',[])}
         for required in ['transform_entity','material_assign','model_export','model_save','model_open']:
             self.assertIn(required,tools)
         for stale in ['transform_component','set_material','export_scene']:
             self.assertNotIn(stale,tools)
+
+    def test_building_architecture_requires_native_component_registry_route(self):
+        data=json.loads((ROOT/'domains/building-architecture/agent-profile.json').read_text(encoding='utf-8'))
+        by_id={stage['stage_id']:stage for stage in data['stages']}
+        stage=by_id['component_resolution']
+        self.assertEqual(['sketchup'],stage['software_candidates'])
+        self.assertIn('component.library_resolve',stage['required_capabilities'])
+        self.assertIn('dependency.validate',stage['required_capabilities'])
 
     def test_profile_versions_reflect_breaking_evidence_semantics(self):
         for rel in ['domains/site-reconstruction/agent-profile.json','domains/mechanical-reconstruction/agent-profile.json']:

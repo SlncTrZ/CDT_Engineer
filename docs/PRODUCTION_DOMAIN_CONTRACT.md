@@ -1,12 +1,14 @@
 # Production Domain Contract
 
+> Documentation class: PUBLIC_CONTRACT
+
 Version: 0.2.0 · Status: Engineering OS domain baseline · Updated: 2026-09-12
 
 ## Purpose inside Engineering OS
 
 A Production Domain is the discipline-specific professional layer inside CDT_Engineer. It does not represent the whole product and it does not execute native CAD/DCC APIs directly. The Engineering OS selects roles, Design Basis, workflow and software route; the domain owns discipline meaning, deterministic engineering logic, standards-derived rules, templates, benchmarks and review gates.
 
-The current Site and Mechanical domains are golden verticals used to prove this contract.
+Site and Mechanical are the original golden verticals used to prove this contract. Building Architecture and Building Structural are newer pilot verticals applying the post-closure semantic-first and fail-closed dependency lessons; their presence does not itself constitute native/discipline production acceptance.
 
 ## Required five components
 
@@ -29,7 +31,9 @@ A domain is consumed together with:
 - [Engineering Skill Contract](ENGINEERING_SKILL_CONTRACT.md) for bounded professional work units;
 - [Workflow Contract](WORKFLOW_CONTRACT.md) for cross-stage/multi-software composition;
 - [Standards Governance](STANDARDS_GOVERNANCE.md) for exact source/edition/applicability and derived rules;
-- [QA / Checker Model](QA_CHECKER_MODEL.md) for independent verification and release verdicts.
+- [QA / Checker Model](QA_CHECKER_MODEL.md) for independent verification and release verdicts;
+- [Release Scope & Semantic Dependency Policy](RELEASE_SCOPE_POLICY.md) for missing skill/catalog/standard/interface/evidence states and explicit scope reduction;
+- [Engineering Asset Catalog Contract](../catalogs/ENGINEERING_ASSET_CATALOG_CONTRACT.md) when reusable technical systems/components are part of the domain.
 
 The domain five-pack remains the minimum reusable discipline package; skills/workflows may refine and compose it without duplicating rule authority.
 
@@ -48,6 +52,23 @@ approved_assumption
 
 `unknown` is a legitimate data state. The schema should be able to represent it where reality is incomplete; domain rules decide whether it blocks a dependent stage. Do not force a fabricated number/string merely to satisfy structural validation.
 
+## Semantic-first invariant
+
+A Production Domain must resolve professional meaning before native primitives. The default order is:
+
+```text
+intent/source
+→ evidence + Design Basis
+→ domain semantic entity/system model
+→ Engineering Skill / rule / deterministic calculation
+→ approved catalog/custom/proxy decision where applicable
+→ capability preflight
+→ native implementation
+→ semantic read-back / domain relationship QA
+```
+
+A domain must not silently replace a missing skill, standard, component/library, cross-discipline dependency or calculation route with generic geometry/tool calls while preserving a stronger release claim. Missing professional dependencies follow the Release Scope Policy.
+
 ## Domain production workflow
 
 Within the broader Engineering OS workflow, a domain typically follows:
@@ -55,6 +76,7 @@ Within the broader Engineering OS workflow, a domain typically follows:
 ```text
 Design Basis / source inventory
 → discipline interpretation or design plan
+→ semantic system/dependency resolution
 → standards/rule applicability
 → capability preflight
 → bounded execution
@@ -112,10 +134,12 @@ A domain is production-accepted only for a declared scope/release class when all
 ```text
 adequate Design Basis
 + structurally valid domain input
-+ deterministic rule implementation where applicable
++ semantic object/system model appropriate to the declared scope
++ executable Engineering Skills and deterministic rule/calculation implementation where applicable
++ required catalog/library/cross-discipline dependencies resolved or explicitly valid for the declared reduced scope
 + verified standards/applicability basis where claimed
 + public engine route for required software work
-+ measured domain QA / drawing QA as applicable
++ measured relationship/topology/interface, completeness and drawing/domain QA as applicable
 + recovery negative tests
 + sealed required native/exchange/document artifacts
 + independent reviewer acceptance

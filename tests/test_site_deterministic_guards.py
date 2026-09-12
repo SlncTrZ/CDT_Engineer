@@ -67,6 +67,12 @@ class RegistrationGuardTests(unittest.TestCase):
         self.assertEqual('fail',r['result'])
         self.assertGreater(r['max_holdout_residual'],0.01)
 
+    def test_nonfinite_target_cannot_pass_registration(self):
+        pts=[{'source':[0,0,0],'target':[0,0,0]},{'source':[1,0,0],'target':[1,0,0]},{'source':[0,1,0],'target':[0,1,0]}]
+        tol={'status':'approved','value':0.01,'unit':'m','source_ref':'P','approved_by':'R'}
+        with self.assertRaises(GuardInputError):
+            evaluate_registration(I,pts,[{'source':[1,1,0],'target':[math.nan,1,0]}],tol,'m')
+
 
 class RegistrationSyntheticRegressionTests(unittest.TestCase):
     def test_identity_registration_has_zero_residual_but_unresolved_tolerance_is_unknown(self):
@@ -90,5 +96,13 @@ class NestedGraphGuardTests(unittest.TestCase):
     def test_budget_truncation_blocks(self):
         r=validate_nested_graph({'A':['B','C'],'B':[],'C':[]},['A'],2)
         self.assertEqual('fail',r['result']); self.assertIn('traversal_budget_exceeded',r['reason_codes'])
+
+    def test_string_children_are_rejected_as_malformed_graph(self):
+        with self.assertRaises(GuardInputError):
+            validate_nested_graph({'A':'B'},['A'],10)
+
+    def test_string_roots_are_rejected_as_malformed_root_list(self):
+        with self.assertRaises(GuardInputError):
+            validate_nested_graph({'A':[]},'A',10)
 
 if __name__=='__main__': unittest.main()

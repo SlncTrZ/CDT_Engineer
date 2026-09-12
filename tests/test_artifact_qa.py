@@ -27,6 +27,20 @@ class CheckerVerdictTests(unittest.TestCase):
   findings=[{'finding_id':'f1','severity':'BLOCKER','result':'pass','artifact_sha256':'a'*64},{'finding_id':'f2','severity':'MINOR','result':'not_applicable','artifact_sha256':'a'*64}]
   self.assertEqual('PASS_FOR_DECLARED_SCOPE',checker_verdict(findings,current_artifact_sha256='a'*64)['verdict'])
 
+ def test_unknown_major_requires_disposition_before_pass(self):
+  findings=[{'finding_id':'f1','severity':'MAJOR','result':'unknown','artifact_sha256':'a'*64}]
+  r=checker_verdict(findings,current_artifact_sha256='a'*64)
+  self.assertEqual('BLOCKED',r['verdict'])
+  self.assertIn('major_unresolved:f1',r['reason_codes'])
+
+ def test_duplicate_finding_ids_are_rejected(self):
+  findings=[
+   {'finding_id':'f1','severity':'MINOR','result':'pass','artifact_sha256':'a'*64},
+   {'finding_id':'f1','severity':'OBSERVATION','result':'pass','artifact_sha256':'a'*64},
+  ]
+  with self.assertRaises(ValueError):
+   checker_verdict(findings,current_artifact_sha256='a'*64)
+
 if __name__=='__main__': unittest.main()
 
 class ExternalArtifactHashTests(unittest.TestCase):

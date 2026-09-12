@@ -1,4 +1,6 @@
 # Mechanical Reconstruction — Review Rubric
+
+> Documentation class: PUBLIC_DOMAIN
 Version: 0.1.0 · Proposed release policy, separate from manufacturing certification.
 
 | Criterion | Weight | Full-credit evidence |

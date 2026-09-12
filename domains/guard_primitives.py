@@ -9,8 +9,8 @@ class GuardInputError(ValueError):
     """Raised when deterministic guard input is malformed."""
 
 def finite_number(value, name: str) -> float:
-    """Return one finite numeric value as float or fail closed."""
-    if not isinstance(value,(int,float)) or not math.isfinite(value):
+    """Return one finite real number as float or fail closed; bool is not numeric input."""
+    if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value):
         raise GuardInputError(f'{name} must be finite numeric')
     return float(value)
 

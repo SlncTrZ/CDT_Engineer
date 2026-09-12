@@ -1,5 +1,7 @@
 # Versioned Standards Governance and Registry
 
+> Documentation class: PUBLIC_POLICY
+
 Version: 0.2.0 · Updated: 2026-09-12 · Scope: TCVN / QCVN / ISO / IEC / ASME and other normative or project-controlled sources.
 
 This policy defines standards identity, access, applicability, derived engineering rules and historical reproducibility. It does not assert that any particular edition applies or that a design/model complies merely because a standard is present in the registry.

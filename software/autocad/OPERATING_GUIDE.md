@@ -1,4 +1,6 @@
 # AutoCAD Operating Guide
+
+> Documentation class: PUBLIC_SOFTWARE_GUIDE
 Version: 0.2.0 · Source contract: `0.4.0rc1 / autocad-generic-v1-rc1 / 86 tools` · Runtime proof required per run.
 
 ## Step-0
