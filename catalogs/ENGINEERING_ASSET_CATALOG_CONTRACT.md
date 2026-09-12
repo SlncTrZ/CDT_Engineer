@@ -47,6 +47,8 @@ native mappings + resolution state
 
 A `resolved` native mapping requires a native key, content hash and validated native version. An `unresolved` mapping must not fabricate those values. Catalog metadata alone is never proof that the native registry currently contains the mapped asset.
 
+Schema `0.2.0` makes this invariant machine-enforced: `resolved` requires `asset_key` + SHA-256 + `native_version`; `unresolved`/`blocked` require a reason and reject those native identity fields. This prevents stale or fabricated binary identity from surviving under a non-resolved state.
+
 ## Resolution states
 
 Native mappings use:

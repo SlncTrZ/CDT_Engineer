@@ -1,7 +1,7 @@
 # CDT_Engineer — Engineering OS Architecture
 
 > Documentation class: PUBLIC_ARCHITECTURE
-> Version: 1.0.0 · Updated: 2026-09-12
+> Version: 1.1.0 · Updated: 2026-09-12
 > Scope: stable public product architecture for the Engineering Operating System / Virtual Engineering Office
 
 ## 1. Product identity
@@ -220,6 +220,10 @@ One discipline may detect a clash or missing dependency but must not silently ma
 ## 13. Human-readable deliverables
 
 Machine-correct models do not automatically satisfy human-use requirements. Where the deliverable is intended for design review, fabrication, construction, assembly or inspection, the workflow verifies the required views, sections, details, datum/reference system, dimensions/tolerances, notes, legends, schedules/BOM, revision identity, scale/readability and release limitations.
+
+Human-deliverable acceptance is release-aware and explicit. Every deliverable family active for the requested release must be accounted for by at least one hard-gate requirement; score-only polish cannot satisfy an active family. `not_applicable` is a reviewed disposition with reason, evidence and exact source/artifact revisions, not silent omission. Missing, unverified or stale hard-gate evidence blocks regardless of presentation score, and reviewer role/independence are part of the evidence. `professional_practice.human_deliverables` is the discipline-neutral executable baseline for these invariants; domain skills still own the concrete technical content required in each family.
+
+The M13 Professional Engineering Practice Standard remains development work until calibrated multi-domain benchmark evidence and independent review support public promotion.
 
 ## 14. Release and professional boundary
 

@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_CONTRACT
 
-Version: 0.1.0 · Updated: 2026-09-12 · Status: public contract baseline.
+Version: 0.2.0 · Updated: 2026-09-12 · Status: public contract baseline.
 
 ## Purpose
 
@@ -112,6 +112,8 @@ If the selected engine cannot provide truthful recovery/isolation for the reques
 ## Drawing and human-use requirements
 
 When the output is intended for construction, fabrication, assembly, inspection or review by people, the skill defines human-readable communication requirements such as views, sections, details, datum/reference system, dimensions/tolerances, notes, legends, schedules/BOM, revision identity and scale/readability expectations.
+
+For every deliverable family active at the requested release, the skill supplies at least one hard-gate requirement or explicitly defers to an equivalent domain package. Score-only polish cannot account for an active family. N/A dispositions require a reason, approval/reviewer evidence and exact source/artifact revision identity. Missing, unverified or stale hard-gate evidence blocks regardless of quality score; reviewer role and independence requirements are explicit. The reusable executable baseline is `professional_practice.human_deliverables`; discipline skills remain responsible for defining the actual technical requirements and evidence.
 
 A geometrically correct model does not automatically satisfy a drawing-delivery skill.
 

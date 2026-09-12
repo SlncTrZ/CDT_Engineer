@@ -1,4 +1,5 @@
 """Contract tests for domain-neutral Engineering Asset Catalog metadata."""
+import copy
 import json
 import unittest
 from pathlib import Path
@@ -35,6 +36,28 @@ class EngineeringAssetCatalogTests(unittest.TestCase):
                 if mapping['state']=='unresolved':
                     self.assertNotIn('asset_key',mapping,f'{asset["asset_id"]}:{software}')
                     self.assertNotIn('sha256',mapping,f'{asset["asset_id"]}:{software}')
+
+    def test_schema_v02_enforces_state_specific_native_identity(self):
+        self.assertEqual('0.2.0',self.schema['properties']['schema_version']['const'])
+        validator=Draft202012Validator(self.schema)
+        unresolved=copy.deepcopy(self.catalog)
+        mapping=unresolved['assets'][0]['native_mappings']['sketchup']
+        mapping['asset_key']='stale-key'
+        mapping['sha256']='a'*64
+        mapping['native_version']='stale-v1'
+        self.assertTrue(list(validator.iter_errors(unresolved)))
+
+        blocked=copy.deepcopy(self.catalog)
+        blocked_mapping=blocked['assets'][0]['native_mappings']['sketchup']
+        blocked_mapping.clear()
+        blocked_mapping['state']='blocked'
+        self.assertTrue(list(validator.iter_errors(blocked)))
+
+        resolved=copy.deepcopy(self.catalog)
+        resolved_mapping=resolved['assets'][0]['native_mappings']['sketchup']
+        resolved_mapping.clear()
+        resolved_mapping.update({'state':'resolved','asset_key':'door-v1','sha256':'b'*64,'native_version':'1.0.0'})
+        self.assertEqual([],list(validator.iter_errors(resolved)))
 
     def test_contract_separates_semantic_catalog_from_native_registry(self):
         text=(ROOT/'catalogs'/'ENGINEERING_ASSET_CATALOG_CONTRACT.md').read_text(encoding='utf-8')

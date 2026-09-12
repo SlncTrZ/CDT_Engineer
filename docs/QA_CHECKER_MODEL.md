@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_POLICY
 
-Version: 0.1.0 · Updated: 2026-09-12 · Status: public policy baseline.
+Version: 0.2.0 · Updated: 2026-09-12 · Status: public policy baseline.
 
 ## Purpose
 
@@ -49,6 +49,8 @@ Review rubrics may use scores for quality prioritization, but a score cannot ove
 - missing required semantic skill/catalog/library/cross-discipline dependency hidden by primitive/proxy substitution;
 - required item omitted from the frozen feature/detail/requirement inventory;
 - generic engine integrity PASS while a domain relationship/interface hard gate fails.
+- an active human-deliverable family omitted, represented only by score/polish, or marked N/A without reviewed reason/evidence/revision identity;
+- required human-deliverable evidence bound to the wrong reviewer role, non-independent review where independence is required, or stale source/artifact revision.
 
 ## Evidence requirements
 
@@ -137,3 +139,5 @@ The Checker binds its verdict to exact artifact hashes/versions. If a checked ar
 ## Executable baseline
 
 `execution.qa_checker` provides deterministic aggregation for hash-bound findings and emits `PASS_FOR_DECLARED_SCOPE`, `BLOCKED`, `FAIL` or `STALE_EVIDENCE`. Finding IDs must be unique within one checker run; duplicate IDs are rejected because they make evidence/reason references ambiguous. Unknown `BLOCKER` and `MAJOR` findings block the baseline release; any explicit `fail` remains `FAIL`. `PASS_WITH_DOCUMENTED_LIMITATIONS` remains a policy vocabulary item only; the current executable baseline does not emit it. `execution.artifact_evidence` creates minimal hash/version manifests and detects changed artifact identity. These helpers do not perform native measurements or sealing; they only enforce verdict/evidence invariants once real evidence is supplied.
+
+`professional_practice.human_deliverables` provides the release-aware communication baseline: active categories require explicit hard-gate accounting, reviewed N/A dispositions, evidence references, reviewer-role/independence evidence and matching source/artifact revisions. Its quality score is deliberately separate and cannot override hard blockers.
