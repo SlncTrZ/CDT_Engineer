@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_DOMAIN
 
-`skill_id`: `building-drawing-package` · Version `0.1.0` · Domain `building-architecture` · Lifecycle `pilot`.
+`skill_id`: `building-drawing-package` · Version `0.2.0` · Domain `building-architecture` · Lifecycle `pilot`.
 
 ## Intent
 
@@ -30,7 +30,7 @@ Deliverable requirements → drawing inventory → plans/elevations/sections/det
 
 ## Software semantics
 
-Use public layout/dimension/plot/export/query capabilities where available. Manual/private bypasses cannot substitute for missing required public capabilities in production acceptance.
+Use public layout/dimension/query capabilities plus the purpose-specific `artifact.drawing_export` semantic for human-readable drawing output. On the current AutoCAD contract this maps to `document_export_pdf` and layout/viewport routes; `artifact.exchange_export` remains the SAT 3D exchange semantic and cannot satisfy drawing-package output. Manual/private bypasses cannot substitute for missing required public capabilities in production acceptance.
 
 ## QA / outputs
 

@@ -36,6 +36,13 @@ class BuildingStructuralGuardTests(unittest.TestCase):
         self.assertEqual('fail',result['result'])
         self.assertIn('load_path_does_not_reach_terminal:roof',result['reason_codes'])
 
+    def test_load_path_requires_every_reachable_branch_to_reach_terminal(self):
+        graph={'roof':['C1','C2'],'C1':['ground'],'C2':[],'ground':[]}
+        result=validate_load_path(graph,loaded_nodes=['roof'],terminal_nodes=['ground'])
+        self.assertEqual('fail',result['result'])
+        self.assertIn('load_path_branch_terminates_before_terminal:roof:C2',result['reason_codes'])
+
+
     def test_load_path_cycle_fails(self):
         graph={'beam':['column'],'column':['beam']}
         result=validate_load_path(graph,loaded_nodes=['beam'],terminal_nodes=['ground'])

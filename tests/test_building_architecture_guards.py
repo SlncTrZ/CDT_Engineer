@@ -91,6 +91,13 @@ class BuildingArchitectureGuardTests(unittest.TestCase):
         self.assertEqual('pass',concept['result'])
         missing=[{'item_id':'window-1','required':True,'resolution_state':'resolved','implementation_state':'missing','verification_state':'unverified'}]
         self.assertEqual('blocked',evaluate_feature_inventory(missing,release_target='concept')['result'])
+    def test_required_feature_not_applicable_is_missing_consistently(self):
+        item={'item_id':'front-door','required':True,'resolution_state':'resolved','implementation_state':'not_applicable','verification_state':'verified'}
+        result=evaluate_feature_inventory([item],release_target='design_review')
+        self.assertEqual('blocked',result['result'])
+        self.assertIn('required_feature_missing:front-door',result['reason_codes'])
+
+
 
 
 if __name__=='__main__':

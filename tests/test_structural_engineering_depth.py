@@ -51,6 +51,26 @@ class StructuralEngineeringDepthTests(unittest.TestCase):
         self.assertIn('load_case_evidence_unresolved:dead',result['reason_codes'])
         self.assertNotIn('combined_effects',result)
 
+    def test_load_combination_rejects_nonfinite_intermediate_or_output(self):
+        cases={
+            'positive':{'evidence_status':'specified','effects':{'N_kN':1e308}},
+            'negative':{'evidence_status':'specified','effects':{'N_kN':-1e308}},
+        }
+        combination={'combination_id':'overflow','factors':{'positive':2.0,'negative':2.0},'basis':VERIFIED_BASIS}
+        with self.assertRaises(GuardInputError):
+            evaluate_load_combination(cases,combination)
+
+    def test_load_combination_normal_cancellation_remains_finite(self):
+        cases={
+            'positive':{'evidence_status':'specified','effects':{'N_kN':1e10}},
+            'negative':{'evidence_status':'specified','effects':{'N_kN':-1e10}},
+        }
+        combination={'combination_id':'cancel','factors':{'positive':1.0,'negative':1.0},'basis':VERIFIED_BASIS}
+        result=evaluate_load_combination(cases,combination)
+        self.assertEqual('pass',result['result'])
+        self.assertEqual(0.0,result['combined_effects']['N_kN'])
+
+
     def test_load_combination_rejects_component_or_case_omission(self):
         cases={
             'dead':{'evidence_status':'specified','effects':{'axial_kN':100.0,'moment_kNm':10.0}},
@@ -128,6 +148,23 @@ class StructuralEngineeringDepthTests(unittest.TestCase):
         result=evaluate_architecture_structural_interfaces(open_item)
         self.assertEqual('blocked',result['result'])
         self.assertIn('required_interface_unresolved:stair-slab-01',result['reason_codes'])
+
+    def test_required_not_applicable_interface_requires_verified_current_evidence(self):
+        base={
+            'interface_id':'na-01','from_discipline':'building-architecture','to_discipline':'building-structural',
+            'interface_type':'facade_support','owner_discipline':'building-structural','required':True,
+            'status':'not_applicable','verification_state':'verified','source_revision':'arch-r4','evidence_refs':['decision:na-01'],
+        }
+        self.assertEqual('pass',evaluate_architecture_structural_interfaces([base])['result'])
+        for patch,reason in [
+            ({'verification_state':'unverified'},'not_applicable_interface_not_verified:na-01'),
+            ({'verification_state':'stale'},'interface_evidence_stale:na-01'),
+            ({'evidence_refs':[]},'not_applicable_interface_without_evidence:na-01'),
+        ]:
+            result=evaluate_architecture_structural_interfaces([{**base,**patch}])
+            self.assertEqual('blocked',result['result'])
+            self.assertIn(reason,result['reason_codes'])
+
 
     def test_architecture_structural_interface_rejects_scope_creep(self):
         with self.assertRaises(GuardInputError):

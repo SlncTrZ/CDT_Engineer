@@ -94,21 +94,28 @@ def validate_load_path(graph: Mapping[str,Sequence[str]], *, loaded_nodes: Seque
     if cycle:
         reasons.append('load_path_cycle')
 
-    def reaches_terminal(start: str) -> bool:
-        stack=[start]; seen=set()
+    def terminal_reachability(start: str) -> tuple[bool,list[str]]:
+        stack=[start]; seen=set(); reached=False; dead_ends=[]
         while stack:
             node=stack.pop()
             if node in terminals:
-                return True
+                reached=True
+                continue
             if node in seen:
                 continue
             seen.add(node)
-            stack.extend(normalized[node])
-        return False
+            children=normalized[node]
+            if not children:
+                dead_ends.append(node)
+                continue
+            stack.extend(children)
+        return reached,dead_ends
 
     for node in loaded:
-        if not reaches_terminal(node):
+        reached,dead_ends=terminal_reachability(node)
+        if not reached:
             reasons.append(f'load_path_does_not_reach_terminal:{node}')
+        reasons.extend(f'load_path_branch_terminates_before_terminal:{node}:{leaf}' for leaf in dead_ends)
     return {
         'result':'fail' if reasons else 'pass',
         'reason_codes':reasons,

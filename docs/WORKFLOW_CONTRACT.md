@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_CONTRACT
 
-Version: 0.1.0 · Updated: 2026-09-12 · Status: public contract baseline.
+Version: 0.2.0 · Updated: 2026-09-12 · Status: public contract baseline.
 
 ## Purpose
 
@@ -47,7 +47,7 @@ Intake
 → ready_for_professional_review
 ```
 
-Stages may be omitted only when the selected deliverable purpose makes them not applicable and the workflow records that decision.
+Stages may be omitted only when the selected deliverable purpose makes them not applicable and the workflow records that decision as a separate stage-applicability disposition with an explicit reason. A stage verification/Checker result of `not_applicable` does not itself omit the stage and cannot exempt its required capabilities.
 
 ## Capability semantics
 

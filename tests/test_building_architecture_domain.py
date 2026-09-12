@@ -19,7 +19,7 @@ class BuildingArchitectureDomainTests(unittest.TestCase):
 
     def make_job(self):
         return {
-            'schema_version':'0.1.0',
+            'schema_version':'0.2.0',
             'job_id':'house-01',
             'domain_id':'building-architecture',
             'release_target':'design_review',
@@ -55,6 +55,12 @@ class BuildingArchitectureDomainTests(unittest.TestCase):
         job=self.make_job()
         del job['building']['openings'][0]['component_resolution']
         self.assertTrue(list(self.validator.iter_errors(job)))
+
+    def test_required_feature_cannot_be_schema_marked_not_applicable(self):
+        job=self.make_job()
+        job['building']['feature_inventory'][0]['implementation_state']='not_applicable'
+        self.assertTrue(list(self.validator.iter_errors(job)))
+
 
     def test_profile_validates_and_declares_fail_closed_dependencies(self):
         profile=json.loads((DOMAIN/'agent-profile.json').read_text(encoding='utf-8'))

@@ -41,16 +41,60 @@ class StageRunnerTests(unittest.TestCase):
   r=run_profile(PROFILE,capabilities=caps,stage_checks=checks)
   self.assertEqual('fail',r['stages'][1]['assessment_result'])
 
- def test_not_applicable_dependency_does_not_block_dependents(self):
+ def test_explicit_whole_stage_not_applicable_is_dependency_neutral(self):
   profile={'profile_id':'na','release_target':'x','stages':[
    {'stage_id':'optional','depends_on':[],'required_capabilities':['local.optional'],'checkpoint':'a'},
    {'stage_id':'required','depends_on':['optional'],'required_capabilities':['local.required'],'checkpoint':'b'},
   ]}
   caps={'local.optional':{'result':'not_applicable'},'local.required':{'result':'pass'}}
   checks={'optional':{'result':'not_applicable'},'required':{'result':'pass'}}
-  r=run_profile(profile,capabilities=caps,stage_checks=checks)
+  applicability={'optional':{'state':'not_applicable','reason_codes':['deliverable_scope_excludes_optional']}}
+  r=run_profile(profile,capabilities=caps,stage_checks=checks,stage_applicability=applicability)
+  self.assertEqual('not_applicable',r['stages'][0]['release_result'])
+  self.assertIn('deliverable_scope_excludes_optional',r['stages'][0]['release_reason_codes'])
   self.assertEqual('pass',r['stages'][1]['release_result'])
   self.assertEqual('pass',r['result'])
+
+ def test_profile_with_only_explicit_not_applicable_stage_is_not_applicable(self):
+  profile={'profile_id':'only-na','release_target':'x','stages':[
+   {'stage_id':'optional','depends_on':[],'required_capabilities':['local.optional'],'checkpoint':'a'},
+  ]}
+  r=run_profile(
+   profile,
+   capabilities={'local.optional':{'result':'not_applicable'}},
+   stage_checks={'optional':{'result':'not_applicable'}},
+   stage_applicability={'optional':{'state':'not_applicable','reason_codes':['deliverable_scope_excludes_optional']}},
+  )
+  self.assertEqual('not_applicable',r['stages'][0]['release_result'])
+  self.assertEqual('not_applicable',r['result'])
+
+ def test_stage_check_not_applicable_does_not_exempt_required_capability(self):
+  profile={'profile_id':'required-na-check-na','release_target':'x','stages':[
+   {'stage_id':'s','depends_on':[],'required_capabilities':['local.required'],'checkpoint':'c'},
+  ]}
+  r=run_profile(profile,capabilities={'local.required':{'result':'not_applicable'}},stage_checks={'s':{'result':'not_applicable'}})
+  self.assertEqual('blocked',r['stages'][0]['assessment_result'])
+  self.assertIn('required_capability_not_applicable:local.required',r['stages'][0]['assessment_reason_codes'])
+  self.assertEqual('blocked',r['result'])
+
+ def test_applicable_stage_cannot_use_not_applicable_check_as_verification_pass(self):
+  profile={'profile_id':'check-na','release_target':'x','stages':[
+   {'stage_id':'s','depends_on':[],'required_capabilities':['local.required'],'checkpoint':'c'},
+  ]}
+  r=run_profile(profile,capabilities={'local.required':{'result':'pass'}},stage_checks={'s':{'result':'not_applicable'}})
+  self.assertEqual('blocked',r['stages'][0]['assessment_result'])
+  self.assertIn('stage_check_not_applicable_for_applicable_stage:s',r['stages'][0]['assessment_reason_codes'])
+  self.assertEqual('blocked',r['result'])
+
+ def test_required_capability_not_applicable_blocks_active_stage(self):
+  profile={'profile_id':'required-na','release_target':'x','stages':[
+   {'stage_id':'s','depends_on':[],'required_capabilities':['local.required'],'checkpoint':'c'},
+  ]}
+  r=run_profile(profile,capabilities={'local.required':{'result':'not_applicable'}},stage_checks={'s':{'result':'pass'}})
+  self.assertEqual('blocked',r['stages'][0]['assessment_result'])
+  self.assertIn('required_capability_not_applicable:local.required',r['stages'][0]['assessment_reason_codes'])
+  self.assertEqual('blocked',r['result'])
+
 
  def test_released_failure_is_not_masked_by_downstream_dependency_block(self):
   caps={'env.ready':{'result':'pass'},'model.measure':{'result':'pass'},'artifact.reopen':{'result':'pass'}}
@@ -124,6 +168,25 @@ class ConflictRegressionTests(unittest.TestCase):
   r=run_profile(profile,capabilities={'artifact.seal':{'result':'pass'}},capabilities_by_software={'sketchup':{}},stage_checks={'s':{'result':'pass'}})
   self.assertEqual('unknown',r['stages'][0]['assessment_result'])
   self.assertNotEqual('pass',r['result'])
+
+ def test_software_required_capability_not_applicable_cannot_win_candidate_selection(self):
+  profile={'profile_id':'na-software','release_target':'x','stages':[{'stage_id':'s','depends_on':[],'software_candidates':['cad'],'required_capabilities':['artifact.required'],'checkpoint':'c'}]}
+  by_sw={'cad':{'artifact.required':{'result':'not_applicable'}}}
+  r=run_profile(profile,capabilities_by_software=by_sw,stage_checks={'s':{'result':'pass'}})
+  self.assertEqual('blocked',r['stages'][0]['assessment_result'])
+  self.assertIn('required_capability_not_applicable:cad:artifact.required',r['stages'][0]['assessment_reason_codes'])
+
+
+ def test_not_applicable_candidate_cannot_beat_blocked_candidate_for_required_capability(self):
+  profile={'profile_id':'mixed-na','release_target':'x','stages':[{'stage_id':'s','depends_on':[],'software_candidates':['cad-a','cad-b'],'required_capabilities':['artifact.required'],'checkpoint':'c'}]}
+  by_sw={
+   'cad-a':{'artifact.required':{'result':'not_applicable'}},
+   'cad-b':{'artifact.required':{'result':'blocked','reason_codes':['provider_missing']}},
+  }
+  r=run_profile(profile,capabilities_by_software=by_sw,stage_checks={'s':{'result':'pass'}})
+  self.assertEqual('blocked',r['stages'][0]['assessment_result'])
+  self.assertNotEqual('pass',r['result'])
+
 
  def test_source_unproven_is_typed_blocker(self):
   from execution.stage_runner import capability_facts_from_engine_maps

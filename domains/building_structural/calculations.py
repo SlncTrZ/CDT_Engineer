@@ -111,7 +111,8 @@ def evaluate_load_combination(load_cases: Mapping, combination: Mapping) -> dict
     combined={component:0.0 for component in sorted(component_set or set())}
     for case_id,factor in factor_values.items():
         for component,value in normalized_cases[case_id]['effects'].items():
-            combined[component]+=factor*value
+            product=finite_number(factor*value,f'combined_effects[{component}] product:{case_id}')
+            combined[component]=finite_number(combined[component]+product,f'combined_effects[{component}] accumulation')
     return {
         'result':'pass',
         'reason_codes':[],

@@ -95,6 +95,20 @@ class AgentProfileAndMapTests(unittest.TestCase):
         for stale in ['transform_component','set_material','export_scene']:
             self.assertNotIn(stale,tools)
 
+    def test_building_drawing_package_uses_pdf_drawing_export_not_sat_exchange(self):
+        profile=json.loads((ROOT/'domains/building-architecture/agent-profile.json').read_text(encoding='utf-8'))
+        stage=next(x for x in profile['stages'] if x['stage_id']=='drawing_package')
+        self.assertIn('artifact.drawing_export',stage['required_capabilities'])
+        self.assertNotIn('artifact.exchange_export',stage['required_capabilities'])
+        autocad=yaml.safe_load((ROOT/'software/autocad/engine-map.yaml').read_text(encoding='utf-8'))
+        by_semantic={x['semantic']:x for x in autocad['capability_mappings']}
+        drawing=by_semantic['artifact.drawing_export']
+        self.assertEqual('expected',drawing['support'])
+        self.assertIn('document_export_pdf',drawing['expected_public_tools'])
+        self.assertNotIn('solid_export',drawing['expected_public_tools'])
+        self.assertEqual(['solid_export'],by_semantic['artifact.exchange_export']['expected_public_tools'])
+
+
     def test_building_architecture_requires_native_component_registry_route(self):
         data=json.loads((ROOT/'domains/building-architecture/agent-profile.json').read_text(encoding='utf-8'))
         by_id={stage['stage_id']:stage for stage in data['stages']}

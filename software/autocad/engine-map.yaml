@@ -1,14 +1,14 @@
-map_version: 0.2.0
+map_version: 0.3.0
 software_id: autocad
 purpose: Current public-contract semantic capability map for CDT_Engineer workflows.
 source_snapshot:
   repository: CDT-AutoCAD
-  head: 98bced282ca32adaa8c2418120a8c89047354c46
+  head: 7bcc8597160ef29167c07e48721e1dd17efb0c38
   provider_version: 0.4.0rc1
   contract_version: autocad-generic-v1-rc1
   public_tool_count: 86
   primary_certification: AutoCAD 2027 Windows x64 / AutoCAD.Application.26
-  working_tree_dirty_at_inspection: true
+  working_tree_dirty_at_inspection: false
   runtime_proof: false
 runtime_preflight:
   required: true
@@ -76,6 +76,10 @@ capability_mappings:
   support: expected
   expected_public_tools: [solid_boolean, solid_inspect]
   verification: historical/native acceptance is narrower than full PID/fingerprint topology loop; verify current runtime and output independently
+- semantic: artifact.drawing_export
+  support: expected
+  expected_public_tools: [document_export_pdf, layout_list, layout_create, layout_set_current, viewport_list]
+  verification: purpose-specific human-readable PDF export from active or selected layout; verify layout/view content, output artifact identity and review readability separately
 - semantic: artifact.exchange_export
   support: expected
   expected_public_tools: [solid_export]

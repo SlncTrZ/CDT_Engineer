@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["schema_version", "job_id", "domain_id", "release_target", "source_manifest", "units", "scope", "assumptions", "standards", "output_requirements", "building"],
   "properties": {
-    "schema_version": {"const": "0.1.0"},
+    "schema_version": {"const": "0.2.0"},
     "job_id": {"type": "string", "minLength": 1},
     "domain_id": {"const": "building-architecture"},
     "release_target": {"$ref": "#/$defs/releaseTarget"},
@@ -210,7 +210,11 @@
               "verification_state": {"enum": ["verified", "unverified", "not_applicable"]},
               "proxy_allowed_through": {"$ref": "#/$defs/releaseTarget"},
               "maximum_release": {"$ref": "#/$defs/releaseTarget"}
-            }
+            },
+            "allOf": [{
+              "if": {"properties": {"required": {"const": true}}, "required": ["required"]},
+              "then": {"properties": {"implementation_state": {"enum": ["implemented", "proxy", "missing"]}}}
+            }]
           }
         }
       }

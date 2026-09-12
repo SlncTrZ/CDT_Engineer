@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_DOMAIN
 
-`skill_id`: `load-path-check` · Version `0.1.0` · Domain `building-structural` · Lifecycle `pilot`.
+`skill_id`: `load-path-check` · Version `0.2.0` · Domain `building-structural` · Lifecycle `pilot`.
 
 ## Intent
 
@@ -20,8 +20,8 @@ May verify connectivity/acyclic support intent. Must not infer force magnitude, 
 
 - `validate_load_path` validates graph shape and referenced nodes;
 - cycles are engineering FAIL evidence;
-- every declared loaded node must reach at least one declared terminal;
-- orphan/terminated load branches fail;
+- every reachable load-transfer branch from each declared loaded node must terminate at a declared foundation/ground terminal; one successful sibling path is insufficient;
+- orphan/terminated load branches fail with the loaded node and dead-end branch localized;
 - graph changes invalidate affected downstream coordination evidence.
 
 ## Workflow

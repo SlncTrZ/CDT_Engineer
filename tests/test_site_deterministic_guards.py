@@ -46,6 +46,20 @@ class AffineGuardTests(unittest.TestCase):
         p=apply_affine_point(world,[1,2,0])
         self.assertAlmostEqual(4,p[0]); self.assertAlmostEqual(22,p[1])
 
+    def test_compose_identity_preserves_xyz(self):
+        point=[1.0,2.0,3.0]
+        self.assertEqual(point,apply_affine_point(compose_affine(I),point))
+
+    def test_nested_transform_preserves_and_translates_nonzero_z(self):
+        t=[1,0,0,10, 0,1,0,20, 0,0,1,30, 0,0,0,1]
+        a=math.radians(90)
+        r=[math.cos(a),-math.sin(a),0,0, math.sin(a),math.cos(a),0,0, 0,0,1,0, 0,0,0,1]
+        p=apply_affine_point(compose_affine(t,r),[1,2,3])
+        self.assertAlmostEqual(8.0,p[0])
+        self.assertAlmostEqual(21.0,p[1])
+        self.assertAlmostEqual(33.0,p[2])
+
+
 class RegistrationGuardTests(unittest.TestCase):
     def test_collinear_controls_block(self):
         pts=[{'source':[0,0,0],'target':[0,0,0]},{'source':[1,0,0],'target':[1,0,0]},{'source':[2,0,0],'target':[2,0,0]}]

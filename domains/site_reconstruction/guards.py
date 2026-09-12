@@ -48,7 +48,7 @@ def inspect_affine(transform: Sequence[float], source_unit: str, target_unit: st
 
 def compose_affine(*transforms: Sequence[float]) -> list[float]:
     """Compose matrices in written order: compose(T,R,S) yields T*R*S."""
-    out=_matrix4([1,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1])
+    out=_matrix4([1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1])
     for values in transforms:
         b=_matrix4(values)
         out=tuple(tuple(sum(out[r][k]*b[k][c] for k in range(4)) for c in range(4)) for r in range(4))

@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_CONTRACT
 
-Version: 1.0.0 · Updated: 2026-09-12 · Status: Engineering OS execution-profile baseline.
+Version: 1.1.0 · Updated: 2026-09-12 · Status: Engineering OS execution-profile baseline.
 
 ## Purpose
 
@@ -69,6 +69,12 @@ preconditions
 ```
 
 On timeout or uncertain mutation, do not release dependents. Reconcile actual state and choose only from the profile's declared recovery actions.
+
+### Runtime stage applicability
+
+A stage is `applicable` by default. Whole-stage omission is allowed only through an explicit runtime applicability disposition recorded separately from the stage Checker result. The executable baseline accepts a `stage_applicability` record keyed by `stage_id`; `not_applicable` requires a non-empty reason and yields stage release `not_applicable`, which is dependency-neutral.
+
+A Checker result of `not_applicable` is **not** a stage-applicability decision. For an applicable stage, a required capability reported `not_applicable` is a typed blocker, and a stage Checker result of `not_applicable` also blocks because the required verification was not performed. If every stage is explicitly not applicable, the profile result is `not_applicable`, never `pass`.
 
 ## Profile vs workflow vs software map
 

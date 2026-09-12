@@ -21,6 +21,14 @@ class CompletenessCheckerTests(unittest.TestCase):
         self.assertEqual('blocked',result['result'])
         self.assertIn('required_item_unverified:stair-slab-interface',result['reason_codes'])
 
+    def test_required_not_applicable_is_missing_even_if_marked_verified(self):
+        result=assess_inventory([
+            {'item_id':'front-door','required':True,'implementation_state':'not_applicable','verification_state':'verified'},
+        ])
+        self.assertEqual('blocked',result['result'])
+        self.assertIn('required_item_missing:front-door',result['reason_codes'])
+
+
     def test_optional_missing_item_does_not_block(self):
         result=assess_inventory([
             {'item_id':'optional-render-detail','required':False,'implementation_state':'missing','verification_state':'unverified'},

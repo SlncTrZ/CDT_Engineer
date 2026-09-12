@@ -36,7 +36,14 @@ def _reason_codes(value: Mapping) -> list[str]:
 
 def _maximum_release(requirement: Mapping, fact: Mapping, state: str) -> str | None:
     if state=='proxy_allowed_for_scope':
-        maximum=fact.get('maximum_release',requirement.get('proxy_allowed_through','concept'))
+        profile_maximum=requirement.get('proxy_allowed_through','concept')
+        _release_index(profile_maximum)
+        runtime_maximum=fact.get('maximum_release')
+        if runtime_maximum is None:
+            maximum=profile_maximum
+        else:
+            _release_index(runtime_maximum)
+            maximum=min((profile_maximum,runtime_maximum),key=_release_index)
     elif state=='reduced_scope':
         maximum=fact.get('maximum_release')
         if maximum is None:

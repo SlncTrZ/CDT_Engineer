@@ -64,8 +64,11 @@ def evaluate_architecture_structural_interfaces(records: Sequence[Mapping]) -> d
         item_reasons=[]
         if required and status not in {'accepted','not_applicable'}:
             item_reasons.append(f'required_interface_unresolved:{interface_id}')
-        if required and status=='not_applicable' and not evidence:
-            item_reasons.append(f'not_applicable_interface_without_evidence:{interface_id}')
+        if required and status=='not_applicable':
+            if verification!='verified':
+                item_reasons.append(f'not_applicable_interface_not_verified:{interface_id}')
+            if not evidence:
+                item_reasons.append(f'not_applicable_interface_without_evidence:{interface_id}')
         if status=='accepted' and verification!='verified':
             item_reasons.append(f'accepted_interface_not_verified:{interface_id}')
         if status=='accepted' and not evidence:

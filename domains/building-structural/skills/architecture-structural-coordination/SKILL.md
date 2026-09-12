@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_DOMAIN
 
-`skill_id`: `architecture-structural-coordination` · Version `0.1.0` · Domain `building-structural` · Lifecycle `pilot`.
+`skill_id`: `architecture-structural-coordination` · Version `0.2.0` · Domain `building-structural` · Lifecycle `pilot`.
 
 ## Intent
 
@@ -24,6 +24,8 @@ May identify geometric/interface clashes and request/recommend coordination chan
 - grid/level identities across disciplines must be reconciled;
 - stair/slab opening, facade support, shaft/penetration and cantilever interfaces remain explicit when in scope;
 - unresolved critical conflicts block dependent design-review release;
+- a required interface marked `not_applicable` is a reviewed disposition, not an omission: it requires `verification_state=verified`, a declared `source_revision` and nonempty evidence references;
+- this deterministic guard enforces caller-supplied `verified`/`stale` state but does not discover the current upstream Architecture revision itself; the workflow/Checker must compare the declared `source_revision` with current upstream evidence and mark mismatches stale before this gate;
 - any changed upstream architecture revision invalidates affected coordination evidence.
 
 ## Workflow

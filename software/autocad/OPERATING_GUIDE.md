@@ -1,7 +1,7 @@
 # AutoCAD Operating Guide
 
 > Documentation class: PUBLIC_SOFTWARE_GUIDE
-Version: 0.2.0 · Source contract: `0.4.0rc1 / autocad-generic-v1-rc1 / 86 tools` · Runtime proof required per run.
+Version: 0.3.0 · Source contract: `0.4.0rc1 / autocad-generic-v1-rc1 / 86 tools` · Runtime proof required per run.
 
 ## Step-0
 Call `system_status` and `system_capabilities`; when strong-integrity native mutation is required also call `native_integrity_status`. Confirm AutoCAD build, provider/contract identity, backend, allowed roots and the exact runtime-supported capability path. The pinned source contract is integration evidence, not proof that the current runtime is ready.
@@ -35,7 +35,7 @@ A committed receipt is execution evidence, not engineering PASS. Query affected 
 The provider may recommend ~300 ms presentation pacing between completed features. UI yield never changes commit/recovery boundaries and screenshots never replace semantic measurements.
 
 ## Artifact lifecycle
-Use `document_save`/`document_save_as` for persisted checkpoints. `artifact_seal` saves a clean active DWG, creates a content-addressed accepted copy and SHA-256 manifest/provenance. CDT_Engineer must still mark prior QA stale if the artifact identity changes after review. SAT is the verified native ACIS exchange path; STEP/STL are not implied.
+Use `document_save`/`document_save_as` for persisted checkpoints. `artifact_seal` saves a clean active DWG, creates a content-addressed accepted copy and SHA-256 manifest/provenance. For human-readable drawing delivery, `artifact.drawing_export` maps to `document_export_pdf` plus the public layout/viewport routes and requires independent package/readability verification. `artifact.exchange_export` is separate: SAT is the verified native ACIS 3D exchange path; STEP/STL are not implied. CDT_Engineer must still mark prior QA stale if an accepted artifact changes after review.
 
 ## Known blockers
 - `source_snapshot_not_runtime_proof`

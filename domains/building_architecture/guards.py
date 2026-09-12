@@ -252,7 +252,7 @@ def evaluate_feature_inventory(items: Sequence[Mapping], *, release_target: str)
             continue
         if resolution=='blocked':
             reasons.append(f'resolution_blocked:{item_id}')
-        if implementation=='missing':
+        if implementation in {'missing','not_applicable'}:
             reasons.append(f'required_feature_missing:{item_id}')
         if verification!='verified':
             reasons.append(f'required_feature_unverified:{item_id}')

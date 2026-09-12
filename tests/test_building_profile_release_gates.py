@@ -54,6 +54,18 @@ class BuildingProfileReleaseGateTests(unittest.TestCase):
         stage=next(x for x in result['stages'] if x['stage_id']=='component_resolution')
         self.assertIn('scope_reduction_required:catalog.building-components:concept',stage['assessment_reason_codes'])
 
+    def test_architecture_runtime_proxy_maximum_cannot_override_profile_ceiling(self):
+        profile=load_profile('building-architecture')
+        capabilities,by_software,checks,deps=all_pass_inputs(profile)
+        deps['component_resolution']['catalog.building-components']={
+            'state':'proxy_allowed_for_scope',
+            'maximum_release':'ready_for_professional_review',
+        }
+        result=run_profile(profile,capabilities=capabilities,capabilities_by_software=by_software,stage_checks=checks,dependency_states=deps)
+        self.assertEqual('blocked',result['result'])
+        self.assertEqual('concept',result['recommended_release_target'])
+
+
     def test_current_building_catalog_deterministically_blocks_design_review(self):
         profile=load_profile('building-architecture')
         catalog=json.loads((ROOT/'catalogs'/'building-components'/'catalog.json').read_text(encoding='utf-8'))

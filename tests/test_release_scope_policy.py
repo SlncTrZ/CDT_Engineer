@@ -43,6 +43,50 @@ class ReleaseScopePolicyTests(unittest.TestCase):
         self.assertEqual('blocked',result['result'])
         self.assertEqual('technical_draft',result['recommended_release_target'])
 
+    def test_runtime_proxy_maximum_cannot_widen_profile_ceiling(self):
+        requirements=[{
+            'dependency_id':'catalog.window-family',
+            'required_from_release':'technical_draft',
+            'proxy_allowed_through':'concept',
+        }]
+        states={'catalog.window-family':{
+            'state':'proxy_allowed_for_scope',
+            'maximum_release':'ready_for_professional_review',
+        }}
+        result=assess_dependencies('design_review',requirements,states)
+        self.assertEqual('blocked',result['result'])
+        self.assertEqual('concept',result['recommended_release_target'])
+
+    def test_runtime_proxy_maximum_may_be_stricter_than_profile_ceiling(self):
+        requirements=[{
+            'dependency_id':'catalog.window-family',
+            'required_from_release':'concept',
+            'proxy_allowed_through':'technical_draft',
+        }]
+        states={'catalog.window-family':{
+            'state':'proxy_allowed_for_scope',
+            'maximum_release':'concept',
+        }}
+        result=assess_dependencies('technical_draft',requirements,states)
+        self.assertEqual('blocked',result['result'])
+        self.assertEqual('concept',result['recommended_release_target'])
+
+
+    def test_runtime_proxy_maximum_equal_to_profile_ceiling_is_allowed_at_that_scope(self):
+        requirements=[{
+            'dependency_id':'catalog.window-family',
+            'required_from_release':'concept',
+            'proxy_allowed_through':'technical_draft',
+        }]
+        states={'catalog.window-family':{
+            'state':'proxy_allowed_for_scope',
+            'maximum_release':'technical_draft',
+        }}
+        result=assess_dependencies('technical_draft',requirements,states)
+        self.assertEqual('pass',result['result'])
+        self.assertIn('proxy:catalog.window-family:technical_draft',result['limitations'])
+
+
     def test_resolved_and_custom_allowed_dependencies_pass(self):
         requirements=[
             {'dependency_id':'domain.skill.feature-plan','required_from_release':'technical_draft'},

@@ -135,7 +135,7 @@
       "purpose": "Produce and independently check human-readable plans/sections/elevations/detail references for design review",
       "owning_roles": ["Architect / Spatial Designer", "CAD/BIM Technician", "Documentation Engineer", "Checker / QA Engineer"],
       "rule_ids": ["ARCH-07", "ARCH-10"],
-      "required_capabilities": ["technical_2d.create", "model.query", "artifact.exchange_export", "evidence.artifact_hash_bound"],
+      "required_capabilities": ["technical_2d.create", "model.query", "artifact.drawing_export", "evidence.artifact_hash_bound"],
       "software_candidates": ["autocad"],
       "depends_on": ["independent_qa"],
       "dependency_requirements": [
