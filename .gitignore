@@ -1,9 +1,9 @@
 # CDT_Engineer — Gitignore
 # Wing: ops | Topic: gitignore | Updated: 2026-09-08
 
-# ===== Internal plans, CAD fixtures, evidence, references (never commit) =====
+# ===== Internal plans, CAD fixtures, evidence, references, test workspace (never commit) =====
 _private/
-
+_test_workspace
 # ===== Environment / Secrets =====
 .env
 .env.*
