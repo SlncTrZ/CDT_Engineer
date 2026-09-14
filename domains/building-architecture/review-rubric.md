@@ -1,14 +1,14 @@
 # Building Architecture v1 — Review Rubric
 
 > Documentation class: PUBLIC_DOMAIN
-Version: 0.1.0 · Scope: low-rise residential / design-review baseline.
+Version: 0.2.0 · Scope: low-rise residential / design-review baseline.
 
 | Criterion | Weight | Full-credit evidence |
 | --- | ---: | --- |
 | Source/provenance + feature inventory | 15 | Required/visible features frozen with source evidence and uncertainty state |
 | Semantic building graph | 20 | Levels, spaces, walls, openings, stairs/facade systems have stable identities and valid dependencies |
 | Component/system fidelity | 20 | Resolved systems use approved semantic assets/custom paths; no silent primitive substitution |
-| Geometry + relationship/topology correctness | 20 | Independent host/level/dimension/topology checks pass |
+| Geometry + relationship/topology correctness | 20 | Independent host/level/dimension/topology checks pass; in-scope casework clear envelopes, subdivisions, corner geometry and drawer/equipment fit pass ARCH-11 |
 | Completeness + detail coverage | 10 | Required inventory items implemented and independently verified for declared scope |
 | Cross-discipline boundary honesty | 5 | Structural/standards unknowns remain explicit and block stronger claims |
 | Native artifact/handoff evidence | 10 | Save/reopen/remeasure/hash evidence and limitations are bound to the final artifact |
@@ -26,6 +26,7 @@ Design-review release requires all of:
 - ARCH-08 critical semantic relationships/topology pass independently;
 - ARCH-09 structural/interface state is explicit; no unsupported adequacy claim;
 - ARCH-10 final artifact save/reopen/remeasure/hash evidence current;
+- ARCH-11 casework/equipment deterministic fit checks pass whenever interior fit-out is in scope, with exact source/provenance for critical dimensions and clearances;
 - exact standards/applicability resolved for any compliance claim;
 - public engine route and current runtime capability evidence.
 

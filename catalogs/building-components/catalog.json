@@ -1,7 +1,7 @@
 {
   "schema_version": "0.2.0",
   "catalog_id": "building-components.v1",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "domain_id": "building-architecture",
   "maturity": "pilot",
   "assets": [
@@ -88,6 +88,62 @@
       "substitution_policy": {"allowed": true, "conditions": ["level connection and deterministic stair geometry remain valid"]},
       "qa_checks": ["level rise reconciliation", "riser count", "going", "width", "opening/support interface state"],
       "native_mappings": {"sketchup": {"state": "unresolved", "reason": "Validated parametric/native representation not yet frozen"}}
+    },
+    {
+      "asset_id": "casework.panel-system.generic.v1",
+      "version": "0.1.0",
+      "family": "casework_panel_system",
+      "semantic_intent": "Generic casework panel-system identity for carcass/partition geometry whose material, thickness, edge and joinery requirements remain explicitly sourced.",
+      "provenance": {"type": "generic", "source": "CDT_Engineer interior-casework semantic baseline", "status": "internal_baseline"},
+      "applicability": {"release_classes": ["concept", "technical_draft", "design_review"], "notes": "No fabrication, durability, fire, moisture or joinery-performance claim without exact project/manufacturer/standard evidence."},
+      "parameters": {"material_semantic_id": "project_required", "thickness": "project_required", "edge_finish": "project_or_manufacturer_required", "joinery_state": "project_or_manufacturer_required"},
+      "interfaces": {"host_types": ["casework_module", "casework_partition"], "rules": ["panel thickness must be explicit", "material/edge intent preserves semantic identity", "joinery performance is not inferred from geometry"]},
+      "allowed_transforms": ["translate", "rotate", "mirror", "parameterized_resize"],
+      "substitution_policy": {"allowed": true, "conditions": ["same panel-system semantic requirements", "explicit thickness/material/edge requirements preserved", "release class supported"]},
+      "qa_checks": ["panel-system identity", "thickness", "material semantic reference", "edge/joinery dependency state", "definition reuse where applicable"],
+      "native_mappings": {"sketchup": {"state": "unresolved", "reason": "No provider-verified sha256/native_version mapping is frozen for a SketchUp panel system"}}
+    },
+    {
+      "asset_id": "casework.drawer-system.generic.v1",
+      "version": "0.1.0",
+      "family": "drawer_system",
+      "semantic_intent": "Generic drawer-system envelope and clearance identity for casework planning/review; hardware performance remains source-specific.",
+      "provenance": {"type": "generic", "source": "CDT_Engineer interior-casework semantic baseline", "status": "internal_baseline"},
+      "applicability": {"release_classes": ["concept", "technical_draft", "design_review"], "notes": "Slide capacity, travel, fixing, front gap and manufacturer clearances require exact product/project evidence."},
+      "parameters": {"envelope": "project_required", "clearances": "manufacturer_or_project_required", "hardware_semantic_id": "manufacturer_or_project_required"},
+      "interfaces": {"host_types": ["casework_opening", "casework_compartment"], "rules": ["drawer envelope plus sourced clearances must fit host opening", "edit must preserve stable semantic/native identity where claimed"]},
+      "allowed_transforms": ["translate", "parameterized_resize"],
+      "substitution_policy": {"allowed": true, "conditions": ["same host envelope and sourced clearance requirements", "hardware performance claim not broadened"]},
+      "qa_checks": ["host opening identity", "six-side clearance evidence", "drawer envelope", "duplicate instance check", "edit read-back"],
+      "native_mappings": {"sketchup": {"state": "unresolved", "reason": "No provider-verified sha256/native_version mapping is frozen for a drawer system"}}
+    },
+    {
+      "asset_id": "equipment.appliance-envelope.generic.v1",
+      "version": "0.1.0",
+      "family": "appliance_envelope",
+      "semantic_intent": "Generic equipment/appliance envelope for fit coordination using exact supplied dimensions and clearance requirements.",
+      "provenance": {"type": "generic", "source": "CDT_Engineer interior-casework semantic baseline", "status": "internal_baseline"},
+      "applicability": {"release_classes": ["concept", "technical_draft", "design_review"], "notes": "Manufacturer identity, ventilation, service, electrical/plumbing and installation requirements remain unresolved until exact data is bound."},
+      "parameters": {"width": "manufacturer_or_project_required", "height": "manufacturer_or_project_required", "depth": "manufacturer_or_project_required", "clearances": "manufacturer_or_project_required", "service_interface_state": "project_required"},
+      "interfaces": {"host_types": ["appliance_housing", "casework_opening", "worktop_opening"], "rules": ["equipment envelope plus sourced clearances must fit", "required service interfaces remain explicit dependencies"]},
+      "allowed_transforms": ["translate", "rotate"],
+      "substitution_policy": {"allowed": true, "conditions": ["same or stricter verified envelope/clearance/interface requirements", "manufacturer-specific claim removed unless exact product identity is preserved"]},
+      "qa_checks": ["equipment identity state", "envelope", "clearance source", "host fit", "service-interface dependency state"],
+      "native_mappings": {"sketchup": {"state": "unresolved", "reason": "No provider-verified sha256/native_version mapping is frozen for an appliance asset"}}
+    },
+    {
+      "asset_id": "casework.anchor-system.generic.v1",
+      "version": "0.1.0",
+      "family": "casework_anchor_system",
+      "semantic_intent": "Casework-to-host anchorage dependency record that keeps host, fixing and adequacy state explicit rather than inferred from contact geometry.",
+      "provenance": {"type": "generic", "source": "CDT_Engineer interior-casework semantic baseline", "status": "internal_baseline"},
+      "applicability": {"release_classes": ["concept", "technical_draft", "design_review"], "notes": "This semantic record is not an anchor-capacity design. Exact fixing type, substrate, loads, spacing and adequacy require responsible project/manufacturer/structural evidence."},
+      "parameters": {"host_type": "project_required", "fixing_requirement_source": "project_or_manufacturer_required", "adequacy_state": "professional_dependency_required"},
+      "interfaces": {"host_types": ["wall", "floor", "ceiling", "casework_support"], "rules": ["host identity must be explicit", "geometry contact does not prove anchorage", "unresolved adequacy cannot be promoted to fabrication/construction claim"]},
+      "allowed_transforms": ["translate", "rotate"],
+      "substitution_policy": {"allowed": false, "conditions": ["anchor/fixing systems require an explicit applicable decision rather than visual substitution"]},
+      "qa_checks": ["host identity", "fixing requirement source", "adequacy dependency state", "release limitation"],
+      "native_mappings": {"sketchup": {"state": "unresolved", "reason": "Anchorage is a professional dependency; no native SketchUp asset identity is frozen"}}
     }
   ]
 }

@@ -1,0 +1,197 @@
+workflow_version: 0.1.0
+workflow_id: building-architecture.interior-casework-layout.v1
+release_scope: concept_to_design_review
+chunk_policy: feature_based_chunk_streaming
+
+stages:
+  - stage_id: source_basis
+    purpose: Freeze source identity, dimensional/scale basis, provenance and required fit-out inventory.
+    owning_roles: [Architect / Spatial Designer, Chief / Lead Engineer]
+    required_design_basis: [purpose, release_target, source_manifest, units, dimensional_basis]
+    invokes: [ARCH-01, interior-casework-layout]
+    required_semantics: [evidence.source_hashes_verified]
+    expected_state: Frozen fit-out source/feature inventory with explicit dimension provenance and unresolved unknowns.
+    query_mutation_budget: read_only
+    chunk_policy: not_applicable
+    checkpoint: fitout_source_basis
+    verification: Source IDs/hashes, dimensional anchors and evidence states are independently reviewable.
+    stop_conditions:
+      - critical_dimension_source_unknown
+      - image_scale_basis_unresolved_for_exact_dimension_claim
+    uncertain_state_reconciliation: Re-read source manifest and dimensional basis; do not promote inferred image dimensions.
+    recovery_actions: [replan, scope_reduce_with_approval, block_for_review]
+    handoff: semantic_casework_plan
+    qa_gate: Critical dimensions have authoritative/provisionally approved evidence state; omissions remain explicit.
+    release_effect: Missing critical dimensional basis blocks dependent exact-fit/native work.
+
+  - stage_id: semantic_casework_plan
+    purpose: Resolve casework modules, corner geometry, compartments, drawer/equipment envelopes and explicit clearances.
+    owning_roles: [Architect / Spatial Designer]
+    required_design_basis: [units, release_target, fitout_scope]
+    invokes: [ARCH-06, ARCH-07, ARCH-11, interior-casework-layout]
+    required_semantics: [feature.plan, dependency.validate]
+    expected_state: Validated semantic casework/equipment graph with deterministic fit results and stable IDs.
+    query_mutation_budget: deterministic_local_only
+    chunk_policy: not_applicable
+    checkpoint: semantic_casework_graph
+    deterministic_checks:
+      - evaluate_casework_box
+      - evaluate_casework_compartments
+      - evaluate_corner_casework
+      - evaluate_rectangular_fit
+    verification: Guard outputs and feature/dependency inventory are independently reproducible from frozen inputs.
+    stop_conditions:
+      - casework_guard_failed
+      - required_clearance_unknown
+      - required_feature_inventory_incomplete
+    uncertain_state_reconciliation: Recompute from frozen inputs and source refs; no convenience defaults.
+    recovery_actions: [replan, scope_reduce_with_approval, block_for_review]
+    handoff: dependency_resolution
+    qa_gate: ARCH-11 passes or emits a typed blocker for every dependent module/item.
+    release_effect: Failed/unknown critical fit blocks the requested dependent release path.
+
+  - stage_id: dependency_resolution
+    purpose: Resolve panel, drawer, appliance and fixing semantic assets or an explicitly bounded custom path.
+    owning_roles: [Architect / Spatial Designer, CAD/BIM Technician]
+    required_design_basis: [release_target, fitout_scope]
+    invokes: [ARCH-06, ARCH-07, interior-casework-layout]
+    required_semantics: [dependency.validate]
+    expected_state: Versioned semantic catalog/custom/proxy decisions with native mapping state and limitations.
+    query_mutation_budget: read_only
+    chunk_policy: not_applicable
+    checkpoint: fitout_dependency_manifest
+    verification: Required semantic families, interfaces, parameters and release limits are complete and reviewable.
+    stop_conditions:
+      - required_dependency_blocked
+      - proxy_exceeds_release_scope
+      - registry_identity_evidence_missing_for_claimed_release
+    uncertain_state_reconciliation: Re-resolve dependency evidence against the frozen catalog/runtime inputs.
+    recovery_actions: [replan, scope_reduce_with_approval, block_for_review]
+    handoff: sketchup_preflight
+    qa_gate: No unresolved semantic dependency is hidden by primitive geometry.
+    release_effect: Unresolved strong registry identity blocks the catalog-resolved design-review path but may allow a separately approved bounded custom path.
+
+  - stage_id: sketchup_preflight
+    purpose: Discover current SketchUp/provider runtime and prove exact public semantic capabilities.
+    owning_roles: [Chief / Lead Engineer, CAD/BIM Technician]
+    required_design_basis: [target_host, release_target]
+    invokes: [interior-casework-layout]
+    required_semantics:
+      - model_3d.create
+      - model_3d.transform
+      - model.query
+      - model.measure
+      - topology.inspect
+      - artifact.native_save
+      - artifact.reopen
+    conditional_semantics:
+      registry_backed_asset: component.library_resolve
+    expected_state: Current runtime capability snapshot bound to provider/application/contract identity.
+    query_mutation_budget: read_only
+    chunk_policy: not_applicable
+    checkpoint: sketchup_fitout_capability_snapshot
+    verification: Runtime-observed capability descriptors satisfy the exact semantics required by the planned chunks.
+    stop_conditions:
+      - runtime_unknown
+      - required_capability_missing
+      - capability_identity_stale
+    uncertain_state_reconciliation: Rediscover runtime/provider state and invalidate stale capability evidence.
+    recovery_actions: [rediscover_environment, request_installation, request_configuration, replan, block_for_review]
+    handoff: native_execution
+    qa_gate: Step-0 runtime evidence is current and no private/native bypass is used.
+    release_effect: Missing required public capability blocks native execution for the requested path.
+
+  - stage_id: native_execution
+    purpose: Execute bounded semantic chunks while preserving stable identity and dependency boundaries.
+    owning_roles: [Architect / Spatial Designer, CAD/BIM Technician, 3D / Visualization Engineer]
+    required_design_basis: [units, reference_frame, release_target]
+    invokes: [ARCH-08, ARCH-11, interior-casework-layout]
+    required_semantics: [model_3d.create, model_3d.transform, model.query, model.measure]
+    expected_state: Verified committed semantic chunks with native identity/read-back evidence and no unplanned duplicates.
+    query_mutation_budget: provider_declared_chunk_bounds
+    chunk_policy: feature_based_chunk_streaming
+    checkpoint: fitout_native_checkpoint
+    chunk_types:
+      - casework_module
+      - partition_group
+      - drawer_group
+      - equipment_instance
+      - bounded_profile_or_finish_feature
+    identity_evidence:
+      - semantic_id
+      - persistent_id
+      - definition_guid
+      - context_revision
+      - semantic_fingerprint
+    chunk_postconditions:
+      - required_identity_readback_matches
+      - measured_envelope_matches_semantic_plan
+      - required_relationships_present
+      - no_unplanned_duplicate_instance
+    verification: Reconcile actual model state then independently query identity, envelope and relationships before releasing dependent chunks.
+    stop_conditions:
+      - chunk_postcondition_failed
+      - mutation_state_uncertain
+      - provider_budget_would_be_exceeded
+    uncertain_state_reconciliation: Query current context/entity/definition state and compare with predecessor checkpoint before any retry.
+    recovery_actions: [reconcile_state, compensate, restart_from_checkpoint, block_for_review]
+    uncertain_completion_policy: never_blind_retry
+    handoff: independent_qa
+    qa_gate: Every predecessor is verified committed and every affected native identity is traceable to its semantic chunk.
+    release_effect: Failed/uncertain chunk blocks all dependent chunks until verified recovery/replan.
+
+  - stage_id: independent_qa
+    purpose: Independently verify fit, identity, completeness, topology/relationships and edit results.
+    owning_roles: [Checker / QA Engineer]
+    required_design_basis: [release_target, fitout_scope, required_outputs]
+    invokes: [ARCH-07, ARCH-08, ARCH-11]
+    required_semantics: [model.query, model.measure, topology.inspect, qa.independent_measure]
+    expected_state: Hash/revision-bound Checker evidence for fit-out completeness, geometry and identity.
+    query_mutation_budget: read_only_provider_bounds
+    chunk_policy: not_applicable
+    checkpoint: fitout_independent_qa
+    checks:
+      - remeasure_casework_clear_envelopes
+      - remeasure_drawer_and_appliance_fit
+      - verify_persistent_id_and_definition_guid
+      - verify_inventory_coverage
+      - detect_duplicate_instance
+      - verify_required_fixing_and_material_dependency_state
+    verification: Checker measurements/queries are independent of producer receipts and bound to current artifact revision.
+    stop_conditions:
+      - critical_measurement_failed
+      - required_feature_missing
+      - wrong_target_identity
+      - duplicate_instance_detected
+      - checker_evidence_stale
+    uncertain_state_reconciliation: Re-query/reopen the current artifact revision; do not reuse stale producer/Checker evidence.
+    recovery_actions: [replan, block_for_review]
+    handoff: native_handoff
+    qa_gate: ARCH-07/08/11 hard gates pass independently for declared fit-out scope.
+    release_effect: Critical fit/identity/completeness failure blocks release regardless of visual quality.
+
+  - stage_id: native_handoff
+    purpose: Save, reopen and independently remeasure the final SketchUp artifact before release verdict.
+    owning_roles: [Checker / QA Engineer, Documentation Engineer]
+    required_design_basis: [release_target, required_outputs]
+    invokes: [ARCH-10, interior-casework-layout]
+    required_semantics: [artifact.native_save, artifact.reopen, model.measure]
+    expected_state: Final reopened artifact with current measurements, identity/hash evidence and exact release limitations.
+    query_mutation_budget: external_side_effect_plus_read_only_verification
+    chunk_policy: not_applicable
+    checkpoint: fitout_reopen_handoff
+    verification: Final save/reopen identity and critical remeasurements match the accepted semantic plan and current Checker evidence.
+    postconditions:
+      - final_artifact_identity_bound
+      - reopened_measurements_match
+      - prior_qa_invalidated_if_artifact_changed
+      - release_label_matches_evidence
+    stop_conditions:
+      - native_save_or_reopen_failed
+      - artifact_identity_missing_or_stale
+      - reopened_measurement_mismatch
+    uncertain_state_reconciliation: Reconcile file/model identity and reopen the exact candidate before any release verdict.
+    recovery_actions: [restart_from_checkpoint, block_for_review]
+    handoff: engineering_handoff_package
+    qa_gate: ARCH-10 final artifact evidence is current and all remaining limitations are explicit.
+    release_effect: Failure produces BLOCKED/STALE_EVIDENCE; save/open success alone never upgrades professional scope.

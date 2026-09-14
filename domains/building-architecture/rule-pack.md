@@ -1,7 +1,7 @@
 # Building Architecture v1 — Rule Pack
 
 > Documentation class: PUBLIC_DOMAIN
-Version: 0.1.0 · Scope: low-rise residential / design-review baseline · Status: ARCH-02/03/04/05/07 deterministic guards implemented; remaining rules specified.
+Version: 0.2.0 · Scope: low-rise residential / design-review baseline · Status: ARCH-02/03/04/05/07/11 deterministic guards implemented; remaining rules specified.
 
 This pack is standards-neutral unless a job binds an exact standard/project requirement with edition/applicability. No universal room, circulation, stair, fire, accessibility or construction-code numbers are invented here.
 
@@ -17,6 +17,7 @@ This pack is standards-neutral unless a job binds an exact standard/project requ
 | ARCH-08 Relationship/topology | Domain relationships (level hierarchy, wall/opening host, component nesting/reuse, stair/slab interface, facade host/support intent) must be checked above generic engine integrity | FAIL/BLOCK on invalid critical relationship; generic integrity PASS cannot override | Engine query/topology facts + domain relationship verdict |
 | ARCH-09 Structural/interface boundary | Architecture identifies structural-role state and required cross-discipline interfaces; unknown structural facts remain unknown; design-review dependencies cannot claim structural adequacy | BLOCK stronger claims when structural interface/evidence is missing | Interface register, structural handoff/blocker states |
 | ARCH-10 Deliverable & artifact release | Design-review artifact must save/reopen, be independently remeasured and hash-bound; release label/limitations must match evidence | BLOCK/STALE on reopen/hash/measurement failure or scope overclaim | Native artifact, hash, reopen receipt, Checker verdict |
+| ARCH-11 Interior casework & equipment fit | For in-scope casework, derive clear carcass envelope only from explicit outer dimensions/panel thicknesses; reconcile compartments; validate orthogonal corner footprint; fit drawers/equipment using explicitly sourced clearances | FAIL/BLOCK on nonphysical carcass/corner geometry, partition-span mismatch, required clearance unknown or item exceeding clear opening; do not invent cabinet/appliance defaults | Fit-out skill input, dimension/clearance sources, deterministic guard results, dependency/catalog state |
 
 ## Primitive policy
 
@@ -38,7 +39,11 @@ A missing door/window/facade/stair/detail family must not become boxes/faces/lin
 - explicit space area and rectangular clear-dimension requirements;
 - simplified wall/opening hosting bounds;
 - stair total-rise consistency and explicit dimension thresholds;
-- feature/detail inventory completeness and proxy release enforcement.
+- feature/detail inventory completeness and proxy release enforcement;
+- rectangular casework clear-envelope derivation from explicit panel thicknesses;
+- compartment/partition span reconciliation;
+- orthogonal L-corner casework physical-footprint validation;
+- drawer/equipment envelope fit using explicit six-side clearances.
 
 These checks do not determine planning quality, structural adequacy, building-code compliance or construction detail sufficiency by themselves. Those claims require the corresponding skill/standard/domain evidence and independent QA.
 
@@ -55,4 +60,8 @@ Mandatory Building v1 negative cases include:
 - stair total rise inconsistent with levels;
 - generic topology/integrity PASS while semantic host relationship fails;
 - unknown structural role promoted to structural fact;
-- design-review artifact not reopened/remeasured or hash evidence stale.
+- design-review artifact not reopened/remeasured or hash evidence stale;
+- compartment widths/partitions do not reconcile to the carcass clear span;
+- corner return depth consumes the opposing casework leg;
+- drawer/appliance does not fit the clear opening with its sourced clearances;
+- image-derived cabinet dimension or manufacturer clearance promoted to exact without an authoritative dimensional/source basis.

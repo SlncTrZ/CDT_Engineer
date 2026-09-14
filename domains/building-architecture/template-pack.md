@@ -1,7 +1,7 @@
 # Building Architecture v1 — Template Pack
 
 > Documentation class: PUBLIC_DOMAIN
-Version: 0.1.0 · Scope: low-rise residential / design-review baseline.
+Version: 0.2.0 · Scope: low-rise residential / design-review baseline.
 
 ## Intake / Design Basis record
 
@@ -35,6 +35,7 @@ stairs/railings
 roof/parapet
 facade systems/modules
 materials/finish intent
+interior fit-out/casework systems when in scope
 structural-role/interface state
 feature/detail inventory
 ```
@@ -56,9 +57,15 @@ maximum allowed release
 replacement requirement
 ```
 
+## Interior casework record
+
+When interior fit-out is in scope, record: system/module IDs; source/scale basis; module kind; box or orthogonal-corner geometry; panel-system/material semantic reference; explicit panel thicknesses; compartment widths/partition thickness; drawer/equipment envelopes; six-side clearance values plus source; host/fixing dependency state; catalog/custom/proxy resolution; release effect; deterministic ARCH-11 results.
+
+Unknown manufacturer/project clearances or fixing adequacy stay unknown and block dependent stronger claims rather than receiving a default.
+
 ## Execution chunk record
 
-Stage/chunk ID; semantic type; entity/system IDs; dependencies; source/catalog versions; required public capabilities; expected postconditions; transaction/recovery mode; native receipts; read-after-write measurements; checkpoint identity.
+Stage/chunk ID; semantic type; entity/system IDs; dependencies; source/catalog versions; required public capabilities; expected postconditions; transaction/recovery mode; native receipts; read-after-write measurements; checkpoint identity. Interior native chunks additionally preserve semantic ID, persistent ID/definition GUID where applicable, predecessor context/fingerprint and duplicate-instance checks so uncertain non-idempotent placement is never blindly replayed.
 
 ## QA record
 

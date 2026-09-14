@@ -1,7 +1,7 @@
 # Building Architecture v1 — Benchmark Pack
 
 > Documentation class: PUBLIC_DOMAIN
-Version: 0.2.0 · Primary negative case: townhouse image reconstruction · Status: benchmark definition; native acceptance pending.
+Version: 0.3.0 · Primary negative case: townhouse image reconstruction · Status: benchmark definition; native acceptance pending.
 
 ## Scope
 
@@ -73,6 +73,42 @@ Exercise failure at dependency boundaries without weakening professional gates:
 - **uncertain completion / timeout:** reconcile current model/context/entity/definition state before retry; non-idempotent placement must never be blindly replayed and duplicate instances must be detected/prevented.
 
 For every injected case, record predecessor checkpoint/context identity, expected state, observed state, recovery action, recovered state and whether dependent chunks remained blocked.
+
+## Benchmark G — Interior casework box / corner casework
+
+Use the public `interior-casework-layout` skill with frozen dimensions and provenance.
+
+Positive cases:
+
+- **casework box:** explicit outer envelope + panel thicknesses derive the expected clear envelope; optional minimum-clear requirements use only supplied sources;
+- **corner casework:** an orthogonal L-footprint has both legs extending beyond the opposing return depth and produces a positive derived footprint area;
+- compartment widths plus intervening partition thicknesses reconcile exactly to the carcass clear span.
+
+Negative cases: nonpositive clear envelope, partition-span mismatch, corner return consuming the opposing leg, or an exact dimension inferred only from an unscaled image. Expected: ARCH-11 FAIL/BLOCK before native execution.
+
+## Benchmark H — Drawer fit / appliance fit and edit
+
+Freeze the host opening, item envelope, six-side clearances and their source. Verify a fitting drawer/appliance passes and an oversized item fails. For an edit case, mutate one drawer envelope/position only after the predecessor identity is frozen; re-run fit checks and independently verify the same semantic/native target identity after edit.
+
+Expected negatives: drawer fit failure, appliance fit failure, missing manufacturer/project clearance source, wrong target identity, or an edit that creates/retains a duplicate instance.
+
+## Benchmark I — Interior asset / material / fixing dependency
+
+Resolve the required semantic families `casework_panel_system`, `drawer_system`, `appliance_envelope` and `casework_anchor_system` through the Engineering Asset Catalog or an explicitly bounded custom path. Material/thickness/edge/fixing requirements remain project/manufacturer dependencies, not visual guesses.
+
+For registry-backed SketchUp placement, `component.library_resolve` must prove exact accepted native identity before a design-review catalog PASS. While `native_component_registry_identity_metadata_missing` remains open, these pilot catalog entries intentionally keep SketchUp mappings `unresolved` and the benchmark must block rather than invent `sha256`/`native_version`.
+
+## Benchmark J — Interior native chunk recovery / duplicate instance negative
+
+Execute semantic chunks such as `casework_module`, `partition_group`, `drawer_group` and `equipment_instance`. Force a middle failure and an uncertain completion. Dependent chunks remain blocked until actual persistent-ID/context/definition state is reconciled. A non-idempotent placement may be retried only after verified rollback/compensation/checkpoint state and a duplicate instance check.
+
+Expected: no blind replay; any unplanned duplicate instance is a hard failure.
+
+## Benchmark K — Profile / molding / loft / curved-shape capability boundary
+
+Freeze the exact profile/curve/loft requirement and source geometry. CDT_Engineer may calculate/profile-plan the shape and chunk it, but native realization is accepted only when current CDT-SketchUp public capabilities can represent and independently query the required geometry within declared budgets. Missing/insufficient capability is a typed blocker or explicit reduced scope; it is not replaced by a visually similar primitive while retaining stronger semantics.
+
+This benchmark distinguishes Engineer planning/completeness from the SKP-03 executor dependency. Native molding/loft/curved-shape parity remains pending until the engine-side capability and runtime benchmark are proven.
 
 ## Measurement / evidence
 

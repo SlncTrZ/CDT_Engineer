@@ -1,5 +1,5 @@
 """Building Architecture deterministic semantic and geometry guards.
-Wing: code | Topic: building-architecture | Updated: 2026-09-12 19:49
+Wing: code | Topic: building-architecture | Updated: 2026-09-14 09:00
 """
 from __future__ import annotations
 
@@ -277,4 +277,169 @@ def evaluate_feature_inventory(items: Sequence[Mapping], *, release_target: str)
         'reason_codes':reasons,
         'limitations':limitations,
         'inventory_count':len(items),
+    }
+
+
+def evaluate_casework_box(module: Mapping, requirements: Mapping) -> dict:
+    """Derive a rectangular casework clear envelope from explicit dimensions/panels."""
+    if not isinstance(module,Mapping) or not isinstance(requirements,Mapping):
+        raise GuardInputError('casework module and requirements must be mappings')
+    module_id=_string_id(module.get('id'),'module.id')
+    width=finite_number(module.get('width'),'module.width')
+    height=finite_number(module.get('height'),'module.height')
+    depth=finite_number(module.get('depth'),'module.depth')
+    if min(width,height,depth)<=0:
+        raise GuardInputError('casework outer dimensions must be positive')
+    panels=module.get('panels')
+    if not isinstance(panels,Mapping):
+        raise GuardInputError('module.panels must be a mapping')
+    panel_values={}
+    for key in ('left','right','top','bottom','back'):
+        if key not in panels:
+            raise GuardInputError(f'module.panels.{key} is required')
+        value=finite_number(panels[key],f'module.panels.{key}')
+        if value<0:
+            raise GuardInputError('panel thicknesses must be nonnegative')
+        panel_values[key]=value
+    clear_width=width-panel_values['left']-panel_values['right']
+    clear_height=height-panel_values['top']-panel_values['bottom']
+    clear_depth=depth-panel_values['back']
+    reasons=[]
+    if clear_width<=_EPS:
+        reasons.append('nonpositive_clear_width')
+    if clear_height<=_EPS:
+        reasons.append('nonpositive_clear_height')
+    if clear_depth<=_EPS:
+        reasons.append('nonpositive_clear_depth')
+    checks=(
+        ('minimum_clear_width',clear_width,'clear_width_below_requirement'),
+        ('minimum_clear_height',clear_height,'clear_height_below_requirement'),
+        ('minimum_clear_depth',clear_depth,'clear_depth_below_requirement'),
+    )
+    for key,actual,reason in checks:
+        if key not in requirements:
+            continue
+        required=finite_number(requirements[key],key)
+        if required<0:
+            raise GuardInputError(f'{key} must be nonnegative')
+        if actual+_EPS<required:
+            reasons.append(reason)
+    return {
+        'result':'fail' if reasons else 'pass',
+        'reason_codes':reasons,
+        'module_id':module_id,
+        'clear_width':clear_width,
+        'clear_height':clear_height,
+        'clear_depth':clear_depth,
+    }
+
+
+def evaluate_casework_compartments(*, clear_span, compartment_widths: Sequence, partition_thickness) -> dict:
+    """Reconcile explicit compartment widths and intervening partitions to one clear span."""
+    span=finite_number(clear_span,'clear_span')
+    partition=finite_number(partition_thickness,'partition_thickness')
+    if span<=0 or partition<0:
+        raise GuardInputError('clear_span must be positive and partition_thickness nonnegative')
+    if isinstance(compartment_widths,(str,bytes)) or not isinstance(compartment_widths,Sequence) or not compartment_widths:
+        raise GuardInputError('compartment_widths must be a non-empty sequence')
+    widths=[]
+    for i,value in enumerate(compartment_widths):
+        width=finite_number(value,f'compartment_widths[{i}]')
+        if width<=0:
+            raise GuardInputError('compartment widths must be positive')
+        widths.append(width)
+    modeled=sum(widths)+partition*(len(widths)-1)
+    tolerance=max(_EPS,abs(span)*1e-9)
+    reasons=[] if abs(modeled-span)<=tolerance else ['compartment_span_mismatch']
+    return {
+        'result':'fail' if reasons else 'pass',
+        'reason_codes':reasons,
+        'clear_span':span,
+        'modeled_span':modeled,
+        'compartment_count':len(widths),
+        'partition_count':max(0,len(widths)-1),
+    }
+
+
+def evaluate_corner_casework(module: Mapping, requirements: Mapping | None = None) -> dict:
+    """Validate a simple orthogonal L-casework footprint without inventing design clearances."""
+    if not isinstance(module,Mapping):
+        raise GuardInputError('corner casework module must be a mapping')
+    if requirements is None:
+        requirements={}
+    if not isinstance(requirements,Mapping):
+        raise GuardInputError('corner casework requirements must be a mapping')
+    module_id=_string_id(module.get('id'),'module.id')
+    values={}
+    for key in ('leg_a','leg_b','depth_a','depth_b','height'):
+        value=finite_number(module.get(key),f'module.{key}')
+        if value<=0:
+            raise GuardInputError('corner casework dimensions must be positive')
+        values[key]=value
+    reasons=[]
+    if values['leg_a']<=values['depth_b']+_EPS:
+        reasons.append('corner_leg_a_not_beyond_return_depth')
+    if values['leg_b']<=values['depth_a']+_EPS:
+        reasons.append('corner_leg_b_not_beyond_return_depth')
+    for key in ('minimum_leg_a','minimum_leg_b','minimum_height'):
+        if key not in requirements:
+            continue
+        required=finite_number(requirements[key],key)
+        if required<0:
+            raise GuardInputError(f'{key} must be nonnegative')
+        actual=values[{'minimum_leg_a':'leg_a','minimum_leg_b':'leg_b','minimum_height':'height'}[key]]
+        if actual+_EPS<required:
+            reasons.append(f'{key}_not_met')
+    footprint=values['leg_a']*values['depth_a']+values['leg_b']*values['depth_b']-values['depth_a']*values['depth_b']
+    if footprint<=_EPS:
+        reasons.append('nonpositive_corner_footprint')
+    return {
+        'result':'fail' if reasons else 'pass',
+        'reason_codes':reasons,
+        'module_id':module_id,
+        'footprint_area':footprint,
+    }
+
+
+def evaluate_rectangular_fit(opening: Mapping, item: Mapping, clearances: Mapping) -> dict:
+    """Check a drawer/appliance envelope against an opening using only supplied clearances."""
+    if not isinstance(opening,Mapping) or not isinstance(item,Mapping) or not isinstance(clearances,Mapping):
+        raise GuardInputError('opening, item and clearances must be mappings')
+    opening_dims={}
+    item_dims={}
+    for key in ('width','height','depth'):
+        opening_value=finite_number(opening.get(key),f'opening.{key}')
+        item_value=finite_number(item.get(key),f'item.{key}')
+        if opening_value<=0 or item_value<=0:
+            raise GuardInputError('opening and item dimensions must be positive')
+        opening_dims[key]=opening_value
+        item_dims[key]=item_value
+    clearance_values={}
+    for key in ('left','right','top','bottom','front','back'):
+        if key not in clearances:
+            raise GuardInputError(f'clearances.{key} is required')
+        value=finite_number(clearances[key],f'clearances.{key}')
+        if value<0:
+            raise GuardInputError('clearances must be nonnegative')
+        clearance_values[key]=value
+    available={
+        'width':opening_dims['width']-clearance_values['left']-clearance_values['right'],
+        'height':opening_dims['height']-clearance_values['top']-clearance_values['bottom'],
+        'depth':opening_dims['depth']-clearance_values['front']-clearance_values['back'],
+    }
+    reasons=[]
+    for axis in ('width','height','depth'):
+        if available[axis]<=_EPS:
+            reasons.append(f'nonpositive_clear_{axis}')
+        elif item_dims[axis]>available[axis]+_EPS:
+            reasons.append(f'item_exceeds_clear_{axis}')
+    return {
+        'result':'fail' if reasons else 'pass',
+        'reason_codes':reasons,
+        'available_width':available['width'],
+        'available_height':available['height'],
+        'available_depth':available['depth'],
+        'margin_width':available['width']-item_dims['width'],
+        'margin_height':available['height']-item_dims['height'],
+        'margin_depth':available['depth']-item_dims['depth'],
     }

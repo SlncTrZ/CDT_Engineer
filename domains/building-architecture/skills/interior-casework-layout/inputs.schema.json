@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Interior Casework Layout Skill Input",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "system_id", "units", "release_target", "source_refs", "modules", "equipment"],
+  "properties": {
+    "schema_version": {"const": "0.1.0"},
+    "system_id": {"type": "string", "minLength": 1},
+    "units": {"enum": ["mm", "cm", "m", "in", "ft"]},
+    "release_target": {"enum": ["concept", "technical_draft", "design_review", "fabrication_or_construction_candidate", "ready_for_professional_review"]},
+    "source_refs": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "evidence_status", "geometry", "panels", "component_resolution", "component_id"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["base_cabinet", "wall_cabinet", "tall_cabinet", "corner_cabinet", "drawer_unit", "appliance_housing", "custom_casework"]},
+          "evidence_status": {"enum": ["observed", "specified", "derived", "inferred", "unknown", "approved_assumption"]},
+          "geometry": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["type"],
+            "properties": {
+              "type": {"enum": ["box", "corner_l"]},
+              "width": {"type": "number", "exclusiveMinimum": 0},
+              "height": {"type": "number", "exclusiveMinimum": 0},
+              "depth": {"type": "number", "exclusiveMinimum": 0},
+              "leg_a": {"type": "number", "exclusiveMinimum": 0},
+              "leg_b": {"type": "number", "exclusiveMinimum": 0},
+              "depth_a": {"type": "number", "exclusiveMinimum": 0},
+              "depth_b": {"type": "number", "exclusiveMinimum": 0}
+            },
+            "allOf": [
+              {"if": {"properties": {"type": {"const": "box"}}, "required": ["type"]}, "then": {"required": ["width", "height", "depth"]}},
+              {"if": {"properties": {"type": {"const": "corner_l"}}, "required": ["type"]}, "then": {"required": ["leg_a", "leg_b", "depth_a", "depth_b", "height"]}}
+            ]
+          },
+          "panels": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["left", "right", "top", "bottom", "back"],
+            "properties": {
+              "left": {"type": "number", "minimum": 0},
+              "right": {"type": "number", "minimum": 0},
+              "top": {"type": "number", "minimum": 0},
+              "bottom": {"type": "number", "minimum": 0},
+              "back": {"type": "number", "minimum": 0}
+            }
+          },
+          "requirements": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "minimum_clear_width": {"type": "number", "minimum": 0},
+              "minimum_clear_height": {"type": "number", "minimum": 0},
+              "minimum_clear_depth": {"type": "number", "minimum": 0},
+              "source_ref": {"type": "string", "minLength": 1}
+            }
+          },
+          "compartments": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["widths", "partition_thickness"],
+            "properties": {
+              "widths": {"type": "array", "minItems": 1, "items": {"type": "number", "exclusiveMinimum": 0}},
+              "partition_thickness": {"type": "number", "minimum": 0}
+            }
+          },
+          "panel_system_asset_id": {"type": ["string", "null"]},
+          "anchor_system_asset_id": {"type": ["string", "null"]},
+          "component_resolution": {"enum": ["resolved", "custom_allowed", "proxy_allowed_for_scope", "reduced_scope", "blocked"]},
+          "component_id": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "equipment": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "evidence_status", "envelope", "clearances", "component_resolution", "component_id"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "kind": {"enum": ["drawer", "appliance", "hardware", "other"]},
+          "evidence_status": {"enum": ["observed", "specified", "derived", "inferred", "unknown", "approved_assumption"]},
+          "envelope": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["width", "height", "depth"],
+            "properties": {
+              "width": {"type": "number", "exclusiveMinimum": 0},
+              "height": {"type": "number", "exclusiveMinimum": 0},
+              "depth": {"type": "number", "exclusiveMinimum": 0}
+            }
+          },
+          "clearances": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["left", "right", "top", "bottom", "front", "back", "source_ref"],
+            "properties": {
+              "left": {"type": "number", "minimum": 0},
+              "right": {"type": "number", "minimum": 0},
+              "top": {"type": "number", "minimum": 0},
+              "bottom": {"type": "number", "minimum": 0},
+              "front": {"type": "number", "minimum": 0},
+              "back": {"type": "number", "minimum": 0},
+              "source_ref": {"type": "string", "minLength": 1}
+            }
+          },
+          "catalog_asset_id": {"type": ["string", "null"]},
+          "component_resolution": {"enum": ["resolved", "custom_allowed", "proxy_allowed_for_scope", "reduced_scope", "blocked"]},
+          "component_id": {"type": ["string", "null"]}
+        }
+      }
+    }
+  }
+}
