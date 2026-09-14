@@ -15,6 +15,9 @@ feature_id; domain purpose; input features; dimension IDs; profile/plane/frame; 
 ## QA
 Requirement ID; independent measurement method; actual value; tolerance; face/edge/section reference; native body count/validity; uncertainty; rule outcome; artifact hash; verifier and finding disposition. Bbox/volume are supplemental.
 
+## Layer and occlusion ledger
+Freeze every source layer/view incl. background/covered/hidden-line content with visibility and evidence state; occluded items stay unknown/inferred until re-observed or approved_assumption, never absent. Final inventory is compared with the frozen ledger via `assess_layer_ledger`; host/base features commit before dependents via `order_layer_chunks`.
+
 ## Delivery
 Native and required neutral format/hash; exporter and reopening-reader identity; round-trip units/topology/dimension results; unreconstructed features; accepted approximations; standards decisions; review score/hard gates; source/pack/engine versions and replay instructions.
 

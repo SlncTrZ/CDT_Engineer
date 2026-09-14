@@ -71,6 +71,10 @@ Stage/chunk ID; semantic type; entity/system IDs; dependencies; source/catalog v
 
 Rule/requirement ID; expected semantic state; independent measured/query state; unit/tolerance when applicable; artifact hash; inventory coverage; topology/relationship evidence; finding severity/result; reviewer context.
 
+## Layer and occlusion ledger
+
+Freeze every source layer incl. background/covered/switched-off layers with visibility and evidence state; occluded items stay unknown/inferred until re-observed or approved_assumption, never absent. Final inventory is compared with the frozen ledger via `assess_layer_ledger`; host/base layers commit before dependents via `order_layer_chunks`.
+
 ## Handoff record
 
 Native/exchange/document artifacts and hashes; Design Basis/domain/profile/skill/catalog versions; included/excluded/deferred scope; proxies/custom items; unresolved structural/standards dependencies; reopen measurements; Checker verdict; explicit release-class label and limitations.

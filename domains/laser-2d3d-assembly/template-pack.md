@@ -15,5 +15,8 @@ feature_id; kind (profile | slot | slice | alignment-hole | nest); input feature
 ## QA
 Requirement ID; independent measurement method; actual value; tolerance; contour/slot/slice reference; closed-profile result; nesting extents; uncertainty; rule outcome; artifact hash; verifier and finding disposition. Bounding box alone is supplemental.
 
+## Layer and occlusion ledger
+Freeze every source layer incl. background/covered content with visibility and evidence state; photo-occluded joints stay unknown/inferred until re-observed or approved_assumption, never absent. Final layout is compared with the frozen ledger via `assess_layer_ledger`; host/base parts commit before dependents via `order_layer_chunks`.
+
 ## Delivery (drawing only)
 Native DWG + required DXF hash; exporter and reopening-reader identity; round-trip units/scale check; PDF assembly guide with part labels/quantities; unresolved joints; accepted approximations; review score/hard gates; source/pack/engine versions and replay instructions. Construction method remains the requester's responsibility.

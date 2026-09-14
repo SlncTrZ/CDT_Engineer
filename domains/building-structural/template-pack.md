@@ -64,6 +64,10 @@ Record exact standard ID/version/designation/issuer/edition/source; source verif
 
 Stage/chunk ID; semantic member/system IDs; required public software capabilities; source/profile/rule versions; native receipts; independent measurements; checkpoint/recovery evidence.
 
+## Layer and occlusion ledger
+
+Freeze every source layer incl. background/covered/switched-off layers with visibility and evidence state; occluded items stay unknown/inferred until re-observed or approved_assumption, never absent. Final inventory is compared with the frozen ledger via `assess_layer_ledger`; host/base layers commit before dependents via `order_layer_chunks`.
+
 ## QA / handoff record
 
 STR rule ID; expected/observed state; independent method; artifact identity; finding severity/result; structural-adequacy limitation; unresolved materials/loads/standards; requested/effective release; downstream responsible reviewer/action.
