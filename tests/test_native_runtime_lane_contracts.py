@@ -11,31 +11,35 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class NativeRuntimeLaneContractTests(unittest.TestCase):
-    def test_sketchup_map_tracks_current_public_registry_route_without_overclaim(self):
+    def test_sketchup_map_tracks_native_accepted_contract_and_strong_identity(self):
         data = yaml.safe_load((ROOT / "software/sketchup/engine-map.yaml").read_text(encoding="utf-8"))
         snapshot = data["source_snapshot"]
-        self.assertEqual("f54cdd247f9dc39878c4cf2eca46c68e3e38be50", snapshot["head"])
-        self.assertEqual("0.25", snapshot["contract_version"])
-        self.assertEqual(64, snapshot["public_tool_count"])
+        self.assertEqual("d9aecb07ecfae9e5ffb969f2314fafe2040c162b", snapshot["head"])
+        self.assertEqual("0.28", snapshot["contract_version"])
+        self.assertEqual(67, snapshot["public_tool_count"])
 
         by_semantic = {row["semantic"]: row for row in data["capability_mappings"]}
         registry = by_semantic["component.library_resolve"]
-        self.assertEqual("unproven", registry["support"])
+        self.assertEqual("expected", registry["support"])
         for tool in ["asset_list", "place_asset", "definition_info", "get_entity_state"]:
             self.assertIn(tool, registry["expected_public_tools"])
 
         blockers = {row["code"] for row in data["known_blockers"]}
-        self.assertIn("native_component_registry_identity_metadata_missing", blockers)
-        self.assertNotIn("native_component_registry_route_missing", blockers)
+        self.assertNotIn("native_component_registry_identity_metadata_missing", blockers)
+        self.assertNotIn("artifact_seal_missing", blockers)
+        self.assertEqual("expected", by_semantic["artifact.seal"]["support"])
+        self.assertIn("artifact_seal", by_semantic["artifact.seal"]["expected_public_tools"])
 
-    def test_sketchup_guide_distinguishes_registry_route_from_identity_proof(self):
+    def test_sketchup_guide_records_native_identity_seal_and_mesh_acceptance(self):
         text = (ROOT / "software/sketchup/OPERATING_GUIDE.md").read_text(encoding="utf-8")
-        self.assertIn("contract `0.25`", text)
+        self.assertIn("contract `0.28`", text)
         self.assertIn("`asset_list`", text)
         self.assertIn("`place_asset`", text)
-        self.assertIn("native_component_registry_identity_metadata_missing", text)
+        self.assertNotIn("native_component_registry_identity_metadata_missing", text)
         self.assertIn("SHA-256", text)
         self.assertIn("native_version", text)
+        self.assertIn("artifact_seal", text)
+        self.assertIn("create_mesh", text)
 
     def test_solidworks_map_fails_closed_on_provider_skeleton(self):
         data = yaml.safe_load((ROOT / "software/solidworks/engine-map.yaml").read_text(encoding="utf-8"))
@@ -53,7 +57,8 @@ class NativeRuntimeLaneContractTests(unittest.TestCase):
         building = (ROOT / "domains/building-architecture/benchmark-pack.md").read_text(encoding="utf-8")
         self.assertIn("asset_list", building)
         self.assertIn("place_asset", building)
-        self.assertIn("native_component_registry_identity_metadata_missing", building)
+        self.assertNotIn("native_component_registry_identity_metadata_missing", building)
+        self.assertIn("native_mapping_unresolved", building)
         self.assertIn("early", building.lower())
         self.assertIn("middle", building.lower())
         self.assertIn("late", building.lower())

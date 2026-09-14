@@ -8,158 +8,486 @@
     {
       "stage_id": "environment_preflight",
       "purpose": "Discover target host software/provider readiness before architectural execution",
-      "owning_roles": ["Chief / Lead Engineer"],
+      "owning_roles": [
+        "Chief / Lead Engineer"
+      ],
       "rule_ids": [],
-      "required_capabilities": ["execution_environment.compatible_or_typed_blocker"],
-      "software_candidates": ["autocad", "sketchup"],
+      "required_capabilities": [
+        "execution_environment.compatible_or_typed_blocker"
+      ],
+      "software_candidates": [
+        "autocad",
+        "sketchup"
+      ],
       "depends_on": [],
       "chunk_policy": "not_applicable",
       "checkpoint": "environment_inventory",
-      "stop_conditions": ["required software/provider state unknown", "version mismatch unresolved"],
-      "recovery_actions": ["rediscover_environment", "request_installation", "request_configuration", "block_for_review"],
-      "qa_gates": ["Step-0 inventory is current and compatibility is typed"]
+      "stop_conditions": [
+        "required software/provider state unknown",
+        "version mismatch unresolved"
+      ],
+      "recovery_actions": [
+        "rediscover_environment",
+        "request_installation",
+        "request_configuration",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "Step-0 inventory is current and compatibility is typed"
+      ]
     },
     {
       "stage_id": "source_interpretation",
       "purpose": "Freeze source evidence, visible feature inventory, provenance and unresolved observations",
-      "owning_roles": ["Architect / Spatial Designer", "Chief / Lead Engineer"],
-      "rule_ids": ["ARCH-01"],
-      "required_capabilities": ["evidence.source_hashes_verified", "feature.plan"],
+      "owning_roles": [
+        "Architect / Spatial Designer",
+        "Chief / Lead Engineer"
+      ],
+      "rule_ids": [
+        "ARCH-01"
+      ],
+      "required_capabilities": [
+        "evidence.source_hashes_verified",
+        "feature.plan"
+      ],
       "software_candidates": [],
-      "depends_on": ["environment_preflight"],
+      "depends_on": [
+        "environment_preflight"
+      ],
       "dependency_requirements": [
-        {"dependency_id": "domain.skill.building-source-interpretation", "required_from_release": "concept"}
+        {
+          "dependency_id": "domain.skill.building-source-interpretation",
+          "required_from_release": "concept"
+        }
       ],
       "chunk_policy": "not_applicable",
       "checkpoint": "source_feature_inventory",
-      "stop_conditions": ["critical source identity unknown", "required observed feature inventory incomplete"],
-      "recovery_actions": ["replan", "scope_reduce_with_approval", "block_for_review"],
-      "qa_gates": ["ARCH-01 provenance and source closure are explicit"]
+      "stop_conditions": [
+        "critical source identity unknown",
+        "required observed feature inventory incomplete"
+      ],
+      "recovery_actions": [
+        "replan",
+        "scope_reduce_with_approval",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "ARCH-01 provenance and source closure are explicit"
+      ]
     },
     {
       "stage_id": "semantic_building_plan",
       "purpose": "Create level/space/wall/opening/stair/facade semantic graph before native geometry",
-      "owning_roles": ["Architect / Spatial Designer"],
-      "rule_ids": ["ARCH-02", "ARCH-03", "ARCH-04", "ARCH-05", "ARCH-09"],
-      "required_capabilities": ["feature.plan", "dependency.validate"],
+      "owning_roles": [
+        "Architect / Spatial Designer"
+      ],
+      "rule_ids": [
+        "ARCH-02",
+        "ARCH-03",
+        "ARCH-04",
+        "ARCH-05",
+        "ARCH-09"
+      ],
+      "required_capabilities": [
+        "feature.plan",
+        "dependency.validate"
+      ],
       "software_candidates": [],
-      "depends_on": ["source_interpretation"],
+      "depends_on": [
+        "source_interpretation"
+      ],
       "dependency_requirements": [
-        {"dependency_id": "domain.skills.building-architecture", "required_from_release": "technical_draft"},
-        {"dependency_id": "discipline.structural-interface", "required_from_release": "design_review", "proxy_allowed_through": "concept"}
+        {
+          "dependency_id": "domain.skills.building-architecture",
+          "required_from_release": "technical_draft"
+        },
+        {
+          "dependency_id": "discipline.structural-interface",
+          "required_from_release": "design_review",
+          "proxy_allowed_through": "concept"
+        }
       ],
       "chunk_policy": "not_applicable",
       "checkpoint": "semantic_building_graph",
-      "stop_conditions": ["semantic system unresolved for requested release", "critical geometry relationship invalid", "structural interface unresolved for design review"],
-      "recovery_actions": ["replan", "scope_reduce_with_approval", "block_for_review"],
-      "qa_gates": ["levels/spaces/openings/stairs pass deterministic guards or carry typed blockers"]
+      "stop_conditions": [
+        "semantic system unresolved for requested release",
+        "critical geometry relationship invalid",
+        "structural interface unresolved for design review"
+      ],
+      "recovery_actions": [
+        "replan",
+        "scope_reduce_with_approval",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "levels/spaces/openings/stairs pass deterministic guards or carry typed blockers"
+      ]
     },
     {
       "stage_id": "technical_2d_plan",
       "purpose": "Produce bounded architectural 2D planning geometry from the approved semantic graph",
-      "owning_roles": ["Architect / Spatial Designer", "CAD/BIM Technician"],
-      "rule_ids": ["ARCH-02", "ARCH-03", "ARCH-04"],
-      "required_capabilities": ["technical_2d.create", "model.query"],
-      "software_candidates": ["autocad"],
-      "depends_on": ["semantic_building_plan"],
+      "owning_roles": [
+        "Architect / Spatial Designer",
+        "CAD/BIM Technician"
+      ],
+      "rule_ids": [
+        "ARCH-02",
+        "ARCH-03",
+        "ARCH-04"
+      ],
+      "required_capabilities": [
+        "technical_2d.create",
+        "model.query"
+      ],
+      "software_candidates": [
+        "autocad"
+      ],
+      "depends_on": [
+        "semantic_building_plan"
+      ],
       "chunk_policy": "feature_based_chunk_streaming",
       "checkpoint": "architectural_2d_checkpoint",
-      "stop_conditions": ["required public 2D capability missing", "chunk postcondition fails", "mutation state uncertain"],
-      "recovery_actions": ["reconcile_state", "compensate", "restart_from_checkpoint", "block_for_review"],
-      "qa_gates": ["2D geometry reads back against semantic identities and dimensions"]
+      "stop_conditions": [
+        "required public 2D capability missing",
+        "chunk postcondition fails",
+        "mutation state uncertain"
+      ],
+      "recovery_actions": [
+        "reconcile_state",
+        "compensate",
+        "restart_from_checkpoint",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "2D geometry reads back against semantic identities and dimensions"
+      ]
     },
     {
       "stage_id": "component_resolution",
       "purpose": "Resolve reusable building systems/components before 3D execution; forbid silent primitive substitution",
-      "owning_roles": ["Architect / Spatial Designer", "CAD/BIM Technician"],
-      "rule_ids": ["ARCH-06", "ARCH-07"],
-      "required_capabilities": ["dependency.validate", "component.library_resolve"],
-      "software_candidates": ["sketchup"],
-      "depends_on": ["technical_2d_plan"],
+      "owning_roles": [
+        "Architect / Spatial Designer",
+        "CAD/BIM Technician"
+      ],
+      "rule_ids": [
+        "ARCH-06",
+        "ARCH-07"
+      ],
+      "required_capabilities": [
+        "dependency.validate",
+        "component.library_resolve"
+      ],
+      "software_candidates": [
+        "sketchup"
+      ],
+      "depends_on": [
+        "technical_2d_plan"
+      ],
       "dependency_requirements": [
-        {"dependency_id": "catalog.building-components", "required_from_release": "technical_draft", "proxy_allowed_through": "concept"}
+        {
+          "dependency_id": "catalog.building-components",
+          "required_from_release": "technical_draft",
+          "proxy_allowed_through": "concept"
+        }
       ],
       "chunk_policy": "not_applicable",
       "checkpoint": "component_resolution_manifest",
-      "stop_conditions": ["required component family unresolved", "native catalog/library resolution route unavailable", "proxy exceeds release class", "required visible feature omitted"],
-      "recovery_actions": ["replan", "scope_reduce_with_approval", "block_for_review"],
-      "qa_gates": ["ARCH-06 component resolution and ARCH-07 completeness pass"]
+      "stop_conditions": [
+        "required component family unresolved",
+        "native catalog/library resolution route unavailable",
+        "proxy exceeds release class",
+        "required visible feature omitted"
+      ],
+      "recovery_actions": [
+        "replan",
+        "scope_reduce_with_approval",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "ARCH-06 component resolution and ARCH-07 completeness pass"
+      ]
     },
     {
       "stage_id": "detail_requirements",
       "purpose": "Derive release-aware architectural junction/detail inventory before native/detail production",
-      "owning_roles": ["Architect / Spatial Designer", "Documentation Engineer"],
-      "rule_ids": ["ARCH-07", "ARCH-08"],
-      "required_capabilities": ["dependency.validate"],
+      "owning_roles": [
+        "Architect / Spatial Designer",
+        "Documentation Engineer"
+      ],
+      "rule_ids": [
+        "ARCH-07",
+        "ARCH-08"
+      ],
+      "required_capabilities": [
+        "dependency.validate"
+      ],
       "software_candidates": [],
-      "depends_on": ["component_resolution"],
+      "depends_on": [
+        "component_resolution"
+      ],
       "dependency_requirements": [
-        {"dependency_id": "domain.skill.architectural-detail-package", "required_from_release": "design_review"}
+        {
+          "dependency_id": "domain.skill.architectural-detail-package",
+          "required_from_release": "design_review"
+        }
       ],
       "chunk_policy": "not_applicable",
       "checkpoint": "architectural_detail_inventory",
-      "stop_conditions": ["required system junction/detail intent missing", "detail dependency unresolved", "unverified detail counted as complete"],
-      "recovery_actions": ["replan", "scope_reduce_with_approval", "block_for_review"],
-      "qa_gates": ["release-aware detail inventory is complete for in-scope semantic systems"]
+      "stop_conditions": [
+        "required system junction/detail intent missing",
+        "detail dependency unresolved",
+        "unverified detail counted as complete"
+      ],
+      "recovery_actions": [
+        "replan",
+        "scope_reduce_with_approval",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "release-aware detail inventory is complete for in-scope semantic systems"
+      ]
     },
     {
       "stage_id": "native_model_execution",
       "purpose": "Build native architectural model by semantic feature/system chunks",
-      "owning_roles": ["Architect / Spatial Designer", "CAD/BIM Technician", "3D / Visualization Engineer"],
-      "rule_ids": ["ARCH-04", "ARCH-05", "ARCH-06", "ARCH-08"],
-      "required_capabilities": ["model_3d.create", "model_3d.transform", "model.query", "model.measure"],
-      "software_candidates": ["sketchup"],
-      "depends_on": ["detail_requirements"],
+      "owning_roles": [
+        "Architect / Spatial Designer",
+        "CAD/BIM Technician",
+        "3D / Visualization Engineer"
+      ],
+      "rule_ids": [
+        "ARCH-04",
+        "ARCH-05",
+        "ARCH-06",
+        "ARCH-08"
+      ],
+      "required_capabilities": [
+        "model_3d.create",
+        "model_3d.transform",
+        "model.query",
+        "model.measure"
+      ],
+      "software_candidates": [
+        "sketchup"
+      ],
+      "depends_on": [
+        "detail_requirements"
+      ],
       "chunk_policy": "feature_based_chunk_streaming",
       "checkpoint": "architectural_native_model_checkpoint",
-      "stop_conditions": ["semantic component cannot be represented truthfully", "host/topology postcondition fails", "mutation state uncertain"],
-      "recovery_actions": ["reconcile_state", "compensate", "restart_from_checkpoint", "block_for_review"],
-      "qa_gates": ["read-after-write identity/transform/host/dimension verification"]
+      "stop_conditions": [
+        "semantic component cannot be represented truthfully",
+        "host/topology postcondition fails",
+        "mutation state uncertain"
+      ],
+      "recovery_actions": [
+        "reconcile_state",
+        "compensate",
+        "restart_from_checkpoint",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "read-after-write identity/transform/host/dimension verification"
+      ]
     },
     {
       "stage_id": "independent_qa",
       "purpose": "Independently verify semantic completeness, topology/relationships and critical dimensions",
-      "owning_roles": ["Checker / QA Engineer"],
-      "rule_ids": ["ARCH-07", "ARCH-08", "ARCH-09"],
-      "required_capabilities": ["model.measure", "topology.inspect", "qa.independent_measure"],
-      "software_candidates": ["sketchup"],
-      "depends_on": ["native_model_execution"],
+      "owning_roles": [
+        "Checker / QA Engineer"
+      ],
+      "rule_ids": [
+        "ARCH-07",
+        "ARCH-08",
+        "ARCH-09"
+      ],
+      "required_capabilities": [
+        "model.measure",
+        "topology.inspect",
+        "qa.independent_measure"
+      ],
+      "software_candidates": [
+        "sketchup"
+      ],
+      "depends_on": [
+        "native_model_execution"
+      ],
       "chunk_policy": "not_applicable",
       "checkpoint": "architectural_independent_qa",
-      "stop_conditions": ["required feature missing", "relationship/topology hard gate fails", "critical dimension unmeasured"],
-      "recovery_actions": ["replan", "block_for_review"],
-      "qa_gates": ["Checker independently validates ARCH-07/08/09 evidence"]
+      "stop_conditions": [
+        "required feature missing",
+        "relationship/topology hard gate fails",
+        "critical dimension unmeasured"
+      ],
+      "recovery_actions": [
+        "replan",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "Checker independently validates ARCH-07/08/09 evidence"
+      ]
     },
     {
       "stage_id": "drawing_package",
       "purpose": "Produce and independently check human-readable plans/sections/elevations/detail references for design review",
-      "owning_roles": ["Architect / Spatial Designer", "CAD/BIM Technician", "Documentation Engineer", "Checker / QA Engineer"],
-      "rule_ids": ["ARCH-07", "ARCH-10"],
-      "required_capabilities": ["technical_2d.create", "model.query", "artifact.drawing_export", "evidence.artifact_hash_bound"],
-      "software_candidates": ["autocad"],
-      "depends_on": ["independent_qa"],
+      "owning_roles": [
+        "Architect / Spatial Designer",
+        "CAD/BIM Technician",
+        "Documentation Engineer",
+        "Checker / QA Engineer"
+      ],
+      "rule_ids": [
+        "ARCH-07",
+        "ARCH-10"
+      ],
+      "required_capabilities": [
+        "technical_2d.create",
+        "model.query",
+        "artifact.drawing_export",
+        "evidence.artifact_hash_bound"
+      ],
+      "software_candidates": [
+        "autocad"
+      ],
+      "depends_on": [
+        "independent_qa"
+      ],
       "dependency_requirements": [
-        {"dependency_id": "domain.skill.building-drawing-package", "required_from_release": "design_review"}
+        {
+          "dependency_id": "domain.skill.building-drawing-package",
+          "required_from_release": "design_review"
+        }
       ],
       "chunk_policy": "feature_based_chunk_streaming",
       "checkpoint": "architecture_drawing_package",
-      "stop_conditions": ["required view/detail/schedule missing", "drawing dimension inconsistent with verified model", "drawing revision identity stale"],
-      "recovery_actions": ["replan", "reconcile_state", "restart_from_checkpoint", "block_for_review"],
-      "qa_gates": ["human-readable drawing inventory, dimensions, details and revision identity pass independent review"]
+      "stop_conditions": [
+        "required view/detail/schedule missing",
+        "drawing dimension inconsistent with verified model",
+        "drawing revision identity stale"
+      ],
+      "recovery_actions": [
+        "replan",
+        "reconcile_state",
+        "restart_from_checkpoint",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "human-readable drawing inventory, dimensions, details and revision identity pass independent review"
+      ]
     },
     {
       "stage_id": "final_handoff",
       "purpose": "Save/reopen/hash-bind the design-review package without promoting it to construction-ready scope",
-      "owning_roles": ["Checker / QA Engineer", "Documentation Engineer"],
-      "rule_ids": ["ARCH-10"],
-      "required_capabilities": ["artifact.native_save", "artifact.reopen", "evidence.artifact_hash_bound", "evidence.sketchup_reopen_verified"],
-      "software_candidates": ["sketchup"],
-      "depends_on": ["drawing_package"],
+      "owning_roles": [
+        "Checker / QA Engineer",
+        "Documentation Engineer"
+      ],
+      "rule_ids": [
+        "ARCH-10"
+      ],
+      "required_capabilities": [
+        "artifact.native_save",
+        "artifact.reopen",
+        "evidence.artifact_hash_bound",
+        "evidence.sketchup_reopen_verified"
+      ],
+      "software_candidates": [
+        "sketchup"
+      ],
+      "depends_on": [
+        "drawing_package"
+      ],
       "chunk_policy": "not_applicable",
       "checkpoint": "architecture_design_review_handoff",
-      "stop_conditions": ["native save/reopen unavailable", "artifact hash missing/stale", "release limitations omitted"],
-      "recovery_actions": ["restart_from_checkpoint", "block_for_review"],
-      "qa_gates": ["ARCH-10 native reopen, independent remeasurement and exact release labeling pass"]
+      "stop_conditions": [
+        "native save/reopen unavailable",
+        "artifact hash missing/stale",
+        "release limitations omitted"
+      ],
+      "recovery_actions": [
+        "restart_from_checkpoint",
+        "block_for_review"
+      ],
+      "qa_gates": [
+        "ARCH-10 native reopen, independent remeasurement and exact release labeling pass"
+      ]
     }
-  ]
+  ],
+  "human_deliverables": {
+    "stage_id": "drawing_package",
+    "requirements": [
+      {
+        "requirement_id": "architecture.design_review.plans_views",
+        "category": "plans_views",
+        "required_from_release": "technical_draft",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      },
+      {
+        "requirement_id": "architecture.design_review.sections_details",
+        "category": "sections_details",
+        "required_from_release": "design_review",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      },
+      {
+        "requirement_id": "architecture.design_review.datums_references",
+        "category": "datums_references",
+        "required_from_release": "technical_draft",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      },
+      {
+        "requirement_id": "architecture.design_review.dimensions_tolerances",
+        "category": "dimensions_tolerances",
+        "required_from_release": "design_review",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      },
+      {
+        "requirement_id": "architecture.design_review.notes_specifications_legends",
+        "category": "notes_specifications_legends",
+        "required_from_release": "design_review",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      },
+      {
+        "requirement_id": "architecture.design_review.schedules_bom",
+        "category": "schedules_bom",
+        "required_from_release": "design_review",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      },
+      {
+        "requirement_id": "architecture.design_review.revision_issue_identity",
+        "category": "revision_issue_identity",
+        "required_from_release": "technical_draft",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      },
+      {
+        "requirement_id": "architecture.design_review.scale_readability",
+        "category": "scale_readability",
+        "required_from_release": "technical_draft",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      },
+      {
+        "requirement_id": "architecture.design_review.downstream_usability",
+        "category": "downstream_usability",
+        "required_from_release": "design_review",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      }
+    ]
+  }
 }

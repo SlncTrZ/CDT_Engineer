@@ -90,16 +90,17 @@ class BuildingInteriorFitoutTests(unittest.TestCase):
             self.assertTrue((SKILL/name).is_file(),name)
         schema=json.loads((SKILL/'inputs.schema.json').read_text(encoding='utf-8'))
         Draft202012Validator.check_schema(schema)
+        evidence=lambda value: {'status':'specified','value':value,'source_ref':'drawing-A3','approved_by':None}
         fixture={
-            'schema_version':'0.1.0',
+            'schema_version':'0.2.0',
             'system_id':'kitchen-01',
             'units':'mm',
             'release_target':'design_review',
             'source_refs':['drawing-A3'],
             'modules':[{
-                'id':'base-01','kind':'base_cabinet','evidence_status':'specified',
-                'geometry':{'type':'box','width':900,'height':720,'depth':600},
-                'panels':{'left':18,'right':18,'top':18,'bottom':18,'back':9},
+                'id':'base-01','kind':'base_cabinet',
+                'geometry':{'type':'box','width':evidence(900),'height':evidence(720),'depth':evidence(600)},
+                'panels':{key:evidence(value) for key,value in {'left':18,'right':18,'top':18,'bottom':18,'back':9}.items()},
                 'component_resolution':'custom_allowed','component_id':None,
             }],
             'equipment':[],

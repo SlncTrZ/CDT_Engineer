@@ -18,11 +18,11 @@ class SoftwareGuideTests(unittest.TestCase):
   text=(ROOT/'software/autocad/OPERATING_GUIDE.md').read_text()
   for token in ['feature_execute','native_integrity_status','artifact_seal','10,000']:
    self.assertIn(token,text)
- def test_sketchup_guide_recognizes_native_lifecycle_but_not_seal(self):
+ def test_sketchup_guide_recognizes_native_lifecycle_identity_mesh_and_seal(self):
   text=(ROOT/'software/sketchup/OPERATING_GUIDE.md').read_text()
-  for token in ['model_save','model_open','model_export','artifact_seal_missing']:
+  for token in ['model_save','model_open','model_export','artifact_seal','artifact_verify','create_mesh','SHA-256','native_version']:
    self.assertIn(token,text)
-  self.assertIn('no content-addressed `artifact.seal`',text)
+  self.assertNotIn('artifact_seal_missing',text)
  def test_solidworks_does_not_claim_transaction_atomicity(self):
   text=(ROOT/'software/solidworks/OPERATING_GUIDE.md').read_text()
   self.assertIn('exact_transaction_mode_unproven',text)

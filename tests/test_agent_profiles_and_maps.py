@@ -78,19 +78,19 @@ class AgentProfileAndMapTests(unittest.TestCase):
     def test_sketchup_map_matches_current_public_contract_and_lifecycle(self):
         data=yaml.safe_load((ROOT/'software/sketchup/engine-map.yaml').read_text(encoding='utf-8'))
         self.assertEqual('0.1.0',data['source_snapshot']['provider_version'])
-        self.assertEqual('0.25',data['source_snapshot']['contract_version'])
-        self.assertEqual(64,data['source_snapshot']['public_tool_count'])
+        self.assertEqual('0.28',data['source_snapshot']['contract_version'])
+        self.assertEqual(67,data['source_snapshot']['public_tool_count'])
         by_semantic={x['semantic']:x for x in data['capability_mappings']}
         self.assertEqual('expected',by_semantic['artifact.native_save']['support'])
         self.assertEqual(['model_save','model_save_as'],by_semantic['artifact.native_save']['expected_public_tools'])
         self.assertEqual('expected',by_semantic['artifact.reopen']['support'])
         self.assertIn('model_open',by_semantic['artifact.reopen']['expected_public_tools'])
-        self.assertEqual('blocked',by_semantic['artifact.seal']['support'])
-        self.assertEqual('unproven',by_semantic['component.library_resolve']['support'])
+        self.assertEqual('expected',by_semantic['artifact.seal']['support'])
+        self.assertEqual('expected',by_semantic['component.library_resolve']['support'])
         for required in ['asset_list','place_asset','definition_info','get_entity_state']:
             self.assertIn(required,by_semantic['component.library_resolve']['expected_public_tools'])
         tools={t for row in data['capability_mappings'] for t in row.get('expected_public_tools',[])}
-        for required in ['transform_entity','material_assign','asset_list','place_asset','model_export','model_save','model_open']:
+        for required in ['transform_entity','material_assign','asset_list','place_asset','create_mesh','query_overlap','artifact_seal','artifact_verify','model_export','model_save','model_open']:
             self.assertIn(required,tools)
         for stale in ['transform_component','set_material','export_scene']:
             self.assertNotIn(stale,tools)

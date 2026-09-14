@@ -1,53 +1,84 @@
 # SketchUp Operating Guide
 
 > Documentation class: PUBLIC_SOFTWARE_GUIDE
-Version: 0.4.0 · Source contract: provider `0.1.0`, contract `0.25`, 64 tools · Measured SketchUp 2024 `24.0.594` / Ruby `3.2.2`.
+Version: 0.5.0 · Source contract: provider `0.1.0`, contract `0.28`, 67 tools · Measured SketchUp 2024 `24.0.594` / Ruby `3.2.2` · Accepted source revision `d9aecb07ecfae9e5ffb969f2314fafe2040c162b`.
 
 ## Step-0
-Call `system_status` and `system_capabilities`; require a reachable bridge, active model, observed SketchUp/Ruby runtime, matching contract/capability fingerprint and the exact required tool descriptors. Source/live-acceptance history does not replace current runtime proof.
+Call `system_status` and `system_capabilities`; require a reachable bridge, active model, observed SketchUp/Ruby runtime, matching provider contract/capability fingerprint and the exact required capability descriptors. The source revision and native-acceptance history below establish what has been measured; they are **not current-run runtime proof**. Block if the live runtime cannot reproduce the required capability state.
 
 ## Compatibility
-Use the measured 2024 runtime as the current accepted baseline. Other major releases remain unclaimed until separately tested. Prefer capability descriptors over prose: `read_only`, `strict_mutation`, `external_side_effect` and `deprecated_legacy` are materially different execution classes.
+SketchUp 2024 `24.0.594` / Ruby `3.2.2` is the measured contract-0.28 baseline. Other major releases remain unclaimed until separately tested. Select paths from machine-readable capability metadata: `read_only`, `strict_mutation`, `external_side_effect` and `deprecated_legacy` have different safety/recovery semantics.
 
 ## Semantic capability map
-Current strict/public integration uses `execute_geometry`, `create_component`, `place_instance`, `asset_list`, `place_asset`, `transform_entity`/move/rotate/scale/mirror, `material_assign`, `get_entity_state`, `definition_info`, `measure_distance`, `query_topology`, `model_save/model_save_as`, `model_open`, and `model_export`. Native save/open/export are no longer source blockers. A true content-addressed `artifact.seal`/provider hash primitive is still absent.
+Current integration uses `execute_geometry`, `create_mesh`, `create_component`, `place_instance`, `asset_list`, `place_asset`, strict transforms, `material_assign`, `get_entity_state`, `definition_info`, `measure_distance`, `query_topology`, `query_overlap`, `model_save/model_save_as`, `model_open`, `model_export`, `artifact_seal` and `artifact_verify`.
 
-The owner-curated component registry route now exists: `asset_list` enumerates allowlisted `asset_key` entries and `place_asset` loads the bound `.skp` through the native definition library before placing an instance. `get_entity_state`/`definition_info` can read back the resulting native definition identity. This closes the old **route-missing** statement, but it does **not** yet satisfy strong Engineering Asset Catalog resolution. The public registry metadata exposes key/name/file/size, not a provider-verified SHA-256 plus `native_version` bound to the exact bytes loaded. Therefore `component.library_resolve` remains `unproven` for release classes that require exact catalog-native identity, with blocker `native_component_registry_identity_metadata_missing`.
+`component.library_resolve` is now an accepted provider capability: `asset_list` verifies exact file SHA-256 + `native_version`; `place_asset` re-verifies bytes around native load, binds identity to the loaded definition and fails closed on incompatible cache/reuse or later definition-geometry drift. `get_entity_state`/`definition_info` expose the accepted definition identity. The native 0.28 acceptance also exercised CDT_Engineer's catalog resolver with matching evidence (PASS) and mismatched SHA-256 (BLOCK).
+
+This **does not populate product catalog data automatically**. A Building catalog family whose `native_mappings.sketchup` is still `unresolved` continues to block as `native_mapping_unresolved`; QA fixtures must never be promoted into production catalog mappings merely because the provider can resolve strong identities.
+
+`model.measure` now includes exact bounded manifold-solid relation/clearance evidence through `measure_distance`/`query_overlap`, while `create_mesh` is the generic bounded realization primitive for Engineer-planned loft/profile/curved geometry. Shape meaning and tessellation remain Engineer responsibilities.
 
 ## Feature chunks
-Execute one bounded semantic feature at a time and preserve receipt context:
+Execute one bounded semantic feature at a time and preserve receipt/context/identity evidence:
+
 ```text
-get_entity_state / context query
-→ strict mutation with if_context + if_match where applicable
-→ operation receipt (affected PIDs, fingerprints, validation, rollback)
-→ independent query/measurement
-→ next feature
+Step-0 capability snapshot
+→ semantic source + dependency resolution
+→ Engineer deterministic geometry/catalog plan
+→ strict mutation (if_context / if_match / target_context where applicable)
+→ operation receipt + exact affected set
+→ independent read-back / measurement
+→ checkpoint
+→ next dependent feature
 ```
-For explicitly approved custom component systems, compose/create once then place instances by exact definition GUID and absolute transforms. For registry-backed assets, query `asset_list` first, require the intended `asset_key`, then use `place_asset` only when the workflow's identity evidence requirement is satisfied. `place_asset` is valid generic native placement; it must not be promoted to a strong catalog-resolution PASS until SHA-256/`native_version` identity is proven by an accepted public route.
+
+For complex geometry, CDT_Engineer plans a bounded indexed mesh; `create_mesh` consumes only the vertices/faces and validates provider budgets. For registry-backed assets, resolve the exact catalog mapping first, require matching `asset_key + sha256 + native_version` in current `asset_list`, place through `place_asset`, then independently read back definition/instance identity.
 
 ## Transaction and recovery
-Strict mutations, including `place_asset`, use the provider Semantic State Loop with native operation, semantic validation before commit, and verified rollback according to the capability descriptor. Unknown asset keys, invalid registry paths, unsupported file types and oversized assets must fail before native placement. On a middle-operation failure, verify rollback by reconciling context/entity fingerprints. On uncertain client state, query current context/entity/definition state before retrying; never blindly replay non-idempotent `place_asset`.
+Strict mutations use the provider Semantic State Loop and commit only after semantic/affected-set validation. Contract 0.28 native evidence includes:
 
-Document save/open/export are `external_side_effect`, not native transactions. A late save/reopen error therefore requires explicit file/model reconciliation and cannot be described as transactional rollback.
+- three-level nested target edit plus verified caller-context restoration;
+- forced mesh expectation failure with verified rollback;
+- malformed/over-budget mesh rejection before mutation;
+- middle-chunk failure with the prior committed chunk preserved;
+- uncertain completion reconciled from actual object identity before action;
+- explicit compensation restoring the semantic baseline without duplicate replay.
+
+Never blindly retry non-idempotent placement or creation after timeout/uncertain completion. Reconcile context, PID, definition GUID, semantic fingerprint and expected object count first.
+
+Document/artifact operations are `external_side_effect` or read-only verification, not SketchUp transactions. Their recovery is file/model reconciliation, not undo semantics.
 
 ## Chunk budgets
-Respect capability metadata bounds: active-context object/fingerprint budgets, 1..500 entity composition sets, arrays up to 100 with projected-load limits, geometry point/segment limits, bridge frame limits and registry asset size caps. Re-measure on another SketchUp version/hardware before advertising stronger budgets.
+Respect the live capability descriptor. The accepted 0.28 bounds include, among others: nested context depth 32; indexed mesh up to 2048 vertices, 4096 faces, 16 vertices/face and 32768 index references; exact-spatial triangulation/pair-test budgets; registry entry/hash/file-size budgets; bridge frame bounds; semantic fingerprint/object limits; and artifact sealing up to the declared byte cap. Do not raise limits merely to force a benchmark through.
 
 ## Read-after-write
-Verify persistent ID, context revision, semantic fingerprint, transform/hierarchy/material and explicit-unit geometry. Registry placement additionally verifies `asset_key` receipt metadata and the resulting definition GUID. These facts still do not substitute for a missing SHA-256/`native_version` binding. Site/Building handoff must reopen the saved SKP with `model_open` and independently re-measure required geometry/relationships before release.
+For semantic geometry verify persistent ID, context revision, semantic fingerprint, transform/hierarchy, topology/bounds and required exact measurements. Registry placement additionally verifies exact `asset_key`, SHA-256, `native_version`, definition GUID and definition geometry identity. Nested instance-specific edits require `make_unique` first when shared-definition mutation is not intended.
+
+For exact spatial QA, use the provider's manifold-solid `disjoint|touching|penetrating` result and surface clearance rather than AABB overlap. Native acceptance includes a rotated case where bounding boxes overlap but solids are correctly reported disjoint.
+
+Site/Building handoff must save, seal, reopen and independently re-measure the accepted artifact when the release workflow requires those gates.
 
 ## UI behavior
-Camera/scene and viewport evidence are supplemental. Presentation state must not substitute for semantic state or geometry verification.
+Camera/scene and viewport evidence are supplemental. Presentation state must not substitute for semantic geometry, identity or measurement evidence.
 
 ## Artifact lifecycle
-`model_save`/`model_save_as` and `model_open` provide rooted native SKP lifecycle; `model_export` provides rooted DAE/KMZ (plus raster view export). These paths have historical live acceptance on the measured runtime but still require Step-0 proof per run. CDT_Engineer may compute an external SHA-256 after a stable save when the workflow permits, but the provider currently has no content-addressed `artifact.seal`/manifest primitive; do not claim sealed SKP provenance from save/open alone.
+`model_save`/`model_save_as`, `model_open` and `model_export` provide rooted native lifecycle. Contract 0.28 adds provider-native content-addressed `artifact_seal`/`artifact_verify`:
+
+1. save the active rooted SKP to stable bytes;
+2. `artifact_seal` hashes source/copy, creates accepted `<sha256>.skp` + manifest and returns the content identity;
+3. mutation makes the prior seal stale until the model is reconciled/saved;
+4. if saved bytes change, reseal to a new SHA-256;
+5. reopen the exact model and run `artifact_verify` plus independent geometry/identity checks.
+
+Native acceptance proves seal/verify, stale-after-mutation, changed-byte reseal and verify-after-reopen.
 
 ## Known blockers
-- `source_snapshot_not_runtime_proof`
-- `artifact_seal_missing`
-- `native_component_registry_identity_metadata_missing` — `asset_list`/`place_asset` exist, but strong catalog release still lacks provider-verified SHA-256 and `native_version` identity for the loaded registry asset
-- `model_world_coordinate_input_unclaimed`
-- `legacy_mutation_paths_deprecated`
+- `source_snapshot_not_runtime_proof` — accepted source/runtime history never replaces Step-0 proof for the current run.
+- `model_world_coordinate_input_unclaimed` — strict public coordinates are `active_context` / target-local nested context; no implicit world conversion.
+- `legacy_mutation_paths_deprecated` — autonomous workflows use preferred strict paths.
+- Per-asset `native_mapping_unresolved` is a catalog-data blocker where a semantic family lacks an actual curated SketchUp mapping; it is **not** a provider identity-capability failure.
 
 ## Benchmarks
-Positive source/runtime route: Step-0 → `asset_list` → bounded `place_asset` → definition/entity read-back → native save → reopen → independent measurement, when all required identity evidence is available. Negative: unknown asset, corrupt/mismatched identity, registry path escape, oversized asset, stale context/entity guards, middle-operation rollback, uncertain timeout without blind retry, wrong unit/coordinate space, save/open path escape, failed reopen verification, or a release requiring provider-native content-addressed sealing. Strong Building catalog acceptance remains BLOCKED until the registry identity metadata blocker is closed.
+Contract 0.28 was accepted natively on SketchUp 2024 through the public MCP route. Positive evidence covers nested edit, strong asset identity + Engineer resolver E2E, tetra/frustum/four-section loft/ellipsoid/rounded/open-molding mesh realization, exact clearance/touching/penetration/rotated-disjoint queries, recovery reconciliation, artifact seal and save/reopen. Negative evidence covers wrong hash/version, missing/oversized/changed asset bytes, used-definition identity mismatch, malformed/over-budget mesh, forced rollback, non-manifold spatial input, stale artifact evidence and shared-definition geometry drift.
+
+A production Building benchmark must still provide real native mappings for every required catalog asset. If one is unresolved, block that dependency rather than substituting the acceptance fixture or a visually similar primitive.

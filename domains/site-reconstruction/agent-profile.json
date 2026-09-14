@@ -106,6 +106,12 @@
       ],
       "qa_gates": [
         "SITE-02 and SITE-03 pass or typed unknown/block"
+      ],
+      "dependency_requirements": [
+        {
+          "dependency_id": "domain.skill.site-registration-reconstruction",
+          "required_from_release": "concept"
+        }
       ]
     },
     {

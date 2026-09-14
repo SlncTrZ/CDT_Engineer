@@ -108,6 +108,12 @@
       ],
       "qa_gates": [
         "MECH-03/04 pass"
+      ],
+      "dependency_requirements": [
+        {
+          "dependency_id": "domain.skill.mechanical-feature-reconstruction",
+          "required_from_release": "technical_draft"
+        }
       ]
     },
     {
@@ -221,5 +227,82 @@
         "MECH-08 and review rubric hard gates pass"
       ]
     }
-  ]
+  ],
+  "human_deliverables": {
+    "stage_id": "neutral_export_and_release",
+    "requirements": [
+      {
+        "requirement_id": "mechanical.professional_review.plans_views",
+        "category": "plans_views",
+        "required_from_release": "technical_draft",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      },
+      {
+        "requirement_id": "mechanical.professional_review.sections_details",
+        "category": "sections_details",
+        "required_from_release": "design_review",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      },
+      {
+        "requirement_id": "mechanical.professional_review.datums_references",
+        "category": "datums_references",
+        "required_from_release": "technical_draft",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      },
+      {
+        "requirement_id": "mechanical.professional_review.dimensions_tolerances",
+        "category": "dimensions_tolerances",
+        "required_from_release": "design_review",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      },
+      {
+        "requirement_id": "mechanical.professional_review.notes_specifications_legends",
+        "category": "notes_specifications_legends",
+        "required_from_release": "design_review",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      },
+      {
+        "requirement_id": "mechanical.professional_review.schedules_bom",
+        "category": "schedules_bom",
+        "required_from_release": "design_review",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      },
+      {
+        "requirement_id": "mechanical.professional_review.revision_issue_identity",
+        "category": "revision_issue_identity",
+        "required_from_release": "technical_draft",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      },
+      {
+        "requirement_id": "mechanical.professional_review.scale_readability",
+        "category": "scale_readability",
+        "required_from_release": "technical_draft",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      },
+      {
+        "requirement_id": "mechanical.professional_review.downstream_usability",
+        "category": "downstream_usability",
+        "required_from_release": "design_review",
+        "gate": "hard",
+        "reviewer_role": "Checker / QA Engineer",
+        "requires_independent_review": true
+      }
+    ]
+  }
 }

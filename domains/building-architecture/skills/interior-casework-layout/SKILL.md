@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_DOMAIN
 
-`skill_id`: `interior-casework-layout` · Version `0.1.0` · Domain `building-architecture` · Lifecycle `pilot`.
+`skill_id`: `interior-casework-layout` · Version `0.2.0` · Domain `building-architecture` · Lifecycle `pilot`.
 
 ## Intent
 
@@ -16,12 +16,12 @@ This skill does not claim fabrication-ready joinery, structural anchorage adequa
 
 - Design Basis purpose and release target are explicit.
 - Source identities/hashes and dimensional anchors are frozen.
-- `inputs.schema.json` validates the casework/equipment input package.
+- `inputs.schema.json` v0.2.0 validates the casework/equipment input package. Critical numeric geometry, panel, compartment, envelope and clearance values carry field-level evidence (`status`, `value`, `source_ref`, approval where applicable); package-level provenance alone is insufficient.
 - Every dimension, panel thickness and required clearance preserves `observed|specified|derived|inferred|unknown|approved_assumption` provenance through its source record.
 - Required catalog/custom/proxy decisions are resolved under ARCH-06 and the Release Scope Policy.
 - Step-0 confirms the selected SketchUp runtime/provider and exact required public capabilities before native execution.
 
-Unknown panel thickness, appliance envelope, drawer clearance, anchor requirement or critical dimension is not replaced with a convenience default. It blocks the dependent check or causes an explicitly approved lower-scope path.
+Unknown panel thickness, appliance envelope, drawer clearance, anchor requirement or critical dimension is not replaced with a convenience default. `validate_casework_input_package` also enforces source membership, unique semantic IDs, evidence-state release ceilings and resolved/proxy/reduced-scope cross-field invariants before the requested release can pass.
 
 ## Decision boundary
 
@@ -38,7 +38,7 @@ A visual image may establish observed/inferred arrangement intent, but it must n
 - `evaluate_corner_casework`: validates a simple orthogonal L-footprint and rejects nonphysical return geometry;
 - `evaluate_rectangular_fit`: checks drawer/appliance envelopes against an opening using explicitly supplied six-side clearances.
 
-No function embeds universal cabinet dimensions, drawer gaps, appliance clearances, panel thickness or code/manufacturer values.
+No function embeds universal cabinet dimensions, drawer gaps, appliance clearances, panel thickness or code/manufacturer values. `domains.building_architecture.geometry_planner` additionally provides bounded indexed-mesh planning for equal-ring lofts and profile sweeps, including self-intersection rejection, executor-aligned mesh budgets and explicit approximation-deviation gates.
 
 ## Rules / release effects
 
@@ -53,7 +53,7 @@ No function embeds universal cabinet dimensions, drawer gaps, appliance clearanc
 
 The Building Engineering Asset Catalog includes pilot semantic families for `casework_panel_system`, `drawer_system`, `appliance_envelope` and `casework_anchor_system`. These records describe professional identity and required parameters; they are not proof that a native SketchUp asset exists.
 
-Until CDT-SketchUp provides provider-verified registry identity binding for exact bytes (`sha256` + `native_version`) and the mapping is populated, strong registry-backed design-review resolution remains blocked by `native_component_registry_identity_metadata_missing`. An explicitly bounded custom casework system may still be used when the release policy and workflow permit it, with its geometry/material/identity evidence independently verified.
+CDT-SketchUp contract 0.28 now provides and natively verifies exact registry identity binding for loaded bytes (`asset_key` + `sha256` + `native_version`) plus definition read-back. Strong registry-backed design-review resolution therefore depends on the **actual semantic asset mapping and current registry/runtime evidence**, not on a missing provider primitive. If the selected catalog entry still has `native_mappings.sketchup` unresolved, the dependency blocks as `native_mapping_unresolved`; do not substitute a QA fixture or invent identity metadata. An explicitly bounded custom casework system may still be used when release policy permits it, with geometry/material/identity evidence independently verified.
 
 ## Workflow
 
@@ -79,7 +79,7 @@ Never blindly replay a non-idempotent asset/component placement after timeout.
 
 Required semantics depend on the case but commonly include `model_3d.create`, `model_3d.transform`, `model.query`, `model.measure`, `topology.inspect`, `artifact.native_save` and `artifact.reopen`. Registry-backed components additionally require `component.library_resolve` at the release strength being claimed.
 
-Native Ruby/SketchUp API implementation remains in CDT-SketchUp. This skill must not bypass the public engine contract with direct Ruby scripts.
+For bounded profile/molding/loft/curved work, the Engineer produces a generic indexed-mesh recipe through `plan_loft_mesh` / `plan_profile_sweep`; the selected engine must expose a compatible bounded mesh primitive. Native Ruby/SketchUp API implementation remains in CDT-SketchUp. This skill must not bypass the public engine contract with direct Ruby scripts.
 
 ## Completeness / QA
 

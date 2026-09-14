@@ -1,5 +1,5 @@
 """Building Architecture deterministic semantic and geometry guards.
-Wing: code | Topic: building-architecture | Updated: 2026-09-14 09:00
+Wing: code | Topic: building-architecture | Updated: 2026-09-14 10:18
 """
 from __future__ import annotations
 
@@ -9,6 +9,14 @@ from domains.guard_primitives import GuardInputError, finite_number
 from execution.release_scope import RELEASE_CLASSES
 
 _EPS=1e-9
+_CASEWORK_EVIDENCE_MAX_RELEASE={
+    'observed':'design_review',
+    'specified':'design_review',
+    'derived':'design_review',
+    'approved_assumption':'design_review',
+    'inferred':'concept',
+    'unknown':None,
+}
 
 
 def _string_id(value, name: str) -> str:
@@ -442,4 +450,140 @@ def evaluate_rectangular_fit(opening: Mapping, item: Mapping, clearances: Mappin
         'margin_width':available['width']-item_dims['width'],
         'margin_height':available['height']-item_dims['height'],
         'margin_depth':available['depth']-item_dims['depth'],
+    }
+
+
+def _iter_casework_evidence(item: Mapping, item_id: str):
+    geometry=item.get('geometry',{})
+    if isinstance(geometry,Mapping):
+        for key,value in geometry.items():
+            if key!='type':
+                yield f'{item_id}.geometry.{key}',value
+    panels=item.get('panels',{})
+    if isinstance(panels,Mapping):
+        for key,value in panels.items():
+            yield f'{item_id}.panels.{key}',value
+    requirements=item.get('requirements',{})
+    if isinstance(requirements,Mapping):
+        for key,value in requirements.items():
+            yield f'{item_id}.requirements.{key}',value
+    compartments=item.get('compartments')
+    if isinstance(compartments,Mapping):
+        widths=compartments.get('widths',[])
+        if isinstance(widths,Sequence) and not isinstance(widths,(str,bytes)):
+            for index,value in enumerate(widths):
+                yield f'{item_id}.compartments.widths[{index}]',value
+        if 'partition_thickness' in compartments:
+            yield f'{item_id}.compartments.partition_thickness',compartments['partition_thickness']
+    envelope=item.get('envelope',{})
+    if isinstance(envelope,Mapping):
+        for key,value in envelope.items():
+            yield f'{item_id}.envelope.{key}',value
+    clearances=item.get('clearances',{})
+    if isinstance(clearances,Mapping):
+        for key,value in clearances.items():
+            yield f'{item_id}.clearances.{key}',value
+
+
+def validate_casework_input_package(payload: Mapping) -> dict:
+    """Fail closed on provenance and semantic-resolution invariants for casework skill v0.2.
+
+    JSON Schema validates structural shape. This validator covers cross-record rules that
+    JSON Schema cannot express cleanly: unique semantic IDs, package source membership,
+    provenance release ceilings and proxy/reduced-scope ceilings.
+    """
+    if not isinstance(payload,Mapping):
+        raise GuardInputError('casework input package must be a mapping')
+    release_target=payload.get('release_target')
+    if release_target not in {'concept','technical_draft','design_review'}:
+        raise GuardInputError('interior-casework-layout supports concept through design_review')
+    source_refs=payload.get('source_refs')
+    if isinstance(source_refs,(str,bytes)) or not isinstance(source_refs,Sequence) or not source_refs:
+        raise GuardInputError('source_refs must be a non-empty sequence')
+    if any(not isinstance(ref,str) or not ref for ref in source_refs):
+        raise GuardInputError('source_refs must contain non-empty strings')
+    declared_sources=set(source_refs)
+    requested_index=RELEASE_CLASSES.index(release_target)
+    reasons=[]; limitations=[]; seen=set(); evidence_count=0
+
+    groups=[]
+    for group_name in ('modules','equipment'):
+        raw=payload.get(group_name,[])
+        if isinstance(raw,(str,bytes)) or not isinstance(raw,Sequence):
+            raise GuardInputError(f'{group_name} must be a sequence')
+        groups.extend(raw)
+
+    for index,item in enumerate(groups):
+        if not isinstance(item,Mapping):
+            raise GuardInputError('casework modules/equipment must be mappings')
+        item_id=_string_id(item.get('id'),f'items[{index}].id')
+        if item_id in seen:
+            reasons.append(f'duplicate_semantic_id:{item_id}')
+        seen.add(item_id)
+
+        for field_path,evidence in _iter_casework_evidence(item,item_id):
+            evidence_count+=1
+            if not isinstance(evidence,Mapping):
+                raise GuardInputError(f'{field_path} must be a typed evidence number')
+            status=evidence.get('status')
+            if status not in _CASEWORK_EVIDENCE_MAX_RELEASE:
+                raise GuardInputError(f'{field_path}: unsupported evidence status')
+            source_ref=evidence.get('source_ref')
+            maximum=_CASEWORK_EVIDENCE_MAX_RELEASE[status]
+            if status=='unknown':
+                reasons.append(f'critical_evidence_unknown:{field_path}')
+                continue
+            if not isinstance(source_ref,str) or not source_ref:
+                reasons.append(f'evidence_source_missing:{field_path}')
+            elif source_ref not in declared_sources:
+                reasons.append(f'evidence_source_not_declared:{field_path}:{source_ref}')
+            if maximum is not None and requested_index>RELEASE_CLASSES.index(maximum):
+                reasons.append(f'evidence_state_exceeds_release:{field_path}:{status}:{maximum}')
+            if status=='approved_assumption':
+                approved_by=evidence.get('approved_by')
+                if not isinstance(approved_by,str) or not approved_by:
+                    reasons.append(f'approved_assumption_missing_approval:{field_path}')
+
+        resolution=item.get('component_resolution')
+        if resolution=='resolved':
+            component_id=item.get('component_id')
+            if not isinstance(component_id,str) or not component_id:
+                reasons.append(f'resolved_component_identity_missing:{item_id}')
+        elif resolution=='proxy_allowed_for_scope':
+            proxy=item.get('proxy')
+            if not isinstance(proxy,Mapping):
+                reasons.append(f'proxy_metadata_missing:{item_id}')
+            else:
+                maximum=proxy.get('maximum_release')
+                if maximum not in RELEASE_CLASSES:
+                    raise GuardInputError(f'{item_id}: invalid proxy maximum_release')
+                if requested_index>RELEASE_CLASSES.index(maximum):
+                    reasons.append(f'proxy_not_valid_for_release:{item_id}:{maximum}')
+                else:
+                    limitations.append(f'proxy:{item_id}:{maximum}')
+        elif resolution=='reduced_scope':
+            reduced=item.get('reduced_scope')
+            if not isinstance(reduced,Mapping):
+                reasons.append(f'reduced_scope_metadata_missing:{item_id}')
+            else:
+                maximum=reduced.get('maximum_release')
+                if maximum not in RELEASE_CLASSES:
+                    raise GuardInputError(f'{item_id}: invalid reduced-scope maximum_release')
+                if requested_index>RELEASE_CLASSES.index(maximum):
+                    reasons.append(f'reduced_scope_exceeded:{item_id}:{maximum}')
+                else:
+                    limitations.append(f'reduced_scope:{item_id}:{maximum}')
+        elif resolution=='blocked':
+            reasons.append(f'component_resolution_blocked:{item_id}')
+        elif resolution!='custom_allowed':
+            raise GuardInputError(f'{item_id}: invalid component_resolution')
+
+    reasons=list(dict.fromkeys(reasons))
+    return {
+        'result':'blocked' if reasons else 'pass',
+        'reason_codes':reasons,
+        'limitations':list(dict.fromkeys(limitations)),
+        'semantic_item_count':len(groups),
+        'evidence_field_count':evidence_count,
+        'release_target':release_target,
     }

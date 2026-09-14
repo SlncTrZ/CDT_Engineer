@@ -1,16 +1,18 @@
-map_version: 0.4.0
+map_version: 0.5.0
 software_id: sketchup
 purpose: Current public-contract semantic capability map for Site and Building 3D handoff.
 source_snapshot:
   repository: CDT-SketchUp
-  head: f54cdd247f9dc39878c4cf2eca46c68e3e38be50
+  head: d9aecb07ecfae9e5ffb969f2314fafe2040c162b
   provider_version: 0.1.0
-  contract_version: '0.25'
-  public_tool_count: 64
+  contract_version: '0.28'
+  public_tool_count: 67
   measured_application_version: 24.0.594
   measured_ruby_version: 3.2.2
   working_tree_dirty_at_inspection: false
   runtime_proof: false
+  native_acceptance: accepted
+  native_acceptance_date: '2026-09-14'
 runtime_preflight:
   required: true
   discover:
@@ -22,28 +24,28 @@ runtime_preflight:
 capability_mappings:
 - semantic: model_3d.create
   support: expected
-  expected_public_tools: [execute_geometry, create_component, place_instance, place_asset, create_polyline, create_rectangle, create_circle, create_arc, create_polygon]
-  verification: strict operation receipt with affected PIDs and semantic read-back
+  expected_public_tools: [execute_geometry, create_component, place_instance, place_asset, create_polyline, create_rectangle, create_circle, create_arc, create_polygon, create_mesh]
+  verification: strict operation receipt with exact affected PIDs and semantic read-back; contract 0.28 native acceptance includes bounded indexed mesh, nested target context and rollback negatives
 - semantic: component.library_resolve
-  support: unproven
+  support: expected
   expected_public_tools: [asset_list, place_asset, definition_info, get_entity_state]
-  verification: public registry enumeration and strict asset-key placement exist, but registry output does not cryptographically bind SHA-256 and native_version to the bytes loaded into the native definition; strong Engineering Asset Catalog resolution therefore remains blocked
+  verification: registry evidence binds exact asset_key + SHA-256 + native_version to verified file bytes and loaded definition geometry; native positive/negative/reuse/drift/save-reopen evidence and CDT_Engineer catalog-resolver E2E passed on SketchUp 2024
 - semantic: model_3d.transform
   support: expected
   expected_public_tools: [transform_entity, move_entity, rotate_entity, scale_entity, mirror_entity]
-  verification: strict receipt, context/fingerprint guards and transform read-back
+  verification: strict receipt, context/fingerprint guards, optional bounded nested target and transform read-back
 - semantic: model_3d.material
   support: expected
   expected_public_tools: [material_assign, material_apply_texture, material_info]
   verification: strict assignment/read-back; texture scale explicit where used
 - semantic: model.query
   support: expected
-  expected_public_tools: [object_list, object_get, get_entity_state, definition_info, asset_list]
-  verification: persistent-ID/context-bound semantic state plus neutral registry listing where applicable
+  expected_public_tools: [object_list, object_get, get_entity_state, definition_info, asset_list, query_overlap]
+  verification: persistent-ID/context-bound semantic state, exact registry evidence and bounded spatial relation query where applicable
 - semantic: model.measure
   support: expected
   expected_public_tools: [measure_distance, query_topology, query_overlap, get_entity_state]
-  verification: explicit-unit measurement/topology facts
+  verification: explicit-unit topology plus exact bounded manifold-solid disjoint/touching/penetrating and surface-clearance evidence; non-manifold/over-budget cases fail closed
 - semantic: artifact.exchange_export
   support: expected
   expected_public_tools: [model_export]
@@ -51,31 +53,27 @@ capability_mappings:
 - semantic: artifact.native_save
   support: expected
   expected_public_tools: [model_save, model_save_as]
-  verification: rooted SKP save lifecycle is live-accepted historically; current observed runtime capability is still required
+  verification: rooted SKP save lifecycle is measured on SketchUp 2024; current observed runtime capability remains required per run
 - semantic: artifact.reopen
   support: expected
-  expected_public_tools: [model_open, model_list]
-  verification: rooted SKP open lifecycle is live-accepted historically; independent post-open measurements are required
+  expected_public_tools: [model_open, model_list, artifact_verify]
+  verification: rooted SKP open plus independent post-open measurement/identity and accepted-artifact verification
 - semantic: artifact.hash
-  support: unproven
-  expected_public_tools: []
-  verification: provider has no content-addressed native artifact hash primitive; hash externally after stable save if workflow permits
+  support: expected
+  expected_public_tools: [artifact_seal, artifact_verify]
+  verification: provider computes and verifies content-addressed SHA-256 over exact rooted SKP bytes; stale or changed bytes fail closed
 - semantic: artifact.seal
-  support: blocked
-  expected_public_tools: []
-  verification: no provider content-addressed seal/manifest primitive equivalent to AutoCAD artifact_seal
+  support: expected
+  expected_public_tools: [artifact_seal, artifact_verify]
+  verification: content-addressed accepted SKP plus manifest, stale-after-mutation detection, reseal after byte change and verify-after-reopen are natively accepted on SketchUp 2024
 - semantic: topology.inspect
   support: expected
   expected_public_tools: [query_topology, integrity_report]
   verification: bounded generic topology/integrity facts, not discipline conclusions
 known_blockers:
 - code: source_snapshot_not_runtime_proof
-  effect: Step-0 runtime discovery remains mandatory
-- code: artifact_seal_missing
-  effect: native SKP lifecycle is available, but content-addressed seal/manifest remains external or blocked by release policy
-- code: native_component_registry_identity_metadata_missing
-  effect: asset_list/place_asset provide an allowlisted registry route and native definition identity, but do not expose or verify the SHA-256/native_version pair required to release strong Engineering Asset Catalog mappings
+  effect: this source map records measured acceptance history but Step-0 current runtime discovery remains mandatory for every execution run
 - code: model_world_coordinate_input_unclaimed
-  effect: strict mutation currently accepts active_context coordinate space only
+  effect: strict mutation accepts active_context coordinates, including target-local nested context; no implicit model/world conversion is claimed
 - code: legacy_mutation_paths_deprecated
-  effect: autonomous workflows must prefer strict_mutation tools advertised by system_capabilities
+  effect: autonomous workflows must prefer strict_mutation tools advertised by current system_capabilities

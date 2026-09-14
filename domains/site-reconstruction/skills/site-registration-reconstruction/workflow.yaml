@@ -1,0 +1,40 @@
+workflow_version: 0.1.0
+workflow_id: site-reconstruction.site-registration-reconstruction.v1
+release_scope: concept_to_ready_for_professional_review
+stages:
+  - stage_id: source_closure
+    purpose: Freeze required sources, hashes, inclusions/exclusions and unresolved dependencies.
+    deterministic_checks: [source_hash_and_dependency_inventory]
+    checkpoint: site_source_manifest
+    stop_conditions: [required_source_missing, available_source_unverified]
+    recovery_actions: [scope_reduce_with_approval, block_for_review]
+  - stage_id: registration
+    purpose: Validate units/frame transform, independent controls/holdouts and explicit acceptance tolerance.
+    deterministic_checks: [inspect_affine, evaluate_registration]
+    checkpoint: site_registration_evidence
+    stop_conditions: [invalid_transform, approved_tolerance_unresolved, residual_exceeds_tolerance]
+    recovery_actions: [replan, block_for_review]
+  - stage_id: semantic_feature_plan
+    purpose: Freeze bounded semantic feature identities and nested-reference traversal before mutation.
+    deterministic_checks: [validate_nested_graph]
+    checkpoint: site_feature_plan
+    stop_conditions: [cycle_detected, traversal_budget_exceeded, required_feature_unresolved]
+    recovery_actions: [replan, block_for_review]
+  - stage_id: native_reconstruction
+    purpose: Execute semantic feature chunks through public engine capabilities only.
+    chunk_policy: feature_based_chunk_streaming
+    checkpoint: site_native_checkpoint
+    postconditions: [identity_readback_matches, coordinate_measurements_match, no_unplanned_duplicate]
+    stop_conditions: [capability_missing, chunk_postcondition_failed, mutation_state_uncertain]
+    recovery_actions: [reconcile_state, compensate, restart_from_checkpoint, block_for_review]
+    uncertain_completion_policy: never_blind_retry
+  - stage_id: independent_qa
+    purpose: Independently remeasure registration, feature coverage and artifact revision.
+    checkpoint: site_independent_qa
+    stop_conditions: [registration_failed, required_feature_missing, checker_evidence_stale]
+    recovery_actions: [replan, block_for_review]
+  - stage_id: handoff
+    purpose: Save/reopen/hash-bind the exact accepted artifact and preserve release limitations.
+    checkpoint: site_handoff
+    stop_conditions: [save_or_reopen_failed, hash_missing_or_stale, release_label_unsupported]
+    recovery_actions: [restart_from_checkpoint, block_for_review]

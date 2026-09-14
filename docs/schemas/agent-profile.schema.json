@@ -4,45 +4,256 @@
   "title": "CDT_Engineer Agent Operational Profile",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "profile_id", "domain_id", "version", "release_target", "stages"],
+  "required": [
+    "schema_version",
+    "profile_id",
+    "domain_id",
+    "version",
+    "release_target",
+    "stages"
+  ],
   "properties": {
-    "schema_version": {"const": "0.1.0"},
-    "profile_id": {"type": "string", "minLength": 1},
-    "domain_id": {"type": "string", "minLength": 1},
-    "version": {"type": "string", "minLength": 1},
-    "release_target": {"enum": ["concept", "technical_draft", "design_review", "fabrication_or_construction_candidate", "ready_for_professional_review"]},
+    "schema_version": {
+      "const": "0.1.0"
+    },
+    "profile_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "domain_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "release_target": {
+      "enum": [
+        "concept",
+        "technical_draft",
+        "design_review",
+        "fabrication_or_construction_candidate",
+        "ready_for_professional_review"
+      ]
+    },
     "stages": {
-      "type": "array", "minItems": 1,
+      "type": "array",
+      "minItems": 1,
       "items": {
-        "type": "object", "additionalProperties": false,
-        "required": ["stage_id", "purpose", "owning_roles", "rule_ids", "required_capabilities", "software_candidates", "depends_on", "chunk_policy", "checkpoint", "stop_conditions", "recovery_actions", "qa_gates"],
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "stage_id",
+          "purpose",
+          "owning_roles",
+          "rule_ids",
+          "required_capabilities",
+          "software_candidates",
+          "depends_on",
+          "chunk_policy",
+          "checkpoint",
+          "stop_conditions",
+          "recovery_actions",
+          "qa_gates"
+        ],
         "properties": {
-          "stage_id": {"type": "string", "minLength": 1},
-          "purpose": {"type": "string", "minLength": 1},
-          "owning_roles": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
-          "rule_ids": {"type": "array", "items": {"type": "string", "minLength": 1}},
-          "required_capabilities": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
-          "software_candidates": {"type": "array", "items": {"type": "string", "minLength": 1}},
-          "depends_on": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+          "stage_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1
+          },
+          "owning_roles": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "rule_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required_capabilities": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "software_candidates": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "depends_on": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
           "dependency_requirements": {
             "type": "array",
             "uniqueItems": true,
             "items": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["dependency_id", "required_from_release"],
+              "required": [
+                "dependency_id",
+                "required_from_release"
+              ],
               "properties": {
-                "dependency_id": {"type": "string", "minLength": 1},
-                "required_from_release": {"enum": ["concept", "technical_draft", "design_review", "fabrication_or_construction_candidate", "ready_for_professional_review"]},
-                "proxy_allowed_through": {"enum": ["concept", "technical_draft", "design_review", "fabrication_or_construction_candidate", "ready_for_professional_review"]}
+                "dependency_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "required_from_release": {
+                  "enum": [
+                    "concept",
+                    "technical_draft",
+                    "design_review",
+                    "fabrication_or_construction_candidate",
+                    "ready_for_professional_review"
+                  ]
+                },
+                "proxy_allowed_through": {
+                  "enum": [
+                    "concept",
+                    "technical_draft",
+                    "design_review",
+                    "fabrication_or_construction_candidate",
+                    "ready_for_professional_review"
+                  ]
+                }
               }
             }
           },
-          "chunk_policy": {"enum": ["not_applicable", "feature_based_chunk_streaming"]},
-          "checkpoint": {"type": "string", "minLength": 1},
-          "stop_conditions": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
-          "recovery_actions": {"type": "array", "minItems": 1, "items": {"enum": ["rediscover_environment", "request_installation", "request_configuration", "replan", "reconcile_state", "compensate", "restart_from_checkpoint", "block_for_review", "scope_reduce_with_approval"]}},
-          "qa_gates": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+          "chunk_policy": {
+            "enum": [
+              "not_applicable",
+              "feature_based_chunk_streaming"
+            ]
+          },
+          "checkpoint": {
+            "type": "string",
+            "minLength": 1
+          },
+          "stop_conditions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "recovery_actions": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "enum": [
+                "rediscover_environment",
+                "request_installation",
+                "request_configuration",
+                "replan",
+                "reconcile_state",
+                "compensate",
+                "restart_from_checkpoint",
+                "block_for_review",
+                "scope_reduce_with_approval"
+              ]
+            }
+          },
+          "qa_gates": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "human_deliverables": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stage_id",
+        "requirements"
+      ],
+      "properties": {
+        "stage_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "requirements": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "requirement_id",
+              "category",
+              "required_from_release",
+              "gate",
+              "reviewer_role",
+              "requires_independent_review"
+            ],
+            "properties": {
+              "requirement_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "category": {
+                "enum": [
+                  "plans_views",
+                  "sections_details",
+                  "datums_references",
+                  "dimensions_tolerances",
+                  "notes_specifications_legends",
+                  "schedules_bom",
+                  "revision_issue_identity",
+                  "scale_readability",
+                  "downstream_usability"
+                ]
+              },
+              "required_from_release": {
+                "enum": [
+                  "concept",
+                  "technical_draft",
+                  "design_review",
+                  "fabrication_or_construction_candidate",
+                  "ready_for_professional_review"
+                ]
+              },
+              "gate": {
+                "enum": [
+                  "hard",
+                  "score"
+                ]
+              },
+              "reviewer_role": {
+                "type": "string",
+                "minLength": 1
+              },
+              "requires_independent_review": {
+                "type": "boolean"
+              }
+            }
+          }
         }
       }
     }

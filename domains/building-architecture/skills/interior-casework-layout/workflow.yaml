@@ -1,4 +1,4 @@
-workflow_version: 0.1.0
+workflow_version: 0.2.0
 workflow_id: building-architecture.interior-casework-layout.v1
 release_scope: concept_to_design_review
 chunk_policy: feature_based_chunk_streaming
@@ -35,10 +35,13 @@ stages:
     chunk_policy: not_applicable
     checkpoint: semantic_casework_graph
     deterministic_checks:
+      - validate_casework_input_package
       - evaluate_casework_box
       - evaluate_casework_compartments
       - evaluate_corner_casework
       - evaluate_rectangular_fit
+      - plan_loft_mesh
+      - plan_profile_sweep
     verification: Guard outputs and feature/dependency inventory are independently reproducible from frozen inputs.
     stop_conditions:
       - casework_guard_failed
@@ -117,6 +120,7 @@ stages:
       - drawer_group
       - equipment_instance
       - bounded_profile_or_finish_feature
+      - bounded_indexed_mesh
     identity_evidence:
       - semantic_id
       - persistent_id
@@ -133,6 +137,7 @@ stages:
       - chunk_postcondition_failed
       - mutation_state_uncertain
       - provider_budget_would_be_exceeded
+      - approximation_deviation_exceeded
     uncertain_state_reconciliation: Query current context/entity/definition state and compare with predecessor checkpoint before any retry.
     recovery_actions: [reconcile_state, compensate, restart_from_checkpoint, block_for_review]
     uncertain_completion_policy: never_blind_retry

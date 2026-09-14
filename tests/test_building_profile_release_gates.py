@@ -33,6 +33,23 @@ def all_pass_inputs(profile):
             dependencies[stage['stage_id']]=states
     return capabilities,by_software,stage_checks,dependencies
 
+def deliverable_evidence(profile):
+    return {
+        req['requirement_id']:{
+            'applicability':'applicable',
+            'implementation_state':'implemented',
+            'verification_state':'verified',
+            'acceptance_state':'pass',
+            'reviewer':'reviewer-1',
+            'reviewer_role':req['reviewer_role'],
+            'independent':True,
+            'evidence_refs':[f"evidence:{req['requirement_id']}"],
+            'artifact_revision':'pkg-1',
+            'source_revision':'src-1',
+        }
+        for req in profile.get('human_deliverables',{}).get('requirements',[])
+    }
+
 
 class BuildingProfileReleaseGateTests(unittest.TestCase):
     def test_architecture_all_runtime_facts_pass_but_missing_catalog_still_blocks(self):
@@ -102,7 +119,10 @@ class BuildingProfileReleaseGateTests(unittest.TestCase):
     def test_architecture_can_release_only_when_declared_dependencies_and_runtime_facts_pass(self):
         profile=load_profile('building-architecture')
         capabilities,by_software,checks,deps=all_pass_inputs(profile)
-        result=run_profile(profile,capabilities=capabilities,capabilities_by_software=by_software,stage_checks=checks,dependency_states=deps)
+        result=run_profile(
+            profile,capabilities=capabilities,capabilities_by_software=by_software,stage_checks=checks,dependency_states=deps,
+            human_deliverable_evidence=deliverable_evidence(profile),package_revision='pkg-1',source_revision='src-1',
+        )
         self.assertEqual('pass',result['result'])
         self.assertIsNone(result['recommended_release_target'])
 

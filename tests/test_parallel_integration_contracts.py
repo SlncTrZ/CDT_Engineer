@@ -23,11 +23,13 @@ class ParallelIntegrationContractTests(unittest.TestCase):
         self.assertEqual('blocked',result['state'])
         self.assertTrue(any(code.startswith('native_mapping_unresolved:') for code in result['reason_codes']))
 
-    def test_sketchup_map_does_not_claim_strong_component_resolution(self):
+    def test_sketchup_map_claims_strong_runtime_route_without_fake_catalog_mapping(self):
         text=(ROOT/'software/sketchup/engine-map.yaml').read_text(encoding='utf-8')
         self.assertIn('semantic: component.library_resolve',text)
-        self.assertIn('support: unproven',text)
-        self.assertIn('native_component_registry_identity_metadata_missing',text)
+        self.assertIn('support: expected',text)
+        self.assertNotIn('native_component_registry_identity_metadata_missing',text)
+        self.assertIn('asset_list',text)
+        self.assertIn('place_asset',text)
 
     def test_design_review_human_package_fails_when_categories_are_omitted(self):
         result=assess_human_deliverables(

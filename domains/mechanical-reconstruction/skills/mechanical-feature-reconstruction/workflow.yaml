@@ -1,0 +1,34 @@
+workflow_version: 0.1.0
+workflow_id: mechanical-reconstruction.mechanical-feature-reconstruction.v1
+release_scope: concept_to_ready_for_professional_review
+stages:
+  - stage_id: source_dimension_closure
+    purpose: Freeze source identity, projection basis, dimension ledger and unresolved tolerances.
+    checkpoint: mechanical_dimension_ledger
+    stop_conditions: [critical_source_missing, projection_ambiguity_critical, critical_tolerance_unresolved_for_release]
+    recovery_actions: [replan, scope_reduce_with_approval, block_for_review]
+  - stage_id: feature_plan
+    purpose: Validate feature identity/dependencies and exactness requirements before native work.
+    deterministic_checks: [validate_feature_dag, evaluate_exactness]
+    checkpoint: mechanical_feature_plan
+    stop_conditions: [feature_dependency_invalid, exact_geometry_route_unavailable, approximation_tolerance_unresolved]
+    recovery_actions: [replan, block_for_review]
+  - stage_id: native_feature_execution
+    purpose: Execute bounded semantic features through the selected public engine.
+    chunk_policy: feature_based_chunk_streaming
+    checkpoint: mechanical_native_checkpoint
+    postconditions: [feature_identity_readback, expected_body_state, dimensions_queryable]
+    stop_conditions: [capability_missing, boolean_result_uncertain, chunk_postcondition_failed]
+    recovery_actions: [reconcile_state, compensate, restart_from_checkpoint, block_for_review]
+    uncertain_completion_policy: never_blind_retry
+  - stage_id: independent_inspection
+    purpose: Independently measure critical dimensions, exactness/deviation and topology/treatments.
+    deterministic_checks: [evaluate_dimension, evaluate_exactness, evaluate_topology]
+    checkpoint: mechanical_independent_inspection
+    stop_conditions: [dimension_outside_tolerance, topology_failed, required_treatment_missing, checker_evidence_stale]
+    recovery_actions: [replan, block_for_review]
+  - stage_id: round_trip_handoff
+    purpose: Export/reopen the exact candidate and bind artifact/measurement evidence.
+    checkpoint: mechanical_round_trip_handoff
+    stop_conditions: [export_or_reopen_failed, artifact_hash_drift, round_trip_measurement_mismatch]
+    recovery_actions: [restart_from_checkpoint, block_for_review]

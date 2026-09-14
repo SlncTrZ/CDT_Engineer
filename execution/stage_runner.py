@@ -1,11 +1,12 @@
 """Agent Profile Stage Runner — deterministic acceptance orchestration.
-Wing: code | Topic: stage-runner | Updated: 2026-09-12 16:10
+Wing: code | Topic: stage-runner | Updated: 2026-09-14 10:28
 """
 from __future__ import annotations
 
 from typing import Mapping
 
 from execution.release_scope import RELEASE_CLASSES, assess_dependencies
+from professional_practice.human_deliverables import assess_human_deliverables
 
 _VALID={'pass','fail','unknown','blocked','not_applicable'}
 _STAGE_APPLICABILITY=frozenset({'applicable','not_applicable'})
@@ -147,7 +148,7 @@ def _candidate_stage_capability_facts(
         reasons.insert(0,f'software_candidate_not_released:{best["software"]}')
     return [{'result':best['result'],'reason_codes':list(dict.fromkeys(reasons))}]
 
-def run_profile(profile: Mapping, *, capabilities: Mapping[str,Mapping] | None = None, stage_checks: Mapping[str,Mapping], capabilities_by_software: Mapping[str,Mapping] | None = None, dependency_states: Mapping[str,Mapping] | None = None, stage_applicability: Mapping[str,Mapping] | None = None) -> dict:
+def run_profile(profile: Mapping, *, capabilities: Mapping[str,Mapping] | None = None, stage_checks: Mapping[str,Mapping], capabilities_by_software: Mapping[str,Mapping] | None = None, dependency_states: Mapping[str,Mapping] | None = None, stage_applicability: Mapping[str,Mapping] | None = None, human_deliverable_evidence: Mapping[str,Mapping] | None = None, package_revision: str | None = None, source_revision: str | None = None) -> dict:
     """Assess stages and release dependencies without invoking native engines."""
     capabilities=capabilities or {}
     capabilities_by_software=capabilities_by_software or {}
@@ -157,6 +158,28 @@ def run_profile(profile: Mapping, *, capabilities: Mapping[str,Mapping] | None =
     if not isinstance(stages,list) or not stages:
         raise ValueError('profile requires stages')
     release_target=profile.get('release_target')
+    deliverable_config=profile.get('human_deliverables')
+    deliverable_result=None
+    deliverable_stage_id=None
+    if deliverable_config is not None:
+        if not isinstance(deliverable_config,Mapping):
+            raise ValueError('human_deliverables must be a mapping')
+        deliverable_stage_id=deliverable_config.get('stage_id')
+        requirements=deliverable_config.get('requirements')
+        if not isinstance(deliverable_stage_id,str) or not deliverable_stage_id:
+            raise ValueError('human_deliverables.stage_id must be non-empty')
+        if not isinstance(requirements,list) or not requirements:
+            raise ValueError('human_deliverables.requirements must be a non-empty list')
+        if not isinstance(package_revision,str) or not package_revision or not isinstance(source_revision,str) or not source_revision:
+            deliverable_result={'result':'blocked','reason_codes':['deliverable_revision_context_missing']}
+        else:
+            deliverable_result=assess_human_deliverables(
+                release_target,
+                requirements,
+                human_deliverable_evidence or {},
+                package_revision=package_revision,
+                source_revision=source_revision,
+            )
     seen=set(); releases={}; output=[]; recommended_targets=[]
     for stage in stages:
         sid=stage.get('stage_id')
@@ -231,6 +254,11 @@ def run_profile(profile: Mapping, *, capabilities: Mapping[str,Mapping] | None =
         assessment_inputs=[*cap_facts,check_fact]
         if dependency_fact is not None:
             assessment_inputs.append(dependency_fact)
+        if deliverable_result is not None and sid==deliverable_stage_id:
+            assessment_inputs.append({
+                'result':deliverable_result['result'],
+                'reason_codes':list(deliverable_result.get('reason_codes',[])),
+            })
         assessment_result,assessment_reasons=_combine(assessment_inputs)
         blocked_deps=[dep for dep in deps if releases.get(dep) not in {'pass','not_applicable'}]
         release_reasons=[]
@@ -273,4 +301,5 @@ def run_profile(profile: Mapping, *, capabilities: Mapping[str,Mapping] | None =
         'result':overall,
         'recommended_release_target':recommended,
         'stages':output,
+        'human_deliverables':deliverable_result,
     }

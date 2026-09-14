@@ -1,84 +1,207 @@
 {
-  "fixture_version": "0.1.0",
+  "fixture_version": "0.2.0",
   "units": "mm",
   "cases": [
     {
       "case_id": "INT-BOX-001",
       "kind": "casework_box",
       "input": {
-        "module": {"id": "base-01", "width": 900, "height": 720, "depth": 600, "panels": {"left": 18, "right": 18, "top": 18, "bottom": 18, "back": 9}},
-        "requirements": {"minimum_clear_width": 850, "minimum_clear_height": 680, "minimum_clear_depth": 580}
+        "module": {
+          "id": "base-01",
+          "width": 900,
+          "height": 720,
+          "depth": 600,
+          "panels": {
+            "left": 18,
+            "right": 18,
+            "top": 18,
+            "bottom": 18,
+            "back": 9
+          }
+        },
+        "requirements": {
+          "minimum_clear_width": 850,
+          "minimum_clear_height": 680,
+          "minimum_clear_depth": 580
+        }
       },
-      "expected": {"result": "pass", "clear_width": 864, "clear_height": 684, "clear_depth": 591}
+      "expected": {
+        "result": "pass",
+        "clear_width": 864,
+        "clear_height": 684,
+        "clear_depth": 591
+      }
     },
     {
       "case_id": "INT-BOX-NEG-001",
       "kind": "casework_box",
       "input": {
-        "module": {"id": "base-02", "width": 500, "height": 700, "depth": 560, "panels": {"left": 18, "right": 18, "top": 18, "bottom": 18, "back": 9}},
-        "requirements": {"minimum_clear_width": 480}
+        "module": {
+          "id": "base-02",
+          "width": 500,
+          "height": 700,
+          "depth": 560,
+          "panels": {
+            "left": 18,
+            "right": 18,
+            "top": 18,
+            "bottom": 18,
+            "back": 9
+          }
+        },
+        "requirements": {
+          "minimum_clear_width": 480
+        }
       },
-      "expected": {"result": "fail", "reason_code": "clear_width_below_requirement"}
+      "expected": {
+        "result": "fail",
+        "reason_code": "clear_width_below_requirement"
+      }
     },
     {
       "case_id": "INT-PART-001",
       "kind": "compartments",
-      "input": {"clear_span": 864, "compartment_widths": [423, 423], "partition_thickness": 18},
-      "expected": {"result": "pass", "modeled_span": 864}
+      "input": {
+        "clear_span": 864,
+        "compartment_widths": [
+          423,
+          423
+        ],
+        "partition_thickness": 18
+      },
+      "expected": {
+        "result": "pass",
+        "modeled_span": 864
+      }
     },
     {
       "case_id": "INT-CORNER-001",
       "kind": "corner_casework",
-      "input": {"module": {"id": "corner-01", "leg_a": 1000, "leg_b": 900, "depth_a": 600, "depth_b": 550, "height": 720}},
-      "expected": {"result": "pass", "footprint_area": 765000}
+      "input": {
+        "module": {
+          "id": "corner-01",
+          "leg_a": 1000,
+          "leg_b": 900,
+          "depth_a": 600,
+          "depth_b": 550,
+          "height": 720
+        }
+      },
+      "expected": {
+        "result": "pass",
+        "footprint_area": 765000
+      }
     },
     {
       "case_id": "INT-CORNER-NEG-001",
       "kind": "corner_casework",
-      "input": {"module": {"id": "corner-02", "leg_a": 500, "leg_b": 900, "depth_a": 600, "depth_b": 550, "height": 720}},
-      "expected": {"result": "fail", "reason_code": "corner_leg_a_not_beyond_return_depth"}
+      "input": {
+        "module": {
+          "id": "corner-02",
+          "leg_a": 500,
+          "leg_b": 900,
+          "depth_a": 600,
+          "depth_b": 550,
+          "height": 720
+        }
+      },
+      "expected": {
+        "result": "fail",
+        "reason_code": "corner_leg_a_not_beyond_return_depth"
+      }
     },
     {
       "case_id": "INT-DRAWER-001",
       "kind": "rectangular_fit",
       "input": {
-        "opening": {"width": 600, "height": 700, "depth": 580},
-        "item": {"width": 580, "height": 680, "depth": 560},
-        "clearances": {"left": 5, "right": 5, "top": 5, "bottom": 5, "front": 0, "back": 10}
+        "opening": {
+          "width": 600,
+          "height": 700,
+          "depth": 580
+        },
+        "item": {
+          "width": 580,
+          "height": 680,
+          "depth": 560
+        },
+        "clearances": {
+          "left": 5,
+          "right": 5,
+          "top": 5,
+          "bottom": 5,
+          "front": 0,
+          "back": 10
+        }
       },
-      "expected": {"result": "pass"}
+      "expected": {
+        "result": "pass"
+      }
     },
     {
       "case_id": "INT-APPLIANCE-NEG-001",
       "kind": "rectangular_fit",
       "input": {
-        "opening": {"width": 600, "height": 700, "depth": 580},
-        "item": {"width": 595, "height": 680, "depth": 560},
-        "clearances": {"left": 5, "right": 5, "top": 5, "bottom": 5, "front": 0, "back": 10}
+        "opening": {
+          "width": 600,
+          "height": 700,
+          "depth": 580
+        },
+        "item": {
+          "width": 595,
+          "height": 680,
+          "depth": 560
+        },
+        "clearances": {
+          "left": 5,
+          "right": 5,
+          "top": 5,
+          "bottom": 5,
+          "front": 0,
+          "back": 10
+        }
       },
-      "expected": {"result": "fail", "reason_code": "item_exceeds_clear_width"}
+      "expected": {
+        "result": "fail",
+        "reason_code": "item_exceeds_clear_width"
+      }
     }
   ],
   "native_pending_cases": [
     {
       "case_id": "INT-ASSET-001",
       "purpose": "Registry-backed asset identity/read-back",
-      "blocked_by": "native_component_registry_identity_metadata_missing"
+      "blocked_by": "native_mapping_unresolved",
+      "provider_capability_status": "accepted_contract_0.28"
     },
     {
       "case_id": "INT-EDIT-001",
       "purpose": "Drawer edit preserves target identity and fit after read-back",
-      "requires": ["model_3d.transform", "model.query", "model.measure"]
+      "requires": [
+        "model_3d.transform",
+        "model.query",
+        "model.measure"
+      ]
     },
     {
       "case_id": "INT-PROFILE-001",
       "purpose": "Molding/profile/loft/curved-shape native realization within declared geometry budgets",
-      "blocked_until": "required CDT-SketchUp public capability and native benchmark are proven"
+      "provider_capability_status": "accepted_contract_0.28_create_mesh",
+      "requires": [
+        "engineer_geometry_plan",
+        "create_mesh",
+        "native_readback",
+        "declared_geometry_budget"
+      ]
     },
     {
       "case_id": "INT-RECOVERY-001",
       "purpose": "Forced failure/uncertain completion without duplicate instance after reconciliation",
-      "requires": ["persistent_id", "definition_guid", "context_revision", "verified recovery evidence"]
+      "requires": [
+        "persistent_id",
+        "definition_guid",
+        "context_revision",
+        "verified recovery evidence"
+      ]
     }
   ]
 }

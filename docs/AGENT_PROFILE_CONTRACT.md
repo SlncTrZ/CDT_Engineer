@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_CONTRACT
 
-Version: 1.1.0 · Updated: 2026-09-12 · Status: Engineering OS execution-profile baseline.
+Version: 1.2.0 · Updated: 2026-09-14 · Status: Engineering OS execution-profile baseline.
 
 ## Purpose
 
@@ -84,6 +84,14 @@ A Checker result of `not_applicable` is **not** a stage-applicability decision. 
 - **Software Operating Guide:** explains version-specific professional operation, transaction/recovery behavior and measured runtime acceptance.
 
 None of these grants tool authority or replaces runtime discovery.
+
+## Human-deliverable acceptance hook
+
+A profile that claims a human-review or handoff package may declare a top-level `human_deliverables` block containing a target `stage_id` and release-aware hard/score requirements. `execution.stage_runner.run_profile()` evaluates this block through `professional_practice.human_deliverables` using exact package/source revisions and independent requirement evidence supplied for the run.
+
+For a configured profile, missing revision context or required evidence fails closed at the target stage. A generic stage PASS, native runtime PASS or visually plausible artifact cannot bypass these deliverable gates. The hook is optional only when the declared profile scope has no human-readable deliverable family; domain skills remain responsible for the concrete technical content of each category.
+
+Building Architecture and Mechanical Reconstruction are the first two executable consumers, satisfying the Rule-of-Two evidence needed for this shared runner integration.
 
 ## Initial profiles
 

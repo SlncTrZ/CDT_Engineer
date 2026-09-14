@@ -1,7 +1,7 @@
 # Building Architecture v1 — Benchmark Pack
 
 > Documentation class: PUBLIC_DOMAIN
-Version: 0.3.0 · Primary negative case: townhouse image reconstruction · Status: benchmark definition; native acceptance pending.
+Version: 0.5.0 · Primary negative case: townhouse image reconstruction · Status: benchmark definition with SketchUp contract-0.28 executor acceptance measured; production cases still require current Step-0, real catalog mappings and project evidence.
 
 ## Scope
 
@@ -36,7 +36,7 @@ Expected:
 - structural-role unknowns remain unknown;
 - native chunks preserve semantic IDs and relationships;
 - independent QA queries relationships/topology and dimensions;
-- final native artifact is saved, reopened, independently remeasured and externally hash-bound when provider-native sealing is unavailable.
+- final native artifact is saved, content-addressed with `artifact_seal`, reopened, independently remeasured and verified against the accepted artifact identity.
 
 ## Benchmark C — Primitive-substitution negative
 
@@ -69,7 +69,7 @@ Exercise failure at dependency boundaries without weakening professional gates:
 
 - **early failure:** unknown asset key, missing/mismatched identity, corrupt asset, path escape, unsupported extension or size violation must fail before native placement;
 - **middle failure:** force a strict component/geometry chunk failure and verify rollback/reconciliation restores the pre-chunk semantic state before any dependent chunk is released;
-- **late failure:** save, reopen, independent-measurement or external-hash failure invalidates final artifact evidence and blocks release even when earlier mutation receipts passed;
+- **late failure:** save, seal, reopen, independent-measurement or artifact-verification failure invalidates final artifact evidence and blocks release even when earlier mutation receipts passed;
 - **uncertain completion / timeout:** reconcile current model/context/entity/definition state before retry; non-idempotent placement must never be blindly replayed and duplicate instances must be detected/prevented.
 
 For every injected case, record predecessor checkpoint/context identity, expected state, observed state, recovery action, recovered state and whether dependent chunks remained blocked.
@@ -96,7 +96,7 @@ Expected negatives: drawer fit failure, appliance fit failure, missing manufactu
 
 Resolve the required semantic families `casework_panel_system`, `drawer_system`, `appliance_envelope` and `casework_anchor_system` through the Engineering Asset Catalog or an explicitly bounded custom path. Material/thickness/edge/fixing requirements remain project/manufacturer dependencies, not visual guesses.
 
-For registry-backed SketchUp placement, `component.library_resolve` must prove exact accepted native identity before a design-review catalog PASS. While `native_component_registry_identity_metadata_missing` remains open, these pilot catalog entries intentionally keep SketchUp mappings `unresolved` and the benchmark must block rather than invent `sha256`/`native_version`.
+For registry-backed SketchUp placement, `component.library_resolve` must prove exact accepted native identity before a design-review catalog PASS. CDT-SketchUp contract 0.28 now provides and natively verifies that strong identity route (`asset_key + sha256 + native_version`, exact bytes, definition binding, save/reopen read-back). Pilot/product catalog entries that still have no curated SketchUp mapping remain `unresolved`; those dependencies must block as `native_mapping_unresolved` rather than inventing asset keys, hashes or versions.
 
 ## Benchmark J — Interior native chunk recovery / duplicate instance negative
 
@@ -108,7 +108,7 @@ Expected: no blind replay; any unplanned duplicate instance is a hard failure.
 
 Freeze the exact profile/curve/loft requirement and source geometry. CDT_Engineer may calculate/profile-plan the shape and chunk it, but native realization is accepted only when current CDT-SketchUp public capabilities can represent and independently query the required geometry within declared budgets. Missing/insufficient capability is a typed blocker or explicit reduced scope; it is not replaced by a visually similar primitive while retaining stronger semantics.
 
-This benchmark distinguishes Engineer planning/completeness from the SKP-03 executor dependency. Native molding/loft/curved-shape parity remains pending until the engine-side capability and runtime benchmark are proven.
+Engineer-side planning is executable through `domains.building_architecture.geometry_planner`: equal-cardinality loft rings and bounded profile sweeps produce indexed-mesh recipes, reject self-intersecting profiles and budget overflow, and fail when declared approximation deviation is exceeded. The matching executor dependency is now measured on CDT-SketchUp contract 0.28: `create_mesh` natively passed tetrahedron, frustum, four-section loft, ellipsoid, rounded closed profile and open curved molding/ribbon cases, plus malformed/budget fail-before-mutation and verified rollback. Every production run must still Step-0 the live descriptor/budgets; this acceptance does not permit a visually similar approximation beyond the Engineer-declared tolerance.
 
 ## Measurement / evidence
 
@@ -126,14 +126,14 @@ Freeze before each run:
 
 Record native receipts, semantic IDs, independent measurements, reopen evidence, artifact hashes and Checker findings. Visual comparison is supplemental only.
 
-## Current native blocker
+## Current native capability status
 
-The current SketchUp public contract exposes an owner-curated registry route through `asset_list` plus strict `place_asset`, and native definition/entity identity can be queried after placement. Therefore the old `native_component_registry_route_missing` statement is closed.
+CDT-SketchUp source revision `d9aecb07ecfae9e5ffb969f2314fafe2040c162b` (provider `0.1.0`, contract `0.28`, 67 tools) has measured native acceptance on SketchUp 2024 `24.0.594` / Ruby `3.2.2`. Through the public MCP route it passed bounded nested edit/restoration, strong registry identity, CDT_Engineer catalog-resolver positive/mismatched-hash E2E, indexed-mesh realization/rollback/budget negatives, exact manifold-solid spatial queries, recovery reconciliation/compensation, content-addressed artifact seal/staleness/reseal and save/reopen verification.
 
-Strong Building catalog resolution is still BLOCKED by `native_component_registry_identity_metadata_missing`: the public registry does not yet bind a provider-verified SHA-256 and `native_version` to the exact `.skp` bytes loaded into the native definition. `execution.catalog_resolver.resolve_catalog_assets` already requires those exact fields and must continue returning `blocked` until catalog mapping, registry evidence and current runtime capability all match.
+The previous provider gaps for cryptographic registry identity and provider-native artifact sealing are closed by contract 0.28 native evidence. `execution.catalog_resolver.resolve_catalog_assets` must nevertheless continue returning `blocked` for any semantic asset whose own `native_mappings.sketchup` is unresolved, whose live registry evidence does not exactly match the catalog `asset_key + sha256 + native_version`, or whose current Step-0 capability is not released. That is catalog/runtime evidence completeness, not a missing executor primitive.
 
-The blocker is cleared only when a public provider route returns/verifies the required asset identity fields, the Building catalog is populated with matching validated mappings, current Step-0 runtime evidence releases `component.library_resolve`, and save/reopen read-back preserves the accepted native identity/instance evidence.
+No QA fixture from native acceptance is a production catalog mapping. Curated mapping population requires the actual intended asset identity and remains deliberately fail-closed per asset.
 
 ## Acceptance
 
-Building Architecture v1 is not production-accepted from offline tests alone. Native Benchmark B execution remains blocked until the registry identity blocker above is cleared and current SketchUp runtime Step-0 passes. Native design-review acceptance then requires Benchmark B plus C/D/E/F negative cases on the declared runtime, resolved component mappings, verified registry evidence and an independent Checker. Higher release classes require additional structural, standards, detail/document and responsible-review evidence.
+Building Architecture v1 is not production-accepted from offline tests or historical executor evidence alone. A native design-review run requires current Step-0 proof, Benchmark B plus C/D/E/F negative cases on the declared runtime, resolved mappings for every required catalog asset, verified registry evidence, artifact save/seal/reopen evidence and an independent Checker. If a production catalog mapping remains unresolved, only that dependent scope blocks/reduces; the provider identity/mesh/seal capability itself is no longer the blocker. Higher release classes still require the additional structural, standards, detail/document and responsible-review evidence defined elsewhere.
