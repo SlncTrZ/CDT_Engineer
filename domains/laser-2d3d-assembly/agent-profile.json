@@ -1,0 +1,120 @@
+{
+  "schema_version": "0.1.0",
+  "profile_id": "laser-2d3d-assembly.cross-slot",
+  "domain_id": "laser-2d3d-assembly",
+  "version": "0.1.0",
+  "release_target": "technical_draft",
+  "stages": [
+    {
+      "stage_id": "environment_preflight",
+      "purpose": "Discover target host software and provider readiness",
+      "owning_roles": ["Chief / Lead Engineer"],
+      "rule_ids": [],
+      "required_capabilities": ["execution_environment.compatible_or_typed_blocker"],
+      "software_candidates": ["autocad", "solidworks"],
+      "depends_on": [],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "environment_inventory",
+      "stop_conditions": ["required software state unknown", "required provider state unknown", "version mismatch unresolved"],
+      "recovery_actions": ["rediscover_environment", "request_installation", "request_configuration", "block_for_review"],
+      "qa_gates": ["Step-0 inventory is current and compatibility is typed"]
+    },
+    {
+      "stage_id": "session_intake",
+      "purpose": "Ask per-session material, thickness, kerf, clearance, sheet size before any cut geometry",
+      "owning_roles": ["Chief / Lead Engineer"],
+      "rule_ids": ["LASER-01"],
+      "required_capabilities": ["evidence.source_hashes_verified", "dimension.ledger"],
+      "software_candidates": ["autocad"],
+      "depends_on": ["environment_preflight"],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "material_intake_record",
+      "stop_conditions": ["material triple unknown for requested release", "profile variant undeclared", "output DXF flavor undeclared"],
+      "recovery_actions": ["replan", "scope_reduce_with_approval", "block_for_review"],
+      "qa_gates": ["LASER-01 disposition recorded with per-session answers"]
+    },
+    {
+      "stage_id": "source_closure",
+      "purpose": "Freeze photo or 3D source hashes and declare from_3d or from_photo branch",
+      "owning_roles": ["Mechanical Design Engineer"],
+      "rule_ids": ["LASER-02"],
+      "required_capabilities": ["source.inventory", "evidence.source_hashes_verified"],
+      "software_candidates": ["autocad"],
+      "depends_on": ["session_intake"],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "source_branch_record",
+      "stop_conditions": ["source hash unverified", "source branch undeclared"],
+      "recovery_actions": ["replan", "block_for_review"],
+      "qa_gates": ["LASER-02 branch disposition recorded"]
+    },
+    {
+      "stage_id": "artistic_interpretation",
+      "purpose": "Reinterpret single photo into proxy 3D/part intent; skipped with reason when source is from_3d",
+      "owning_roles": ["Mechanical Design Engineer"],
+      "rule_ids": ["LASER-02"],
+      "required_capabilities": ["technical_2d.inspect", "dependency.validate"],
+      "software_candidates": ["autocad"],
+      "depends_on": ["source_closure"],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "proxy_interpretation_record",
+      "stop_conditions": ["photo joints treated as exact without approval", "proxy label missing for from_photo branch"],
+      "recovery_actions": ["replan", "scope_reduce_with_approval", "block_for_review"],
+      "qa_gates": ["proxy record labeled with capped release"]
+    },
+    {
+      "stage_id": "cut_plan",
+      "purpose": "Freeze cross-slot part inventory, slot DAG, and slot-width derivations",
+      "owning_roles": ["Mechanical Design Engineer", "Manufacturing Engineer"],
+      "rule_ids": ["LASER-03", "LASER-04"],
+      "required_capabilities": ["feature.plan", "dependency.validate"],
+      "software_candidates": ["autocad", "solidworks"],
+      "depends_on": ["artistic_interpretation"],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "slot_cut_plan",
+      "stop_conditions": ["slot dependency invalid", "slot width derivation missing material triple"],
+      "recovery_actions": ["replan", "block_for_review"],
+      "qa_gates": ["LASER-03/04 plan pass"]
+    },
+    {
+      "stage_id": "native_2d_layout",
+      "purpose": "Draw closed CUT/ENGRAVE layout by semantic feature chunks with nesting",
+      "owning_roles": ["Mechanical Design Engineer", "CAD/BIM Technician"],
+      "rule_ids": ["LASER-04", "LASER-06"],
+      "required_capabilities": ["technical_2d.create", "model.query", "checkpoint.create"],
+      "software_candidates": ["autocad"],
+      "depends_on": ["cut_plan"],
+      "chunk_policy": "feature_based_chunk_streaming",
+      "checkpoint": "nested_layout_checkpoint",
+      "stop_conditions": ["required native capability missing", "open CUT contour found", "nesting exceeds sheet", "chunk postcondition fails"],
+      "recovery_actions": ["reconcile_state", "compensate", "restart_from_checkpoint", "block_for_review"],
+      "qa_gates": ["closed profiles and sheet fit verified after write"]
+    },
+    {
+      "stage_id": "independent_qa_and_export",
+      "purpose": "Independently measure slots/layout, export DXF plus assembly guide, seal drawing",
+      "owning_roles": ["Checker / QA Engineer", "Documentation Engineer"],
+      "rule_ids": ["LASER-07", "LASER-08"],
+      "required_capabilities": ["model.measure", "artifact.drawing_export", "artifact.seal", "evidence.artifact_hash_bound"],
+      "software_candidates": ["autocad"],
+      "depends_on": ["native_2d_layout"],
+      "chunk_policy": "not_applicable",
+      "checkpoint": "sealed_drawing_handoff",
+      "stop_conditions": ["required exporter unavailable", "DXF reopen unit drift", "missing part labels or BOM", "artifact hash drift"],
+      "recovery_actions": ["block_for_review"],
+      "qa_gates": ["LASER-07/08 and review rubric hard gates pass"]
+    }
+  ],
+  "human_deliverables": {
+    "stage_id": "independent_qa_and_export",
+    "requirements": [
+      {"requirement_id": "laser.cross-slot.plans_views", "category": "plans_views", "required_from_release": "technical_draft", "gate": "hard", "reviewer_role": "Checker / QA Engineer", "requires_independent_review": true},
+      {"requirement_id": "laser.cross-slot.datums_references", "category": "datums_references", "required_from_release": "technical_draft", "gate": "hard", "reviewer_role": "Checker / QA Engineer", "requires_independent_review": true},
+      {"requirement_id": "laser.cross-slot.dimensions_tolerances", "category": "dimensions_tolerances", "required_from_release": "technical_draft", "gate": "hard", "reviewer_role": "Checker / QA Engineer", "requires_independent_review": true},
+      {"requirement_id": "laser.cross-slot.notes_specifications_legends", "category": "notes_specifications_legends", "required_from_release": "technical_draft", "gate": "hard", "reviewer_role": "Checker / QA Engineer", "requires_independent_review": true},
+      {"requirement_id": "laser.cross-slot.schedules_bom", "category": "schedules_bom", "required_from_release": "technical_draft", "gate": "hard", "reviewer_role": "Checker / QA Engineer", "requires_independent_review": true},
+      {"requirement_id": "laser.cross-slot.revision_issue_identity", "category": "revision_issue_identity", "required_from_release": "technical_draft", "gate": "hard", "reviewer_role": "Checker / QA Engineer", "requires_independent_review": true},
+      {"requirement_id": "laser.cross-slot.scale_readability", "category": "scale_readability", "required_from_release": "technical_draft", "gate": "hard", "reviewer_role": "Checker / QA Engineer", "requires_independent_review": true},
+      {"requirement_id": "laser.cross-slot.downstream_usability", "category": "downstream_usability", "required_from_release": "technical_draft", "gate": "hard", "reviewer_role": "Checker / QA Engineer", "requires_independent_review": true}
+    ]
+  }
+}
