@@ -23,9 +23,13 @@ class SoftwareGuideTests(unittest.TestCase):
   for token in ['model_save','model_open','model_export','artifact_seal','artifact_verify','create_mesh','SHA-256','native_version']:
    self.assertIn(token,text)
   self.assertNotIn('artifact_seal_missing',text)
- def test_solidworks_does_not_claim_transaction_atomicity(self):
+ def test_solidworks_tracks_public_contract_without_claiming_runtime_atomicity(self):
   text=(ROOT/'software/solidworks/OPERATING_GUIDE.md').read_text()
+  self.assertNotIn('provider_not_implemented',text)
+  for token in ['part_cut_extrude','body_combine','evaluation_measure','reconstruction_assess','reconstruction_step_to_editable','reconstruction_mesh_to_parametric','reconstruction_compare']:
+   self.assertIn(token,text)
   self.assertIn('exact_transaction_mode_unproven',text)
   self.assertIn('checkpointed_atomic',text)
   self.assertIn('only after runtime proof',text)
+  self.assertIn('runtime discovery',text.lower())
 if __name__=='__main__': unittest.main()

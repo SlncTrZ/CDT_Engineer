@@ -1,75 +1,146 @@
-map_version: 0.2.0
+map_version: 0.3.0
 software_id: solidworks
-purpose: Current public-contract truth for Mechanical reconstruction against the CDT-SolidWorks provider repository.
+purpose: Frozen parallel-contract mapping for Mechanical reconstruction; source mapping is not runtime proof.
 source_snapshot:
   repository: CDT-SolidWorks
-  head: 3bd2bfb2e6527cf2440fa8d2e23610ed4d77a6ab
-  provider_state: skeleton_no_callable_mcp
+  head: 51e5ecfc6376b4146266811b7cd3f36020a89967
+  provider_state: parallel_contract_runtime_gated
   provider_version: null
-  contract_version: null
-  public_tool_count: 0
+  contract_version: inter-agent-contract-v1
+  public_tool_count: null
+  public_tool_count_basis: final Agent-7 composition pending
   working_tree_dirty_at_inspection: false
   runtime_proof: false
 runtime_preflight:
   required: true
   discover:
-  - SolidWorks installation path/version/build/edition
-  - required COM/add-in host readiness
-  - CDT-SolidWorks provider implementation/version/contract
-  - runtime tool/capability surface
+  - CDT-SolidWorks reachable provider/build and final composed plugin contract
+  - SolidWorks installation version/build/edition and running/registration state
+  - required public tool names are present in live tools/list
+  - capability descriptors report available=true for every required semantic
+  - SolidWorks license/dependency readiness for the requested operation
   blocker_codes:
-  - software_not_installed
-  - provider_not_ready
-  - provider_not_implemented
-  - configuration_required
-  - version_mismatch
+  - provider_unreachable
+  - tool_missing
   - capability_missing
+  - license_unverified
+  - dependency_unavailable
+  - version_mismatch
   - runtime_unknown
+  - parallel_integration_not_accepted
+  - exact_transaction_mode_unproven
 capability_mappings:
 - semantic: solid.feature.create
-  support: blocked
-  expected_public_tools: []
-  verification: current CDT-SolidWorks snapshot has no callable MCP server or native feature tool
+  support: expected
+  expected_public_tools:
+  - part_create_rect_extrude
+  - part_cut_extrude
+  - part_revolve
+  - part_revolve_cut
+  - part_simple_hole
+  - part_hole_wizard
+  verification: frozen CDT-SolidWorks public contract contains bounded native feature routes; live runtime discovery must confirm the exact composed surface
+  runtime_gate: &runtime_gate
+    required: true
+    requires:
+    - provider_reachable
+    - tool_present
+    - capability_available
+    - dependency_available
+    - license_ready
 - semantic: solid.boolean
-  support: blocked
-  expected_public_tools: []
-  verification: current CDT-SolidWorks snapshot has no callable MCP server or Boolean tool
+  support: expected
+  expected_public_tools:
+  - body_combine
+  - part_combine_all_bodies
+  verification: bounded Boolean routes are source-mapped; body identity/read-back and live capability availability remain runtime gates
+  runtime_gate: *runtime_gate
 - semantic: model.query
-  support: blocked
-  expected_public_tools: []
-  verification: current CDT-SolidWorks snapshot has no callable MCP model query tool
+  support: expected
+  expected_public_tools:
+  - document_list_features
+  - document_list_bodies
+  - body_inspect
+  verification: source contract contains bounded feature/body query routes; runtime availability is mandatory
+  runtime_gate: *runtime_gate
 - semantic: checkpoint.create
-  support: blocked
-  expected_public_tools: []
-  verification: no public native checkpoint/save route exists in the current provider snapshot
+  support: expected
+  expected_public_tools:
+  - document_save
+  verification: document_save is a public persistence route, not proof of transaction atomicity or rollback semantics
+  runtime_gate: *runtime_gate
 - semantic: model_3d.measure
-  support: blocked
-  expected_public_tools: []
-  verification: no public independent native measurement route exists in the current provider snapshot
+  support: expected
+  expected_public_tools:
+  - evaluation_measure
+  - evaluation_bounding_box
+  verification: independent measurement routes are source-mapped; acceptance requires live capability and target-specific read-back
+  runtime_gate: *runtime_gate
 - semantic: topology.inspect
-  support: blocked
+  support: unproven
   expected_public_tools: []
-  verification: no public topology inspection route exists in the current provider snapshot
+  verification: frozen six-lane contract requires an injected topology.inspect port, but Agent-5 does not own or invent Agent-1 final public tool names
+  runtime_gate: *runtime_gate
 - semantic: artifact.native_save
-  support: blocked
-  expected_public_tools: []
-  verification: no public native save route exists in the current provider snapshot
+  support: expected
+  expected_public_tools:
+  - document_save
+  - document_save_as
+  verification: native save routes are source-mapped; persisted identity and later reopen must be independently verified
+  runtime_gate: *runtime_gate
 - semantic: artifact.reopen
-  support: blocked
-  expected_public_tools: []
-  verification: no public native reopen route exists in the current provider snapshot
+  support: expected
+  expected_public_tools:
+  - document_reopen
+  verification: public reopen route is source-mapped; runtime discovery and post-reopen identity checks are required
+  runtime_gate: *runtime_gate
 - semantic: artifact.exchange_export
-  support: blocked
-  expected_public_tools: []
-  verification: no public exchange export route exists in the current provider snapshot
+  support: expected
+  expected_public_tools:
+  - export_document
+  verification: STEP/IGES/Parasolid and other accepted export pairs are runtime-gated by the provider capability surface
+  runtime_gate: *runtime_gate
 - semantic: artifact.seal
-  support: blocked
+  support: unproven
   expected_public_tools: []
-  verification: no public content-addressed seal route exists in the current provider snapshot
+  verification: no content-addressed SolidWorks artifact seal is claimed by the frozen Agent-5 contract
+  runtime_gate: *runtime_gate
+- semantic: reconstruction.assess
+  support: expected
+  expected_public_tools:
+  - reconstruction_assess
+  verification: Agent-5 plugin classifies source/hash/units/frame/topology-or-mesh evidence and fails closed when required inspection ports are absent
+  runtime_gate: *runtime_gate
+- semantic: reconstruction.step_to_editable
+  support: expected
+  expected_public_tools:
+  - reconstruction_step_to_editable
+  verification: controlled bracket/shaft STEP rebuild requires final Agent-7 binding of topology and part ports plus quantitative dimension/read-back gates
+  runtime_gate: *runtime_gate
+- semantic: reconstruction.mesh_to_parametric
+  support: expected
+  expected_public_tools:
+  - reconstruction_mesh_to_parametric
+  verification: controlled STL redraw is approximation-only, tolerance-bound, and refuses ambiguous primitive fits
+  runtime_gate: *runtime_gate
+- semantic: reconstruction.compare
+  support: expected
+  expected_public_tools:
+  - reconstruction_compare
+  verification: deterministic critical-dimension comparison is source-mapped; it does not itself prove upstream measurement provenance
+  runtime_gate: *runtime_gate
 known_blockers:
-- code: provider_not_implemented
-  effect: current CDT-SolidWorks repository is a provider-native skeleton; docs explicitly state that no callable MCP server/capability is currently claimed
-- code: source_snapshot_not_runtime_proof
-  effect: installed SolidWorks or reference automation examples cannot substitute for a released CDT-SolidWorks public provider
+- code: parallel_integration_not_accepted
+  effect: Agent-5 source mapping precedes Agent-7 final composition; do not dispatch until the live provider exposes the mapped tools and capabilities
+- code: runtime_discovery_required
+  effect: source files and branch SHAs are not runtime proof; missing provider/tool/capability must return a typed blocker before mutation
+- code: license_unverified
+  effect: SolidWorks registration/running state does not by itself establish operation-ready licensing; use the strongest runtime dependency evidence available and fail closed when unknown
+- code: topology_public_tool_name_unresolved
+  effect: reconstruction consumes the frozen topology port contract but Agent-5 does not invent another lane's public tool name
+- code: reconstruction_port_binding_pending
+  effect: STEP/STL mutation routes remain unavailable until Agent-7 binds the required topology/mesh and editable-part ports
 - code: exact_transaction_mode_unproven
-  effect: failure/recovery acceptance cannot start until a public native mutation/checkpoint route exists and its semantics are runtime-proven
+  effect: save/reopen and reconciliation routes do not establish native_atomic or checkpointed_atomic recovery without injected failure evidence
+- code: artifact_seal_unproven
+  effect: native and neutral artifacts need an external/future content-addressed seal route before release evidence can claim artifact sealing

@@ -41,17 +41,27 @@ class NativeRuntimeLaneContractTests(unittest.TestCase):
         self.assertIn("artifact_seal", text)
         self.assertIn("create_mesh", text)
 
-    def test_solidworks_map_fails_closed_on_provider_skeleton(self):
+    def test_solidworks_map_tracks_frozen_parallel_contract_but_remains_runtime_gated(self):
         data = yaml.safe_load((ROOT / "software/solidworks/engine-map.yaml").read_text(encoding="utf-8"))
         snapshot = data["source_snapshot"]
         self.assertEqual("CDT-SolidWorks", snapshot["repository"])
-        self.assertEqual("3bd2bfb2e6527cf2440fa8d2e23610ed4d77a6ab", snapshot["head"])
-        self.assertEqual(0, snapshot["public_tool_count"])
+        self.assertEqual("51e5ecfc6376b4146266811b7cd3f36020a89967", snapshot["head"])
+        self.assertEqual("inter-agent-contract-v1", snapshot["contract_version"])
+        self.assertFalse(snapshot["runtime_proof"])
+        self.assertEqual("parallel_contract_runtime_gated", snapshot["provider_state"])
+        by_semantic = {row["semantic"]: row for row in data["capability_mappings"]}
+        self.assertEqual("expected", by_semantic["solid.feature.create"]["support"])
+        self.assertIn("part_cut_extrude", by_semantic["solid.feature.create"]["expected_public_tools"])
+        self.assertIn("body_combine", by_semantic["solid.boolean"]["expected_public_tools"])
+        self.assertIn("evaluation_measure", by_semantic["model_3d.measure"]["expected_public_tools"])
+        self.assertIn("reconstruction_step_to_editable", by_semantic["reconstruction.step_to_editable"]["expected_public_tools"])
+        self.assertEqual("unproven", by_semantic["artifact.seal"]["support"])
         for row in data["capability_mappings"]:
-            self.assertEqual("blocked", row["support"], row["semantic"])
-            self.assertEqual([], row["expected_public_tools"], row["semantic"])
+            self.assertTrue(row["runtime_gate"]["required"], row["semantic"])
         blockers = {row["code"] for row in data["known_blockers"]}
-        self.assertIn("provider_not_implemented", blockers)
+        self.assertNotIn("provider_not_implemented", blockers)
+        self.assertIn("parallel_integration_not_accepted", blockers)
+        self.assertIn("exact_transaction_mode_unproven", blockers)
 
     def test_native_benchmarks_define_recovery_and_current_typed_blockers(self):
         building = (ROOT / "domains/building-architecture/benchmark-pack.md").read_text(encoding="utf-8")
@@ -70,7 +80,9 @@ class NativeRuntimeLaneContractTests(unittest.TestCase):
         self.assertIn("external hash", site.lower())
 
         mechanical = (ROOT / "domains/mechanical-reconstruction/benchmark-pack.md").read_text(encoding="utf-8")
-        self.assertIn("provider_not_implemented", mechanical)
+        self.assertNotIn("provider_not_implemented", mechanical)
+        self.assertIn("reconstruction_step_to_editable", mechanical)
+        self.assertIn("runtime discovery", mechanical.lower())
         for token in ["early", "middle", "late", "uncertain"]:
             self.assertIn(token, mechanical.lower())
 
