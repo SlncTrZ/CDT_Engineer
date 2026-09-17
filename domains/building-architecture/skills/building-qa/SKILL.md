@@ -19,6 +19,7 @@ Checker may independently measure/query and issue findings. It must not fill mis
 ## Deterministic checks
 
 - rerun `validate_levels`, `evaluate_space`, `evaluate_opening_host`, `evaluate_stair` on frozen inputs/independent measurements where applicable;
+- rerun `resolve_opening_elevation` and `verify_opening_placement` for placed openings, plus `verify_execution_placement` for every native-bound feature lane;
 - rerun `evaluate_feature_inventory` against the requested release;
 - verify semantic IDs/host relationships/component reuse against native query evidence;
 - verify required feature/detail inventory completeness;

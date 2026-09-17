@@ -22,6 +22,13 @@ system/native preflight
 ```
 Use raw `batch_*` only when their lower-level primitive is intentionally required. Compatibility mutations must retain their advertised weaker recovery class.
 
+## Lane discipline (2D drafting vs 3D solid)
+Declare one execution lane per feature before mutation and gate it with `verify_execution_placement`:
+- `autocad_2d_drafting` (LINE/LWPOLYLINE and siblings) is strictly plan/elevation drafting: the provider forces zero elevation and +Z normal by design (O1 LWPOLYLINE). Any 3D intent (heights, sill/head elevations, solids) routed here is silently flattened — this is a `lane_intent_mismatch` FAIL, never a quiet downgrade.
+- `autocad_3d_solid` (`solid_create_primitive`, `solid_extrude/sweep/revolve`) requires explicit full XYZ; a missing Z fails instead of defaulting to 0.
+- 2D drafting additionally requires an elevation reference (explicit elevation or level binding); floating plan geometry without datum fails.
+- Undeclared intent or lane yields `unknown` and blocks stronger releases. Wall XY position/orientation is not yet in the domain schema — it must be frozen explicitly per job, never invented silently.
+
 ## Transaction and recovery
 For accepted G3/`feature_execute` families, the provider owns one immutable predecessor checkpoint across bounded native micro-chunks and verifies exact feature-local recovery. RC2 additionally binds caller planning state through `document_pid` + `expected_parent_fp`; do not refresh the predecessor merely to make a stale mutation succeed. Do not wrap that path in a second long-lived client transaction. For broad COM/legacy paths, use only their advertised transaction/recovery semantics; timeout/unknown completion requires reconciliation and forbids blind replay. A known deferred RC2 operational debt can leave a stale COM application proxy after AutoCAD restart; after `RPC server is unavailable`, recover a clean Session-1 supervisor/worker, re-run read-only preflight, and only then resume new mutation.
 

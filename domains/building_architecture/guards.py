@@ -272,6 +272,79 @@ def verify_opening_placement(resolved: Mapping, measured_sill_elevation, measure
     return {'result':'fail' if reasons else 'pass','reason_codes':reasons}
 
 
+EXECUTION_LANES=('autocad_2d_drafting','autocad_3d_solid','sketchup_mesh')
+
+
+def _finite_point(point, name: str, dims: int) -> list:
+    if isinstance(point,(str,bytes)) or not isinstance(point,Sequence) or len(point)!=dims:
+        raise GuardInputError(f'{name} must contain {dims} numeric values')
+    return [finite_number(value,f'{name}[{i}]') for i,value in enumerate(point)]
+
+
+def verify_execution_placement(feature: Mapping, lane: str) -> dict:
+    """Gate native-bound feature placement by execution lane and coordinate completeness.
+
+    Lanes have incompatible coordinate contracts: autocad_2d_drafting forces
+    zero elevation/+Z normal by provider design, so any 3D intent routed there
+    is silently flattened. 3D lanes require explicit full coordinates; a
+    missing Z (or 2D points) fails instead of defaulting to 0. An undeclared
+    intent or lane yields 'unknown', never an assumed frame.
+    """
+    if not isinstance(feature,Mapping):
+        raise GuardInputError('feature must be a mapping')
+    if lane not in EXECUTION_LANES:
+        raise GuardInputError(f'lane must be one of {"/".join(EXECUTION_LANES)}')
+    intent=feature.get('intent_3d')
+    if not isinstance(intent,bool):
+        return {'result':'unknown','reason_codes':['intent_undeclared'],'feature_id':feature.get('id')}
+    coordinates=feature.get('coordinates')
+    if not isinstance(coordinates,Mapping):
+        return {'result':'fail','reason_codes':['missing_coordinates'],'feature_id':feature.get('id')}
+    reasons=[]
+    point_reasons=[]
+    def _check_point(point, name: str, dims: int) -> None:
+        if isinstance(point,(str,bytes)) or not isinstance(point,Sequence) or len(point)!=dims:
+            point_reasons.append('coordinate_dimension_mismatch')
+            return
+        try:
+            for i,value in enumerate(point):
+                finite_number(value,f'{name}[{i}]')
+        except GuardInputError:
+            point_reasons.append('non_finite_coordinate')
+    if lane=='autocad_2d_drafting':
+        if intent:
+            reasons.append('lane_intent_mismatch')
+        points=coordinates.get('points')
+        if isinstance(points,Sequence) and not isinstance(points,(str,bytes)):
+            for i,point in enumerate(points):
+                _check_point(point,f'coordinates.points[{i}]',2)
+        else:
+            _check_point(coordinates.get('origin'),'coordinates.origin',2)
+        elevation=coordinates.get('elevation')
+        if elevation is None and not coordinates.get('level_id'):
+            reasons.append('missing_elevation_reference')
+        elif elevation is not None:
+            try:
+                finite_number(elevation,'coordinates.elevation')
+            except GuardInputError:
+                point_reasons.append('non_finite_coordinate')
+    else:
+        if not intent:
+            reasons.append('lane_intent_mismatch')
+        points=coordinates.get('points')
+        if isinstance(points,Sequence) and not isinstance(points,(str,bytes)) and len(points)>0:
+            for i,point in enumerate(points):
+                _check_point(point,f'coordinates.points[{i}]',3)
+        else:
+            origin=coordinates.get('origin')
+            if origin is None:
+                reasons.append('missing_coordinates')
+            else:
+                _check_point(origin,'coordinates.origin',3)
+    reasons.extend(point_reasons)
+    return {'result':'fail' if reasons else 'pass','reason_codes':reasons,'feature_id':feature.get('id'),'lane':lane}
+
+
 def evaluate_stair(stair: Mapping, requirements: Mapping) -> dict:
     """Check stair dimensional consistency; regulatory thresholds must be supplied explicitly."""
     if not isinstance(stair,Mapping) or not isinstance(requirements,Mapping):

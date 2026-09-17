@@ -2,12 +2,14 @@
 import unittest
 
 from domains.building_architecture.guards import (
+    EXECUTION_LANES,
     evaluate_feature_inventory,
     evaluate_opening_host,
     evaluate_space,
     evaluate_stair,
     resolve_opening_elevation,
     validate_levels,
+    verify_execution_placement,
     verify_opening_placement,
 )
 from domains.guard_primitives import GuardInputError
@@ -93,6 +95,44 @@ class BuildingArchitectureGuardTests(unittest.TestCase):
         self.assertIn('head_elevation_mismatch',double_added['reason_codes'])
         unresolved=resolve_opening_elevation([{'id':'L1','elevation':0.0}],wall,opening)
         self.assertEqual('unknown',verify_opening_placement(unresolved,4500.0,6000.0,1.0)['result'])
+
+    def test_3d_intent_through_2d_drafting_lane_fails(self):
+        window_3d={'id':'WIN1','intent_3d':True,'coordinates':{'points':[[0.0,0.0],[1.5,0.0]],'level_id':'L1'}}
+        result=verify_execution_placement(window_3d,'autocad_2d_drafting')
+        self.assertEqual('fail',result['result'])
+        self.assertIn('lane_intent_mismatch',result['reason_codes'])
+        mesh_3d={'id':'M1','intent_3d':True,'coordinates':{'points':[[0.0,0.0],[1.0,0.0]]}}
+        self.assertEqual('fail',verify_execution_placement(mesh_3d,'sketchup_mesh')['result'])
+
+    def test_3d_lane_requires_explicit_z(self):
+        flat={'id':'W1','intent_3d':True,'coordinates':{'points':[[0.0,0.0],[6.0,0.0]]}}
+        result=verify_execution_placement(flat,'autocad_3d_solid')
+        self.assertEqual('fail',result['result'])
+        self.assertIn('coordinate_dimension_mismatch',result['reason_codes'])
+        no_coords={'id':'W1','intent_3d':True,'coordinates':{}}
+        result=verify_execution_placement(no_coords,'autocad_3d_solid')
+        self.assertEqual('fail',result['result'])
+        self.assertIn('missing_coordinates',result['reason_codes'])
+        solid={'id':'W1','intent_3d':True,'coordinates':{'points':[[0.0,0.0,0.0],[6.0,0.0,0.0],[6.0,0.0,3.6]]}}
+        self.assertEqual('pass',verify_execution_placement(solid,'autocad_3d_solid')['result'])
+
+    def test_2d_lane_requires_elevation_reference(self):
+        plan={'id':'P1','intent_3d':False,'coordinates':{'origin':[0.0,0.0],'level_id':'L1'}}
+        self.assertEqual('pass',verify_execution_placement(plan,'autocad_2d_drafting')['result'])
+        floating=dict(plan)
+        floating['coordinates']={'origin':[0.0,0.0]}
+        result=verify_execution_placement(floating,'autocad_2d_drafting')
+        self.assertEqual('fail',result['result'])
+        self.assertIn('missing_elevation_reference',result['reason_codes'])
+
+    def test_undeclared_intent_or_lane_is_unknown_or_rejected(self):
+        no_intent={'id':'X1','coordinates':{'origin':[0.0,0.0,0.0]}}
+        result=verify_execution_placement(no_intent,'sketchup_mesh')
+        self.assertEqual('unknown',result['result'])
+        self.assertIn('intent_undeclared',result['reason_codes'])
+        with self.assertRaises(GuardInputError):
+            verify_execution_placement(no_intent,'autocad_legacy_plot')
+        self.assertEqual(3,len(EXECUTION_LANES))
 
     def test_stair_uses_level_delta_and_explicit_requirements_not_universal_code_values(self):
         stair={

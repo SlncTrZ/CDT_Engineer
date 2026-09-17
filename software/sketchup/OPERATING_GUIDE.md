@@ -34,6 +34,9 @@ Step-0 capability snapshot
 
 For complex geometry, CDT_Engineer plans a bounded indexed mesh; `create_mesh` consumes only the vertices/faces and validates provider budgets. For registry-backed assets, resolve the exact catalog mapping first, require matching `asset_key + sha256 + native_version` in current `asset_list`, place through `place_asset`, then independently read back definition/instance identity.
 
+## Lane discipline (mesh coordinates)
+`sketchup_mesh` is a 3D lane: every point must carry explicit finite XYZ — 2D points fail the placement gate instead of defaulting Z to 0. Declare `intent_3d` per feature and gate with `verify_execution_placement` before mutation. Strict coordinates are `active_context`/target-local; never assume an implicit world conversion (see `model_world_coordinate_input_unclaimed`).
+
 ## Transaction and recovery
 Strict mutations use the provider Semantic State Loop and commit only after semantic/affected-set validation. Contract 0.28 native evidence includes:
 

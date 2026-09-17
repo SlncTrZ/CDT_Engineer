@@ -40,9 +40,9 @@ Expected:
 
 ## Benchmark C — Primitive-substitution negative
 
-Create an artifact that visually resembles the reference but replaces required resolved door/window/facade systems with arbitrary raw boxes/faces or omits major visible features.
+Create an artifact that visually resembles the reference but replaces required resolved door/window/facade systems with arbitrary raw boxes/faces or omits major visible features. Include a 3D-intent feature (e.g. a window with sill/head elevations) executed through the 2D drafting lane, and a natively placed feature with missing/defaulted lane coordinates.
 
-Expected: ARCH-06/07 hard gate FAIL/BLOCK regardless of screenshot/render quality or generic engine integrity.
+Expected: ARCH-06/07 hard gate FAIL/BLOCK regardless of screenshot/render quality or generic engine integrity; lane/intent mismatch and incomplete placement additionally FAIL/BLOCK under ARCH-04.
 
 ## Benchmark D — Relationship/topology negative
 

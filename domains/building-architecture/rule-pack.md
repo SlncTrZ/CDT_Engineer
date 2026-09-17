@@ -1,7 +1,7 @@
 # Building Architecture v1 — Rule Pack
 
 > Documentation class: PUBLIC_DOMAIN
-Version: 0.2.1 · Scope: low-rise residential / design-review baseline · Status: ARCH-02/03/04/05/07/11 deterministic guards implemented (ARCH-02/04 include absolute opening-elevation binding since 2026-09-17); remaining rules specified.
+Version: 0.2.2 · Scope: low-rise residential / design-review baseline · Status: ARCH-02/03/04/05/07/11 deterministic guards implemented (ARCH-02/04 include absolute opening-elevation binding and execution-lane placement gating since 2026-09-17); remaining rules specified.
 
 This pack is standards-neutral unless a job binds an exact standard/project requirement with edition/applicability. No universal room, circulation, stair, fire, accessibility or construction-code numbers are invented here.
 
@@ -10,7 +10,7 @@ This pack is standards-neutral unless a job binds an exact standard/project requ
 | ARCH-01 Source & provenance closure | Freeze source identities/hashes; classify observations as observed/specified/derived/inferred/unknown/approved_assumption; inventory visible/required features before modeling | BLOCK when critical source identity or required feature inventory is unresolved for requested scope | Source manifest, evidence ledger, feature inventory |
 | ARCH-02 Levels & references | Level IDs/elevations are finite, unique and ordered; all dependent entities reference valid levels; every opening resolves an absolute sill/head elevation through its host wall's level before native placement | FAIL on malformed/duplicate/inconsistent levels or unresolvable opening elevation | Level register and independent elevation check |
 | ARCH-03 Spaces & dimensional requirements | Space boundaries are valid; compute area and explicit measurable clear-dimension checks; apply only project/standard thresholds supplied by Design Basis | FAIL on invalid geometry or explicit requirement breach; UNKNOWN where requested measurement method is unsupported | Space polygons, requirement source, measurements |
-| ARCH-04 Wall/opening hosting | Opening host identity is explicit; opening bounds must fit host wall in the declared simplified v1 representation, relatively (sill+height within wall height) and absolutely (head at or below wall top elevation); downstream component references the opening/system identity | FAIL on unhosted/out-of-bounds opening, including absolute head-above-wall-top | Wall/opening identities and measured bounds |
+| ARCH-04 Wall/opening hosting | Opening host identity is explicit; opening bounds must fit host wall in the declared simplified v1 representation, relatively (sill+height within wall height) and absolutely (head at or below wall top elevation); every native-bound feature declares its execution lane (`autocad_2d_drafting` / `autocad_3d_solid` / `sketchup_mesh`) with complete lane coordinates — 3D intent through the 2D drafting lane is prohibited because the provider flattens it by design | FAIL on unhosted/out-of-bounds opening, including absolute head-above-wall-top and lane/intent mismatch | Wall/opening identities and measured bounds |
 | ARCH-05 Vertical circulation | Stair total rise must reconcile with connected level elevations; riser/going/width checks use only explicit Design Basis/standard thresholds | FAIL on geometric inconsistency or explicit requirement breach | Level elevations, stair dimensions, requirement source |
 | ARCH-06 Semantic/component resolution | Professional intent resolves to a semantic system/component/custom path before native primitives. **Silent primitive substitution** for a missing required component/system is prohibited. Proxy use follows Release Scope Policy | BLOCK or reduce scope when catalog/skill/system dependency is unresolved | Semantic ID, dependency state, catalog/custom/proxy decision, native mapping evidence |
 | ARCH-07 Completeness | Compare frozen requirement/visible-feature inventory with implemented + independently verified artifact content | BLOCK on required omission, unverified required item or proxy beyond allowed release | Inventory with source evidence, implementation and verification states |
@@ -39,6 +39,8 @@ A missing door/window/facade/stair/detail family must not become boxes/faces/lin
 - explicit space area and rectangular clear-dimension requirements;
 - simplified wall/opening hosting bounds, relative and absolute
   (sill/head elevation resolution through the host wall's level);
+- execution-lane placement gating (lane declaration, intent/lane match,
+  coordinate completeness per lane);
 - natively measured opening sill/head verification against the resolved
   reference with a caller-declared tolerance;
 - stair total-rise consistency and explicit dimension thresholds;
@@ -61,6 +63,8 @@ Mandatory Building v1 negative cases include:
 - self-intersecting/degenerate space boundary;
 - opening outside its host wall, relatively or absolutely (window head above
   wall top elevation; sill/head placed without resolving the host level);
+- 3D feature content executed through the 2D drafting lane, or any native-bound
+  feature placed with missing/defaulted lane coordinates;
 - stair total rise inconsistent with levels;
 - generic topology/integrity PASS while semantic host relationship fails;
 - unknown structural role promoted to structural fact;
