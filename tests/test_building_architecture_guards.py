@@ -6,7 +6,9 @@ from domains.building_architecture.guards import (
     evaluate_opening_host,
     evaluate_space,
     evaluate_stair,
+    resolve_opening_elevation,
     validate_levels,
+    verify_opening_placement,
 )
 from domains.guard_primitives import GuardInputError
 
@@ -50,6 +52,47 @@ class BuildingArchitectureGuardTests(unittest.TestCase):
         result=evaluate_opening_host(wall,bad)
         self.assertEqual('fail',result['result'])
         self.assertIn('opening_exceeds_wall_length',result['reason_codes'])
+
+    def test_opening_absolute_elevation_binds_wall_level(self):
+        levels=[{'id':'L1','elevation':0.0},{'id':'L2','elevation':3600.0}]
+        wall={'id':'W1','level_id':'L2','length':6000.0,'height':3600.0}
+        opening={'id':'WIN1','host_wall_id':'W1','offset':1000.0,'width':1500.0,'height':1500.0,'sill_height':900.0}
+        result=resolve_opening_elevation(levels,wall,opening)
+        self.assertEqual('pass',result['result'])
+        self.assertEqual(4500.0,result['sill_elevation'])
+        self.assertEqual(6000.0,result['head_elevation'])
+        self.assertEqual(3600.0,result['wall_base_elevation'])
+        self.assertEqual(7200.0,result['wall_top_elevation'])
+
+    def test_opening_head_above_wall_top_fails_absolute_gate(self):
+        levels=[{'id':'L2','elevation':3600.0}]
+        wall={'id':'W1','level_id':'L2','length':6000.0,'height':3600.0}
+        eating_ceiling={'id':'WIN1','host_wall_id':'W1','offset':1000.0,'width':1500.0,'height':1500.0,'sill_height':3000.0}
+        result=resolve_opening_elevation(levels,wall,eating_ceiling)
+        self.assertEqual('fail',result['result'])
+        self.assertIn('head_above_wall_top',result['reason_codes'])
+
+    def test_opening_unresolved_level_is_unknown_not_pass(self):
+        levels=[{'id':'L1','elevation':0.0}]
+        wall={'id':'W1','level_id':'L2','length':6000.0,'height':3600.0}
+        opening={'id':'WIN1','host_wall_id':'W1','offset':1000.0,'width':1500.0,'height':1500.0,'sill_height':900.0}
+        result=resolve_opening_elevation(levels,wall,opening)
+        self.assertEqual('unknown',result['result'])
+        self.assertIn('level_unresolved',result['reason_codes'])
+        self.assertIsNone(result['sill_elevation'])
+
+    def test_measured_placement_verifies_against_resolved_elevation(self):
+        levels=[{'id':'L2','elevation':3600.0}]
+        wall={'id':'W1','level_id':'L2','length':6000.0,'height':3600.0}
+        opening={'id':'WIN1','host_wall_id':'W1','offset':1000.0,'width':1500.0,'height':1500.0,'sill_height':900.0}
+        resolved=resolve_opening_elevation(levels,wall,opening)
+        self.assertEqual('pass',verify_opening_placement(resolved,4500.0,6000.0,1.0)['result'])
+        double_added=verify_opening_placement(resolved,8100.0,9600.0,1.0)
+        self.assertEqual('fail',double_added['result'])
+        self.assertIn('sill_elevation_mismatch',double_added['reason_codes'])
+        self.assertIn('head_elevation_mismatch',double_added['reason_codes'])
+        unresolved=resolve_opening_elevation([{'id':'L1','elevation':0.0}],wall,opening)
+        self.assertEqual('unknown',verify_opening_placement(unresolved,4500.0,6000.0,1.0)['result'])
 
     def test_stair_uses_level_delta_and_explicit_requirements_not_universal_code_values(self):
         stair={

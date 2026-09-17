@@ -1,5 +1,5 @@
 """Building Architecture deterministic semantic and geometry guards.
-Wing: code | Topic: building-architecture | Updated: 2026-09-14 10:18
+Wing: code | Topic: building-architecture | Updated: 2026-09-17
 """
 from __future__ import annotations
 
@@ -186,6 +186,90 @@ def evaluate_opening_host(wall: Mapping, opening: Mapping) -> dict:
         'host_wall_id':wall_id,
         'opening_id':opening.get('id'),
     }
+
+
+def resolve_opening_elevation(levels: Sequence[Mapping], wall: Mapping, opening: Mapping) -> dict:
+    """Bind opening sill/head to absolute elevation via the host wall's level.
+
+    sill_height is relative to the wall base (its level elevation); native
+    placement must use sill_elevation/head_elevation, never the raw sill.
+    Returns 'unknown' when the wall level cannot be resolved and 'fail' when
+    the absolute opening exceeds the wall (e.g. a window head eating the
+    ceiling). Relative-only checks cannot catch these; this binding can.
+    """
+    if isinstance(levels,(str,bytes)) or not isinstance(levels,Sequence):
+        raise GuardInputError('levels must be a sequence')
+    if not isinstance(wall,Mapping) or not isinstance(opening,Mapping):
+        raise GuardInputError('wall and opening must be mappings')
+    wall_id=_string_id(wall.get('id'),'wall.id')
+    host_id=_string_id(opening.get('host_wall_id'),'opening.host_wall_id')
+    level_id=_string_id(wall.get('level_id'),'wall.level_id')
+    wall_height=finite_number(wall.get('height'),'wall.height')
+    sill=finite_number(opening.get('sill_height',0.0),'opening.sill_height')
+    height=finite_number(opening.get('height'),'opening.height')
+    if wall_height<=0 or height<=0 or sill<0:
+        raise GuardInputError('wall/opening vertical dimensions must be physically positive and sill nonnegative')
+    elevations={}
+    for i,level in enumerate(levels):
+        if not isinstance(level,Mapping):
+            raise GuardInputError('each level must be a mapping')
+        elevations[_string_id(level.get('id'),f'levels[{i}].id')]=finite_number(level.get('elevation'),f'levels[{i}].elevation')
+    reasons=[]
+    if host_id!=wall_id:
+        reasons.append('opening_host_id_mismatch')
+    if level_id not in elevations:
+        return {
+            'result':'unknown' if not reasons else 'fail',
+            'reason_codes':[*reasons,'level_unresolved'],
+            'host_wall_id':wall_id,
+            'opening_id':opening.get('id'),
+            'sill_elevation':None,
+            'head_elevation':None,
+            'wall_base_elevation':None,
+            'wall_top_elevation':None,
+        }
+    base=elevations[level_id]
+    top=base+wall_height
+    sill_abs=base+sill
+    head_abs=sill_abs+height
+    if head_abs>top+_EPS:
+        reasons.append('head_above_wall_top')
+    return {
+        'result':'fail' if reasons else 'pass',
+        'reason_codes':reasons,
+        'host_wall_id':wall_id,
+        'opening_id':opening.get('id'),
+        'sill_elevation':sill_abs,
+        'head_elevation':head_abs,
+        'wall_base_elevation':base,
+        'wall_top_elevation':top,
+    }
+
+
+def verify_opening_placement(resolved: Mapping, measured_sill_elevation, measured_head_elevation, tolerance) -> dict:
+    """Verify natively measured opening elevations against a resolved reference.
+
+    The caller declares the project tolerance (same units as the elevations);
+    the oracle never invents one. An unresolved reference yields 'unknown',
+    never a silent pass.
+    """
+    if not isinstance(resolved,Mapping):
+        raise GuardInputError('resolved must be a mapping')
+    tolerance=finite_number(tolerance,'tolerance')
+    if tolerance<0:
+        raise GuardInputError('tolerance must be nonnegative')
+    if resolved.get('result')!='pass':
+        return {'result':'unknown','reason_codes':['unresolved_reference']}
+    sill_ref=finite_number(resolved.get('sill_elevation'),'resolved.sill_elevation')
+    head_ref=finite_number(resolved.get('head_elevation'),'resolved.head_elevation')
+    sill_meas=finite_number(measured_sill_elevation,'measured_sill_elevation')
+    head_meas=finite_number(measured_head_elevation,'measured_head_elevation')
+    reasons=[]
+    if abs(sill_meas-sill_ref)>tolerance+_EPS:
+        reasons.append('sill_elevation_mismatch')
+    if abs(head_meas-head_ref)>tolerance+_EPS:
+        reasons.append('head_elevation_mismatch')
+    return {'result':'fail' if reasons else 'pass','reason_codes':reasons}
 
 
 def evaluate_stair(stair: Mapping, requirements: Mapping) -> dict:

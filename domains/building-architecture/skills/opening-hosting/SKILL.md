@@ -19,6 +19,8 @@ May place openings and selected resolved/custom components within approved host 
 ## Deterministic checks
 
 - `evaluate_opening_host` validates host identity and opening bounds against wall length/height;
+- `resolve_opening_elevation` binds sill/head to absolute elevation through the host wall's `level_id` before any native placement — the raw `sill_height` must never be used as a native Z;
+- `verify_opening_placement` checks natively measured sill/head elevations against the resolved reference with a caller-declared tolerance;
 - widths/heights/offsets/sill values must be finite and physically valid;
 - component resolution state is explicit before production-level placement;
 - repeated resolved families preserve component identity rather than duplicate raw geometry;
@@ -26,7 +28,7 @@ May place openings and selected resolved/custom components within approved host 
 
 ## Workflow
 
-Opening requirement → host wall lookup → dimensional/provenance check → component/catalog resolution → semantic opening chunk → native implementation → query/measure host relationship → checkpoint.
+Opening requirement → host wall lookup → dimensional/provenance check → absolute elevation resolution (`resolve_opening_elevation`) → component/catalog resolution → semantic opening chunk → native implementation at resolved elevations → query/measure host relationship → placement verification (`verify_opening_placement`) → checkpoint.
 
 ## Software semantics
 
@@ -39,7 +41,8 @@ Output: opening register with host IDs, resolved component IDs, measured bounds/
 ## Negative cases
 
 - door/window merely overlaps a wall without hosted opening semantics;
-- opening exceeds host bounds;
+- opening exceeds host bounds, relatively or absolutely (sill/head placed
+  without resolving the host wall level, e.g. window head above wall top);
 - missing approved family silently replaced with arbitrary box at `design_review`;
 - repeated windows copied as unrelated raw geometry;
 - hidden lintel/support detail invented from an image.

@@ -53,6 +53,7 @@ Introduce one or more:
 - duplicate/copanar facade geometry where the declared system forbids it;
 - cross-storey semantic leakage;
 - stair level-rise mismatch;
+- opening placed at an absolute sill/head elevation inconsistent with its host wall's level elevation (unresolved level, or measured placement deviating from the resolved reference beyond the declared tolerance);
 - component instance whose semantic identity/native mapping does not match the catalog resolution.
 
 Expected: ARCH-04/05/08 FAIL/BLOCK.
