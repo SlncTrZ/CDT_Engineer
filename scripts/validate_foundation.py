@@ -18,7 +18,7 @@ def run(cmd):
 def main():
  test_stdout,test_stderr=run([sys.executable,'-m','unittest','discover','-s','tests','-v'])
  schemas=[*ROOT.glob('domains/*/domain.schema.json'),*ROOT.glob('docs/schemas/*.json'),*ROOT.glob('catalogs/schemas/*.json')]
- for p in schemas: Draft202012Validator.check_schema(json.loads(p.read_text()))
+ for p in schemas: Draft202012Validator.check_schema(json.loads(p.read_text(encoding='utf-8')))
  profile_schema=json.loads((ROOT/'docs/schemas/agent-profile.schema.json').read_text(encoding='utf-8'))
  profile_validator=Draft202012Validator(profile_schema)
  profiles=list(ROOT.glob('domains/*/agent-profile.json'))
@@ -43,7 +43,7 @@ def main():
  root_resolved=ROOT.resolve()
  for f in md:
   if not f.exists(): continue
-  for link in pat.findall(f.read_text()):
+  for link in pat.findall(f.read_text(encoding='utf-8')):
    if link.startswith(('http://','https://','#','mailto:')): continue
    rel=link.split('#',1)[0]
    if not rel: continue

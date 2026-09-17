@@ -1,3 +1,6 @@
+"""Agent profile and engine-map consistency tests.
+Wing: code | Topic: agent-profiles-maps | Updated: 2026-09-17
+"""
 import json
 import unittest
 from pathlib import Path

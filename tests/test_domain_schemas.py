@@ -1,3 +1,6 @@
+"""Production domain schema validation tests.
+Wing: code | Topic: domain-schemas | Updated: 2026-09-17
+"""
 import copy
 import json
 import unittest

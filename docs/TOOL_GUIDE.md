@@ -72,6 +72,8 @@ CDT_Engineer tools must not expose native primitives such as line/circle creatio
 
 For AutoCAD, the client performs Step-0 using `cdt-autocad.system_status`, `cdt-autocad.system_capabilities` and, where strong-integrity mutation is required, `cdt-autocad.native_integrity_status`. The client then executes through the public AutoCAD contract and returns measured receipts/state to CDT_Engineer checks.
 
+The same Step-0 preflight applies to the other Generic CAD Executors: discover live capabilities through the executor's own `system_status`/`system_capabilities` surface first, then execute through its pinned public contract. `engine_map_get(software_id)` currently serves `autocad`, `sketchup` and `solidworks` source maps; those maps are source expectations, never current runtime proof.
+
 ## Error and safety rules
 
 - Invalid structured engineering input returns `validation_error`.
@@ -85,3 +87,5 @@ For AutoCAD, the client performs Step-0 using `cdt-autocad.system_status`, `cdt-
 ## Current scope
 
 This alpha provider slice exposes existing deterministic CDT_Engineer logic. It intentionally does **not** add a project database, hidden orchestration backend, LLM routing layer, universal CAD API, or new professional semantics. Additional tools should be promoted only when backed by public contracts and deterministic behavior.
+
+Blender is defined in the L2 contract model (`docs/CONTRACTS.md` §6) but is **deferred from this alpha slice**: no `software/blender/` Operating Guide or engine map ships yet, and `engine_map_get` does not serve a `blender` key. A Blender guide/map should be added only with pinned public contract evidence, not as an unverified placeholder.

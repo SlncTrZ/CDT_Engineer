@@ -1,5 +1,5 @@
 """Bounded complex-geometry planning for Building Architecture.
-Wing: code | Topic: building-complex-geometry | Updated: 2026-09-14 10:22
+Wing: code | Topic: building-complex-geometry | Updated: 2026-09-17
 
 This module produces generic indexed-mesh recipes for an external CAD executor. It is
 not a CAD kernel and does not call SketchUp/native APIs.
@@ -13,6 +13,14 @@ from collections.abc import Sequence
 from domains.guard_primitives import finite_number
 
 _EPS = 1e-9
+# Loft rings are validated against a best-fit plane; inputs such as the ENG-R02
+# nonplanar fixture (0.5 off-plane) must fail while exactly-planar executor
+# sections (float noise ~1e-15) must pass.
+_PLANAR_TOL = 1e-6
+# Default pre-allocation cap for arc sampling (ENG-R04): bounds work before any
+# point list is built so pathological tolerance/sweep requests fail instead of
+# exhausting memory.
+_DEFAULT_ARC_MAX_SEGMENTS = 4096
 
 
 class GeometryPlanError(ValueError):
@@ -127,6 +135,149 @@ def _bounds(points: Sequence[Sequence[float]]) -> dict:
     }
 
 
+def _ring_projection(
+    ring: Sequence[tuple[float, float, float]],
+) -> tuple[list[tuple[float, float]], tuple[float, float, float]]:
+    """Project a 3D ring onto its dominant plane via the Newell normal."""
+    nx = ny = nz = 0.0
+    count = len(ring)
+    for index in range(count):
+        x0, y0, z0 = ring[index]
+        x1, y1, z1 = ring[(index + 1) % count]
+        nx += (y0 - y1) * (z0 + z1)
+        ny += (z0 - z1) * (x0 + x1)
+        nz += (x0 - x1) * (y0 + y1)
+    dominant = max(range(3), key=lambda axis: abs((nx, ny, nz)[axis]))
+    if dominant == 0:
+        projected = [(point[1], point[2]) for point in ring]
+    elif dominant == 1:
+        projected = [(point[0], point[2]) for point in ring]
+    else:
+        projected = [(point[0], point[1]) for point in ring]
+    return projected, (nx, ny, nz)
+
+
+def _signed_area2(points: Sequence[tuple[float, float]]) -> float:
+    count = len(points)
+    return sum(
+        points[index][0] * points[(index + 1) % count][1]
+        - points[(index + 1) % count][0] * points[index][1]
+        for index in range(count)
+    )
+
+
+def _point_in_triangle(
+    point: tuple[float, float],
+    a: tuple[float, float],
+    b: tuple[float, float],
+    c: tuple[float, float],
+) -> bool:
+    """Strict interior test (points on the edge do not count as inside)."""
+    o1 = _orientation(a, b, point)
+    o2 = _orientation(b, c, point)
+    o3 = _orientation(c, a, point)
+    return (
+        (o1 > _EPS and o2 > _EPS and o3 > _EPS)
+        or (o1 < -_EPS and o2 < -_EPS and o3 < -_EPS)
+    )
+
+
+def _triangulate_simple_polygon(
+    outline: Sequence[tuple[float, float]],
+) -> list[tuple[int, int, int]]:
+    """Ear-clipping triangulation for simple (concave-safe) polygons.
+
+    Fan triangulation from vertex 0 overlaps outside concave outlines
+    (ENG-R01: concave cap fan produced area 11.0 for a 7.0 polygon), so caps
+    must be ear-clipped instead.
+    """
+    count = len(outline)
+    if count < 3:
+        raise GeometryPlanError("cap outline requires at least three points")
+    if count == 3:
+        return [(0, 1, 2)]
+    working = list(range(count))
+    if _signed_area2([outline[index] for index in working]) < 0:
+        working.reverse()
+    triangles: list[tuple[int, int, int]] = []
+    guard = 0
+    while len(working) > 3:
+        ear_found = False
+        for cursor in range(len(working)):
+            prev = working[(cursor - 1) % len(working)]
+            curr = working[cursor]
+            nxt = working[(cursor + 1) % len(working)]
+            a, b, c = outline[prev], outline[curr], outline[nxt]
+            if _orientation(a, b, c) <= _EPS:
+                continue
+            if any(
+                _point_in_triangle(outline[other], a, b, c)
+                for other in working
+                if other not in (prev, curr, nxt)
+            ):
+                continue
+            triangles.append((prev, curr, nxt))
+            del working[cursor]
+            ear_found = True
+            break
+        guard += 1
+        if not ear_found or guard > count * count:
+            raise GeometryPlanError("cap outline cannot be triangulated without overlap")
+    triangles.append((working[0], working[1], working[2]))
+    return triangles
+
+
+def _validate_loft_ring(
+    ring: Sequence[tuple[float, float, float]], section_index: int
+) -> list[tuple[float, float]]:
+    """Fail closed on nonplanar / self-intersecting / degenerate loft rings (ENG-R02)."""
+    projected, normal = _ring_projection(ring)
+    norm_len = math.sqrt(sum(component * component for component in normal))
+    count = len(ring)
+    if norm_len <= _EPS:
+        # A self-cancelled Newell normal (e.g. bow-tie lobes) has zero signed
+        # area; report the actionable self-intersection first when the outline
+        # crosses itself, and only then fall back to degenerate. Use the XY
+        # projection here since the dominant-axis projection is meaningless
+        # without a valid normal.
+        fallback = [(point[0], point[1]) for point in ring]
+        for index in range(count):
+            for other in range(index + 1, count):
+                if other in {index, (index + 1) % count} or index == (other + 1) % count:
+                    continue
+                if _segments_intersect(
+                    fallback[index],
+                    fallback[(index + 1) % count],
+                    fallback[other],
+                    fallback[(other + 1) % count],
+                ):
+                    raise GeometryPlanError(f"loft section {section_index} is self-intersecting")
+        raise GeometryPlanError(f"loft section {section_index} is degenerate")
+    centroid = [sum(point[axis] for point in ring) / count for axis in range(3)]
+    unit = [component / norm_len for component in normal]
+    for point in ring:
+        distance = sum((point[axis] - centroid[axis]) * unit[axis] for axis in range(3))
+        if abs(distance) > _PLANAR_TOL:
+            raise GeometryPlanError(f"loft section {section_index} is not planar")
+    for index in range(count):
+        if math.dist(projected[index], projected[(index + 1) % count]) <= _EPS:
+            raise GeometryPlanError(f"loft section {section_index} contains a zero-length edge")
+    for index in range(count):
+        for other in range(index + 1, count):
+            if other in {index, (index + 1) % count} or index == (other + 1) % count:
+                continue
+            if _segments_intersect(
+                projected[index],
+                projected[(index + 1) % count],
+                projected[other],
+                projected[(other + 1) % count],
+            ):
+                raise GeometryPlanError(f"loft section {section_index} is self-intersecting")
+    if abs(_signed_area2(projected)) <= _EPS:
+        raise GeometryPlanError(f"loft section {section_index} area is degenerate")
+    return projected
+
+
 def plan_loft_mesh(
     sections: Sequence[Sequence[Sequence[float]]],
     *,
@@ -151,6 +302,13 @@ def plan_loft_mesh(
         normalized.append(ring)
     assert width is not None
 
+    # Validate every ring before any recipe is produced: an invalid section
+    # must fail before execution, never return manifold_expected=True (ENG-R02).
+    ring_projections = [
+        _validate_loft_ring(ring, section_index)
+        for section_index, ring in enumerate(normalized)
+    ]
+
     points = [list(point) for ring in normalized for point in ring]
     faces: list[list[int]] = []
     section_count = len(normalized)
@@ -161,11 +319,14 @@ def plan_loft_mesh(
             nxt = (vertex_index + 1) % width
             faces.append([base_a + vertex_index, base_a + nxt, base_b + nxt, base_b + vertex_index])
 
-    for vertex_index in range(1, width - 1):
-        faces.append([0, vertex_index + 1, vertex_index])
+    # Caps are ear-clipped in each ring's own plane so concave outlines are
+    # covered exactly (ENG-R01). The start cap winds opposite the ring order
+    # (outward normal faces away from the loft interior).
+    for prev, curr, nxt in _triangulate_simple_polygon(ring_projections[0]):
+        faces.append([nxt, curr, prev])
     last = (section_count - 1) * width
-    for vertex_index in range(1, width - 1):
-        faces.append([last, last + vertex_index, last + vertex_index + 1])
+    for prev, curr, nxt in _triangulate_simple_polygon(ring_projections[-1]):
+        faces.append([last + prev, last + curr, last + nxt])
 
     _check_budget(points, faces, budget)
     chunk = {
@@ -202,8 +363,14 @@ def sample_circular_arc(
     start_angle_deg,
     end_angle_deg,
     max_chord_error,
+    max_segments: int | None = _DEFAULT_ARC_MAX_SEGMENTS,
 ) -> dict:
-    """Sample a planar circular arc with a mathematically bounded sagitta error."""
+    """Sample a planar circular arc with a mathematically bounded sagitta error.
+
+    The required segment count is capped by ``max_segments`` *before* any
+    point list is allocated (ENG-R04): pathological tolerance/sweep requests
+    fail as typed blockers instead of exhausting memory.
+    """
     cx, cy = _point2(center, "center")
     radius = finite_number(radius, "radius")
     start = math.radians(finite_number(start_angle_deg, "start_angle_deg"))
@@ -211,17 +378,37 @@ def sample_circular_arc(
     tolerance = finite_number(max_chord_error, "max_chord_error")
     if radius <= 0 or tolerance <= 0:
         raise GeometryPlanError("radius and max_chord_error must be positive")
+    if max_segments is not None:
+        if not isinstance(max_segments, int) or isinstance(max_segments, bool):
+            raise GeometryPlanError("max_segments must be a positive integer")
+        if max_segments <= 0:
+            raise GeometryPlanError("max_segments must be a positive integer")
     sweep = end - start
     if abs(sweep) <= _EPS:
         raise GeometryPlanError("arc sweep must be nonzero")
     if tolerance >= radius:
         max_segment_angle = math.pi
     else:
-        ratio = max(-1.0, min(1.0, 1.0 - tolerance / radius))
-        max_segment_angle = 2.0 * math.acos(ratio)
-    if max_segment_angle <= _EPS:
+        # acos(1 - tiny) loses precision below ~1e-8 relative tolerance, so use
+        # the small-angle sagitta approximation sagitta ~= r*theta^2/8 there.
+        relative = tolerance / radius
+        if relative < 1e-8:
+            max_segment_angle = math.sqrt(max(8.0 * relative, 0.0))
+        else:
+            ratio = max(-1.0, min(1.0, 1.0 - relative))
+            max_segment_angle = 2.0 * math.acos(ratio)
+    if not math.isfinite(max_segment_angle) or max_segment_angle <= _EPS:
+        if max_segments is not None:
+            raise GeometryPlanError(
+                "arc segment budget exceeded: request needs more than "
+                f"{max_segments} segments"
+            )
         raise GeometryPlanError("requested chord error is too small to sample safely")
     segments = max(1, math.ceil(abs(sweep) / max_segment_angle))
+    if max_segments is not None and segments > max_segments:
+        raise GeometryPlanError(
+            f"arc segment budget exceeded: {segments} > {max_segments}"
+        )
     step = sweep / segments
     points = [
         [cx + radius * math.cos(start + step * index), cy + radius * math.sin(start + step * index)]

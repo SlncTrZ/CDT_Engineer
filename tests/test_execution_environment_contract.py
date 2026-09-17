@@ -1,3 +1,6 @@
+"""Execution environment contract validation tests.
+Wing: code | Topic: execution-environment | Updated: 2026-09-17
+"""
 import json
 import unittest
 from pathlib import Path
