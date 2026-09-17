@@ -1,0 +1,365 @@
+{
+  "case_id": "straight-rect-sweep",
+  "planner": "plan_profile_sweep",
+  "planner_inputs": {
+    "profile": [
+      [
+        0,
+        0
+      ],
+      [
+        10,
+        0
+      ],
+      [
+        10,
+        20
+      ],
+      [
+        0,
+        20
+      ]
+    ],
+    "path": [
+      [
+        0,
+        0
+      ],
+      [
+        100,
+        0
+      ]
+    ]
+  },
+  "recipe": {
+    "representation": "indexed_mesh",
+    "points": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        10.0,
+        0.0
+      ],
+      [
+        0.0,
+        10.0,
+        20.0
+      ],
+      [
+        0.0,
+        0.0,
+        20.0
+      ],
+      [
+        100.0,
+        0.0,
+        0.0
+      ],
+      [
+        100.0,
+        10.0,
+        0.0
+      ],
+      [
+        100.0,
+        10.0,
+        20.0
+      ],
+      [
+        100.0,
+        0.0,
+        20.0
+      ]
+    ],
+    "faces": [
+      [
+        0,
+        1,
+        5,
+        4
+      ],
+      [
+        1,
+        2,
+        6,
+        5
+      ],
+      [
+        2,
+        3,
+        7,
+        6
+      ],
+      [
+        3,
+        0,
+        4,
+        7
+      ],
+      [
+        1,
+        0,
+        3
+      ],
+      [
+        3,
+        2,
+        1
+      ],
+      [
+        7,
+        4,
+        5
+      ],
+      [
+        5,
+        6,
+        7
+      ]
+    ],
+    "vertex_count": 8,
+    "face_count": 8,
+    "index_reference_count": 28,
+    "bounds": {
+      "min": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max": [
+        100.0,
+        10.0,
+        20.0
+      ]
+    },
+    "manifold_expected": true,
+    "budget": {
+      "max_vertices": 2048,
+      "max_faces": 4096,
+      "max_face_vertices": 16,
+      "max_index_references": 32768
+    },
+    "chunks": [
+      {
+        "chunk_id": "mesh-0001",
+        "points": [
+          [
+            0.0,
+            0.0,
+            0.0
+          ],
+          [
+            0.0,
+            10.0,
+            0.0
+          ],
+          [
+            0.0,
+            10.0,
+            20.0
+          ],
+          [
+            0.0,
+            0.0,
+            20.0
+          ],
+          [
+            100.0,
+            0.0,
+            0.0
+          ],
+          [
+            100.0,
+            10.0,
+            0.0
+          ],
+          [
+            100.0,
+            10.0,
+            20.0
+          ],
+          [
+            100.0,
+            0.0,
+            20.0
+          ]
+        ],
+        "faces": [
+          [
+            0,
+            1,
+            5,
+            4
+          ],
+          [
+            1,
+            2,
+            6,
+            5
+          ],
+          [
+            2,
+            3,
+            7,
+            6
+          ],
+          [
+            3,
+            0,
+            4,
+            7
+          ],
+          [
+            1,
+            0,
+            3
+          ],
+          [
+            3,
+            2,
+            1
+          ],
+          [
+            7,
+            4,
+            5
+          ],
+          [
+            5,
+            6,
+            7
+          ]
+        ],
+        "vertex_count": 8,
+        "face_count": 8
+      }
+    ],
+    "chunking_disposition": "single_bounded_chunk",
+    "planner": "plan_profile_sweep",
+    "profile_vertex_count": 4,
+    "path_station_count": 2,
+    "max_path_deviation_allowed": 0.0,
+    "max_path_deviation_observed": 0.0,
+    "approximation_state": "exact_for_supplied_path"
+  },
+  "create_mesh": {
+    "name": "straight-rect-sweep",
+    "points": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        10.0,
+        0.0
+      ],
+      [
+        0.0,
+        10.0,
+        20.0
+      ],
+      [
+        0.0,
+        0.0,
+        20.0
+      ],
+      [
+        100.0,
+        0.0,
+        0.0
+      ],
+      [
+        100.0,
+        10.0,
+        0.0
+      ],
+      [
+        100.0,
+        10.0,
+        20.0
+      ],
+      [
+        100.0,
+        0.0,
+        20.0
+      ]
+    ],
+    "faces": [
+      [
+        0,
+        1,
+        5,
+        4
+      ],
+      [
+        1,
+        2,
+        6,
+        5
+      ],
+      [
+        2,
+        3,
+        7,
+        6
+      ],
+      [
+        3,
+        0,
+        4,
+        7
+      ],
+      [
+        1,
+        0,
+        3
+      ],
+      [
+        3,
+        2,
+        1
+      ],
+      [
+        7,
+        4,
+        5
+      ],
+      [
+        5,
+        6,
+        7
+      ]
+    ],
+    "unit": "mm",
+    "expect": {
+      "active_entity_delta": 1,
+      "type": "Group",
+      "vertex_count": 8,
+      "face_count": 8
+    }
+  },
+  "expected": {
+    "planner_unit": "mm",
+    "expected_volume": 20000.0,
+    "bounds": {
+      "min": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "max": [
+        100.0,
+        10.0,
+        20.0
+      ]
+    },
+    "vertex_count": 8,
+    "face_count": 8
+  }
+}

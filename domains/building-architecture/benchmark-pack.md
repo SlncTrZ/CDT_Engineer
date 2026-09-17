@@ -110,6 +110,45 @@ Freeze the exact profile/curve/loft requirement and source geometry. CDT_Enginee
 
 Engineer-side planning is executable through `domains.building_architecture.geometry_planner`: equal-cardinality loft rings and bounded profile sweeps produce indexed-mesh recipes, reject self-intersecting profiles and budget overflow, and fail when declared approximation deviation is exceeded. The matching executor dependency is now measured on CDT-SketchUp contract 0.28: `create_mesh` natively passed tetrahedron, frustum, four-section loft, ellipsoid, rounded closed profile and open curved molding/ribbon cases, plus malformed/budget fail-before-mutation and verified rollback. Every production run must still Step-0 the live descriptor/budgets; this acceptance does not permit a visually similar approximation beyond the Engineer-declared tolerance.
 
+## Benchmark L — Planner-to-native mesh end-to-end (ENG-R03)
+
+Close the planner/executor evidence gap: the native mesh route must consume
+real `domains.building_architecture.geometry_planner` recipes, not
+self-generated fixtures. Frozen inputs live in `e2e-fixtures/*.json`
+(`straight-rect-sweep`, `tapered-quad-loft`, `concave-c-sweep`,
+`curved-rect-sweep`, `four-section-loft`); each fixture records the planner
+name, its inputs, the byte-exact recipe, the `create_mesh` payload and the
+analytically expected oracle values.
+
+Live procedure per case (planner unit = mm, native `unit` explicit):
+
+```text
+fixture create_mesh payload
+-> CDT-SketchUp create_mesh (expect pins vertex/face counts)
+-> get_entity_state read-back (bbox, counts, manifold, volume, unit)
+-> domains.building_architecture.plan_oracle.assess_plan_execution
+-> envelope / counts / edge-manifold / Euler / manifold-agreement /
+   volume / deviation verdict
+```
+
+Expected:
+
+- every fixture recipe replays byte-identical from its recorded planner
+  inputs (`test_plan_oracle.py` proves this offline);
+- straight/tapered/concave/four-section cases reach oracle `pass`
+  (envelope within tolerance, counts exact, edge-manifold with Euler 2,
+  analytic volume matched);
+- `curved-rect-sweep` reports volume `unknown` (tessellation-dependent, no
+  exact analytic expectation) while envelope/counts/topology still verify —
+  `reduced_scope`, never a silent volume PASS;
+- any envelope/count/manifold/volume mismatch verdicts `blocked`;
+- missing native read-back verdicts `reduced_scope`, never `pass`.
+
+Status: oracle, fixtures and offline tests are measured in-repo; the live
+planner -> `create_mesh` -> `get_entity_state` run on current Step-0 runtime
+remains the final acceptance step and is recorded with exact source/engine
+revisions when executed.
+
 ## Measurement / evidence
 
 Freeze before each run:
