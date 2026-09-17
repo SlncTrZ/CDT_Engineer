@@ -1,7 +1,7 @@
 # Building Architecture v1 — Benchmark Pack
 
 > Documentation class: PUBLIC_DOMAIN
-Version: 0.5.0 · Primary negative case: townhouse image reconstruction · Status: benchmark definition with SketchUp contract-0.28 executor acceptance measured; production cases still require current Step-0, real catalog mappings and project evidence.
+Version: 0.6.0 · Primary negative case: townhouse image reconstruction · Status: benchmark definition with SketchUp contract-0.28 executor acceptance measured; production cases still require current Step-0, real catalog mappings and project evidence.
 
 ## Scope
 
@@ -157,6 +157,41 @@ volume tolerance `2e-04` (measured native deviation `7.9e-05` on re-entrant
 cap tessellation, recorded in its fixture). Raw receipts live in ignored
 `_test_workspace/live_e2e_evidence_*.json`, never committed; verdicts are
 recorded in the private audit SOT with exact revisions.
+
+## Benchmark M — PlanSpec pipeline end-to-end, AutoCAD 2D lane (ENG-R06..R11)
+
+Offline executable workflow for 2D floor-plan reconstruction from a
+reference image through the AutoCAD 2D drafting lane. The pipeline is code,
+not hidden prompt logic (`tests/test_reconstruction_pipeline_20260917.py`):
+
+```text
+source audit (manifest + observed image dimensions)
+-> calibration (ENG-R06: pixel observed, anchor approved_assumption, coords derived)
+-> typed PlanSpec IR (ENG-R07: no CAD primitives)
+-> pre-CAD professional review (ENG-R08: APPROVED_FOR_EXECUTION required)
+-> semantic chunk compiler (ENG-R09: bounded DAG, postconditions)
+-> lane execution (AutoCAD 2D: XY + elevation reference, DAG order enforced)
+-> read-back (postcondition counts/fingerprints vs expected_outputs)
+-> provenance receipts + release QA (ENG-R11: ceiling per feature)
+```
+
+Reference input: `Test6_House_3_Floors_Layout.jpg` (1200×1600 px, observed
+at runtime); owner dimensional assumption: total plan width 15 000 mm
+(`approved_assumption`, never ground truth) → frame scale 12.5 mm/px.
+
+Expected:
+
+- contradictory anchors block the pipeline before any PlanSpec exists;
+- a review-rejected plan never reaches the executor (zero chunk calls);
+- dependent chunks execute only after verified predecessors;
+- read-back counts match chunk `expected_outputs`;
+- receipts preserve per-feature provenance and `design_review` passes only
+  when every feature ceiling allows it.
+
+Execution evidence in this benchmark uses an explicitly simulated lane
+double. It proves pipeline determinism and gate wiring, not native AutoCAD
+acceptance; production runs must substitute real CDT-AutoCAD executor
+receipts with current Step-0 capability proof.
 
 ## Measurement / evidence
 
