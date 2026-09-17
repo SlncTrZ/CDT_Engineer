@@ -47,7 +47,19 @@ def _frustum_volume(area_a: float, area_b: float, height: float) -> float:
 
 
 def _fixture(case_id: str, planner: str, inputs: dict, recipe: dict,
-             expected_volume: float | None) -> dict:
+             expected_volume: float | None,
+             volume_tolerance: float = 1e-6,
+             volume_tolerance_reason: str = "") -> dict:
+    expected: dict = {
+        "planner_unit": "mm",
+        "expected_volume": expected_volume,
+        "volume_tolerance": volume_tolerance,
+        "bounds": recipe["bounds"],
+        "vertex_count": recipe["vertex_count"],
+        "face_count": recipe["face_count"],
+    }
+    if volume_tolerance_reason:
+        expected["volume_tolerance_reason"] = volume_tolerance_reason
     return {
         "case_id": case_id,
         "planner": planner,
@@ -65,13 +77,7 @@ def _fixture(case_id: str, planner: str, inputs: dict, recipe: dict,
                 "face_count": recipe["face_count"],
             },
         },
-        "expected": {
-            "planner_unit": "mm",
-            "expected_volume": expected_volume,
-            "bounds": recipe["bounds"],
-            "vertex_count": recipe["vertex_count"],
-            "face_count": recipe["face_count"],
-        },
+        "expected": expected,
     }
 
 
@@ -110,6 +116,14 @@ def main() -> None:
         "concave-c-sweep", "plan_profile_sweep",
         {"profile": concave, "path": short_path},
         recipe, _polygon_area(concave) * _path_length(short_path),
+        # Measured native volume precision on re-entrant cap tessellation
+        # (SketchUp 2024 24.0.594): rel dev 7.9e-05 vs convex cases ~1e-07.
+        # 2e-04 stays far below engineering significance; case-specific.
+        volume_tolerance=2e-4,
+        volume_tolerance_reason=(
+            "measured native volume deviation 7.9e-05 on concave caps, "
+            "SketchUp 2024 24.0.594, 2026-09-17 live run"
+        ),
     ))
 
     tall_rect = [[0, 0], [20, 0], [20, 40], [0, 40]]

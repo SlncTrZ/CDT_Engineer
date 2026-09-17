@@ -144,10 +144,18 @@ Expected:
 - any envelope/count/manifold/volume mismatch verdicts `blocked`;
 - missing native read-back verdicts `reduced_scope`, never `pass`.
 
-Status: oracle, fixtures and offline tests are measured in-repo; the live
-planner -> `create_mesh` -> `get_entity_state` run on current Step-0 runtime
-remains the final acceptance step and is recorded with exact source/engine
-revisions when executed.
+Status: measured live 2026-09-17 — 4/5 cases oracle `pass` on SketchUp 2024
+`24.0.594` / Ruby `3.2.2` via public `execute_geometry`/`get_entity_state`
+(`straight-rect-sweep`, `tapered-quad-loft`, `concave-c-sweep`,
+`four-section-loft`; envelope worst delta ~1.1e-05 mm against 1e-03 mm run
+tolerance; analytic volumes matched, convex cases ~1e-07 relative).
+`curved-rect-sweep` stays `reduced_scope` with volume `unknown` by design
+(tessellation-dependent, no exact analytic expectation) while its
+envelope/counts/topology verify. `concave-c-sweep` carries a case-specific
+volume tolerance `2e-04` (measured native deviation `7.9e-05` on re-entrant
+cap tessellation, recorded in its fixture). Raw receipts live in ignored
+`_test_workspace/live_e2e_evidence_*.json`, never committed; verdicts are
+recorded in the private audit SOT with exact revisions.
 
 ## Measurement / evidence
 

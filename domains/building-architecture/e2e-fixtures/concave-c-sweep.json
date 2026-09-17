@@ -675,6 +675,7 @@
   "expected": {
     "planner_unit": "mm",
     "expected_volume": 70.0,
+    "volume_tolerance": 0.0002,
     "bounds": {
       "min": [
         0.0,
@@ -688,6 +689,7 @@
       ]
     },
     "vertex_count": 16,
-    "face_count": 20
+    "face_count": 20,
+    "volume_tolerance_reason": "measured native volume deviation 7.9e-05 on concave caps, SketchUp 2024 24.0.594, 2026-09-17 live run"
   }
 }

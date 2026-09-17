@@ -2591,6 +2591,7 @@
   "expected": {
     "planner_unit": "mm",
     "expected_volume": null,
+    "volume_tolerance": 1e-06,
     "bounds": {
       "min": [
         -0.8723877473066903,

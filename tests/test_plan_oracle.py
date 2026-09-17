@@ -242,3 +242,30 @@ def test_expected_fixture_volumes_are_exact():
         rel_tol=1e-12,
     )
     assert _load("concave-c-sweep")["expected"]["expected_volume"] == 70.0
+
+
+def test_assess_honors_case_volume_tolerance():
+    fixture = _load("concave-c-sweep")
+    expected = dict(fixture["expected"])
+    assert expected["volume_tolerance"] == 2e-4
+    # Measured live native value (SketchUp 2024, re-entrant caps).
+    receipt = _simulated_receipt(fixture, volume=70.005537408)
+    result = assess_plan_execution(fixture["recipe"], expected, receipt)
+    assert result["checks"]["volume"]["result"] == "pass"
+    strict = dict(expected, volume_tolerance=1e-6)
+    blocked = assess_plan_execution(fixture["recipe"], strict, receipt)
+    assert blocked["checks"]["volume"]["result"] == "fail"
+    assert blocked["verdict"] == "blocked"
+
+
+def test_deviation_vacuous_pass_for_loft_recipes():
+    fixture = _load("tapered-quad-loft")
+    result = assess_plan_execution(
+        fixture["recipe"], fixture["expected"],
+        _simulated_receipt(fixture),
+    )
+    assert result["checks"]["deviation"] == {
+        "result": "pass",
+        "reason": "no path deviation in recipe scope",
+    }
+    assert result["verdict"] == "pass"

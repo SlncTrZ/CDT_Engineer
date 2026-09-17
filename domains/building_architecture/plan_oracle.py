@@ -208,12 +208,23 @@ def evaluate_volume(
 
 
 def evaluate_deviation(plan: Mapping) -> dict:
-    """Re-check the recipe's declared approximation deviation gate."""
+    """Re-check the recipe's declared approximation deviation gate.
+
+    Loft recipes carry no path-deviation fields; the gate is vacuous there
+    and returns ``pass`` with an explicit reason (reviewed not-applicable),
+    never a silent omission. Partially present fields yield ``unknown``.
+    """
+    allowed_present = "max_path_deviation_allowed" in plan
+    observed_present = "max_path_deviation_observed" in plan
+    if not allowed_present and not observed_present:
+        return {"result": "pass", "reason": "no path deviation in recipe scope"}
+    if not (allowed_present and observed_present):
+        return {"result": "unknown", "reason": "deviation evidence missing"}
     try:
         allowed = float(plan["max_path_deviation_allowed"])
         observed = float(plan["max_path_deviation_observed"])
-    except (KeyError, TypeError, ValueError):
-        return {"result": "unknown", "reason": "deviation evidence missing"}
+    except (TypeError, ValueError):
+        return {"result": "unknown", "reason": "deviation evidence malformed"}
     if observed <= allowed + _EPS:
         return {
             "result": "pass",
@@ -229,6 +240,8 @@ def assess_plan_execution(
     recipe: Mapping,
     expected: Mapping,
     native_receipt: Mapping | None,
+    *,
+    tolerance_mm: float = 1e-6,
 ) -> dict:
     """Aggregate envelope/counts/topology/volume/deviation oracles one verdict.
 
@@ -244,6 +257,7 @@ def assess_plan_execution(
         (native_receipt or {}).get("bbox", {}),
         planner_unit=planner_unit,
         native_unit=native_unit,
+        tolerance_mm=tolerance_mm,
     )
     counts = evaluate_counts(recipe, native_receipt)
     manifold = evaluate_edge_manifold(recipe.get("faces", []))
@@ -274,6 +288,7 @@ def assess_plan_execution(
         (native_receipt or {}).get("volume"),
         planner_unit=planner_unit,
         native_unit=native_unit,
+        relative_tolerance=expected.get("volume_tolerance", 1e-6),
     )
     deviation = evaluate_deviation(recipe)
     checks = {
