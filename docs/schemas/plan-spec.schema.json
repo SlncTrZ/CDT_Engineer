@@ -1,0 +1,453 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://slnctrz.github.io/CDT_Engineer/schemas/plan-spec.schema.json",
+  "title": "CDT_Engineer PlanSpec Intermediate Representation",
+  "description": "Typed engineering intermediate representation between reasoning and CAD execution. Explicitly bans native CAD primitives.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "plan_id",
+    "domain_id",
+    "plan_type",
+    "units",
+    "coordinate_system",
+    "provenance_ledger",
+    "assumptions",
+    "payload"
+  ],
+  "properties": {
+    "schema_version": { "const": "0.1.0" },
+    "plan_id": { "type": "string", "minLength": 1 },
+    "domain_id": { "type": "string", "minLength": 1 },
+    "plan_type": {
+      "enum": [
+        "architectural_floor_plan",
+        "civil_road_alignment",
+        "civil_road_profile",
+        "civil_road_cross_section",
+        "general_engineering_plan"
+      ]
+    },
+    "units": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["length", "angle"],
+      "properties": {
+        "length": { "enum": ["mm", "cm", "m", "in", "ft"] },
+        "angle": { "enum": ["deg", "rad"] },
+        "station": { "enum": ["m", "km"] }
+      }
+    },
+    "coordinate_system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["datum", "origin", "scale"],
+      "properties": {
+        "datum": { "type": "string", "minLength": 1 },
+        "origin": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 2,
+          "maxItems": 3
+        },
+        "azimuth": { "type": "number" },
+        "scale": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["horizontal"],
+          "properties": {
+            "horizontal": { "type": "number", "exclusiveMinimum": 0 },
+            "vertical": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        }
+      }
+    },
+    "provenance_ledger": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "enum": [
+              "observed",
+              "specified",
+              "derived",
+              "inferred",
+              "approved_assumption",
+              "unknown"
+            ]
+          },
+          "source_id": { "type": ["string", "null"] },
+          "assumption_id": { "type": ["string", "null"] },
+          "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "statement", "status"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "statement": { "type": "string", "minLength": 1 },
+          "status": { "const": "approved_assumption" },
+          "evidence": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "chunk_dependencies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["chunk_id", "semantic_type", "depends_on"],
+        "properties": {
+          "chunk_id": { "type": "string", "minLength": 1 },
+          "semantic_type": { "type": "string", "minLength": 1 },
+          "depends_on": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "point2d": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "architecturalFloorPlanPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "axes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["axis_id", "label", "start", "end"],
+            "properties": {
+              "axis_id": { "type": "string", "minLength": 1 },
+              "label": { "type": "string", "minLength": 1 },
+              "start": { "$ref": "#/$defs/point2d" },
+              "end": { "$ref": "#/$defs/point2d" }
+            }
+          }
+        },
+        "walls": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["wall_id", "wall_type", "thickness", "start", "end", "baseline"],
+            "properties": {
+              "wall_id": { "type": "string", "minLength": 1 },
+              "wall_type": { "enum": ["interior", "exterior", "partition", "bearing"] },
+              "thickness": { "type": "number", "exclusiveMinimum": 0 },
+              "start": { "$ref": "#/$defs/point2d" },
+              "end": { "$ref": "#/$defs/point2d" },
+              "baseline": { "enum": ["center", "finish_face_interior", "finish_face_exterior"] },
+              "level_ref": { "type": "string" },
+              "height": { "type": "number", "exclusiveMinimum": 0 }
+            }
+          }
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["column_id", "shape", "dimensions", "center"],
+            "properties": {
+              "column_id": { "type": "string", "minLength": 1 },
+              "shape": { "enum": ["rect", "circle"] },
+              "dimensions": {
+                "type": "array",
+                "items": { "type": "number", "exclusiveMinimum": 0 },
+                "minItems": 1,
+                "maxItems": 2
+              },
+              "center": { "$ref": "#/$defs/point2d" }
+            }
+          }
+        },
+        "openings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["opening_id", "host_wall_id", "opening_type", "offset_along_wall", "width", "height", "sill_height", "head_height"],
+            "properties": {
+              "opening_id": { "type": "string", "minLength": 1 },
+              "host_wall_id": { "type": "string", "minLength": 1 },
+              "opening_type": { "enum": ["door", "window"] },
+              "offset_along_wall": { "type": "number", "minimum": 0 },
+              "width": { "type": "number", "exclusiveMinimum": 0 },
+              "height": { "type": "number", "exclusiveMinimum": 0 },
+              "sill_height": { "type": "number", "minimum": 0 },
+              "head_height": { "type": "number", "minimum": 0 },
+              "swing_type": { "type": "string" }
+            }
+          }
+        },
+        "spaces": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["space_id", "name", "boundary_polygon"],
+            "properties": {
+              "space_id": { "type": "string", "minLength": 1 },
+              "name": { "type": "string", "minLength": 1 },
+              "boundary_polygon": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/point2d" },
+                "minItems": 3
+              },
+              "net_area": { "type": "number", "exclusiveMinimum": 0 },
+              "min_area": { "type": "number", "exclusiveMinimum": 0 }
+            }
+          }
+        },
+        "fixtures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["fixture_id", "fixture_type", "position"],
+            "properties": {
+              "fixture_id": { "type": "string", "minLength": 1 },
+              "fixture_type": { "type": "string", "minLength": 1 },
+              "position": { "$ref": "#/$defs/point2d" },
+              "rotation": { "type": "number" },
+              "host_wall_id": { "type": "string" },
+              "host_space_id": { "type": "string" }
+            }
+          }
+        },
+        "dimensions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["dimension_id", "dimension_type", "measured_value", "witness_points"],
+            "properties": {
+              "dimension_id": { "type": "string", "minLength": 1 },
+              "dimension_type": { "enum": ["linear", "aligned"] },
+              "measured_value": { "type": "number", "exclusiveMinimum": 0 },
+              "witness_points": {
+                "type": "array",
+                "items": { "$ref": "#/$defs/point2d" },
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "feature_refs": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "civilRoadProfilePayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alignment_ref", "ground_line", "grade_line"],
+      "properties": {
+        "alignment_ref": { "type": "string", "minLength": 1 },
+        "ground_line": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["station", "elevation"],
+            "properties": {
+              "station": { "type": "number" },
+              "elevation": { "type": "number" },
+              "label": { "type": "string" }
+            }
+          }
+        },
+        "grade_line": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["station", "elevation"],
+            "properties": {
+              "station": { "type": "number" },
+              "elevation": { "type": "number" },
+              "grade_in_percent": { "type": "number" },
+              "grade_out_percent": { "type": "number" },
+              "curve_radius": { "type": "number", "exclusiveMinimum": 0 },
+              "curve_length": { "type": "number", "minimum": 0 }
+            }
+          }
+        },
+        "crossings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["station", "crossing_type", "elevation"],
+            "properties": {
+              "station": { "type": "number" },
+              "crossing_type": { "type": "string", "minLength": 1 },
+              "elevation": { "type": "number" },
+              "description": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "civilRoadCrossSectionPayload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["alignment_ref", "station", "elevation_datum", "carriageway", "pavement_structure"],
+      "properties": {
+        "alignment_ref": { "type": "string", "minLength": 1 },
+        "station": { "type": "number" },
+        "elevation_datum": { "type": "number" },
+        "carriageway": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["width_left", "width_right", "cross_slope_left_percent", "cross_slope_right_percent"],
+          "properties": {
+            "width_left": { "type": "number", "minimum": 0 },
+            "width_right": { "type": "number", "minimum": 0 },
+            "cross_slope_left_percent": { "type": "number" },
+            "cross_slope_right_percent": { "type": "number" }
+          }
+        },
+        "shoulders": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "paved_left": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["width", "cross_slope_percent"],
+              "properties": {
+                "width": { "type": "number", "minimum": 0 },
+                "cross_slope_percent": { "type": "number" }
+              }
+            },
+            "paved_right": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["width", "cross_slope_percent"],
+              "properties": {
+                "width": { "type": "number", "minimum": 0 },
+                "cross_slope_percent": { "type": "number" }
+              }
+            },
+            "unpaved_left": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["width", "cross_slope_percent"],
+              "properties": {
+                "width": { "type": "number", "minimum": 0 },
+                "cross_slope_percent": { "type": "number" }
+              }
+            },
+            "unpaved_right": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["width", "cross_slope_percent"],
+              "properties": {
+                "width": { "type": "number", "minimum": 0 },
+                "cross_slope_percent": { "type": "number" }
+              }
+            }
+          }
+        },
+        "pavement_structure": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["layer_id", "name", "material", "thickness", "order"],
+            "properties": {
+              "layer_id": { "type": "string", "minLength": 1 },
+              "name": { "type": "string", "minLength": 1 },
+              "material": { "type": "string", "minLength": 1 },
+              "thickness": { "type": "number", "exclusiveMinimum": 0 },
+              "order": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "side_slopes": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "left": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["slope_ratio", "is_cut"],
+              "properties": {
+                "slope_ratio": { "type": "number", "exclusiveMinimum": 0 },
+                "is_cut": { "type": "boolean" },
+                "ditch": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["ditch_type", "depth", "bottom_width"],
+                  "properties": {
+                    "ditch_type": { "type": "string", "minLength": 1 },
+                    "depth": { "type": "number", "exclusiveMinimum": 0 },
+                    "bottom_width": { "type": "number", "minimum": 0 }
+                  }
+                }
+              }
+            },
+            "right": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["slope_ratio", "is_cut"],
+              "properties": {
+                "slope_ratio": { "type": "number", "exclusiveMinimum": 0 },
+                "is_cut": { "type": "boolean" },
+                "ditch": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["ditch_type", "depth", "bottom_width"],
+                  "properties": {
+                    "ditch_type": { "type": "string", "minLength": 1 },
+                    "depth": { "type": "number", "exclusiveMinimum": 0 },
+                    "bottom_width": { "type": "number", "minimum": 0 }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "quantities": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cut_area": { "type": "number", "minimum": 0 },
+            "fill_area": { "type": "number", "minimum": 0 },
+            "topsoil_strip_area": { "type": "number", "minimum": 0 }
+          }
+        }
+      }
+    }
+  }
+}
