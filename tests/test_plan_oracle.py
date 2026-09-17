@@ -122,13 +122,38 @@ def test_fixture_satisfies_create_mesh_native_bounds(case_id):
     assert payload["expect"]["face_count"] == len(faces)
 
 
+# IA-08 numeric contract: recipe replay is deterministic up to platform libm
+# 1-ulp noise (~1e-13 at fixture magnitudes, e.g. 353.5533905932737 vs ...738
+# on curved-rect-sweep index 36). Canonicalize to 9 decimals before exact
+# comparison: 1e-9 mm is far below the 1e-3 mm run tolerance yet far above
+# float noise. Faces/bounds structure stay exact; a dedicated negative test
+# below proves significant deviations still fail.
+_REPLAY_ROUND_DIGITS = 9
+
+
+def _canon_scalars(data):
+    if isinstance(data, bool) or not isinstance(data, (int, float)):
+        if isinstance(data, (list, tuple)):
+            return [_canon_scalars(item) for item in data]
+        return data
+    return round(float(data), _REPLAY_ROUND_DIGITS)
+
+
 @pytest.mark.parametrize("case_id", CASE_IDS)
 def test_fixture_recipe_reproduces_from_recorded_inputs(case_id):
     fixture = _load(case_id)
     fresh = _replan(fixture)
-    assert fresh["points"] == fixture["recipe"]["points"]
+    assert _canon_scalars(fresh["points"]) == _canon_scalars(fixture["recipe"]["points"])
     assert fresh["faces"] == fixture["recipe"]["faces"]
-    assert fresh["bounds"] == fixture["recipe"]["bounds"]
+    assert _canon_scalars(fresh["bounds"]) == _canon_scalars(fixture["recipe"]["bounds"])
+
+
+def test_replay_canonicalization_still_catches_significant_deviation():
+    fixture = _load("curved-rect-sweep")
+    fresh = _replan(fixture)
+    perturbed = [list(point) for point in fresh["points"]]
+    perturbed[36] = [coord + 1e-6 for coord in perturbed[36]]
+    assert _canon_scalars(perturbed) != _canon_scalars(fixture["recipe"]["points"])
 
 
 @pytest.mark.parametrize("case_id", CASE_IDS)

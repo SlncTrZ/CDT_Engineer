@@ -62,6 +62,10 @@ def build_chunk_receipt(chunk: Mapping[str, Any], *, engine_receipt_id: str,
         raise ValueError(f"{chunk_id}: chunk.provenance must be a mapping")
     carried = {fid: _provenance_status(chunk_id, fid, provenance.get(fid, "unknown"))
                for fid in feature_ids}
+    # IA-03 side observation: a failed/unverified execution must never mint a
+    # "committed" receipt. Receipt status follows verification evidence.
+    receipt_status = {"pass": "committed", "fail": "verification_failed",
+                      "unknown": "unverified"}[verification_status]
     if transaction_mode not in _TRANSACTION_MODES:
         raise ValueError(f"{chunk_id}: invalid transaction_mode: {transaction_mode}")
     if verification_status not in {"pass", "fail", "unknown"}:
@@ -76,7 +80,7 @@ def build_chunk_receipt(chunk: Mapping[str, Any], *, engine_receipt_id: str,
         "semantic_type": chunk.get("semantic_type"),
         "feature_ids": list(feature_ids),
         "provenance": carried,
-        "status": "committed",
+        "status": receipt_status,
         "transaction_mode": transaction_mode,
         "engine_receipt_id": engine_receipt_id,
         "created_or_modified_ids": list(created_or_modified_ids),
@@ -122,9 +126,24 @@ def assess_provenance_release(receipts: Sequence[Mapping[str, Any]], release_tar
         if not isinstance(receipt, Mapping):
             raise ValueError("each receipt must be a mapping")
         chunk_id = receipt.get("chunk_id", "?")
+        # IA-03: only verified-committed execution evidence is assessable.
+        if receipt.get("status", "committed") != "committed":
+            blockers.append(f"receipt_not_committed:{chunk_id}:{receipt.get('status')}")
+            continue
+        feature_ids = receipt.get("feature_ids", [])
+        if isinstance(feature_ids, (str, bytes)) or not isinstance(feature_ids, Sequence):
+            raise ValueError(f"{chunk_id}: receipt.feature_ids must be a sequence")
+        if not feature_ids:
+            blockers.append(f"empty_receipt_feature_set:{chunk_id}")
+            continue
         provenance = receipt.get("provenance")
         if not isinstance(provenance, Mapping):
             raise ValueError(f"{chunk_id}: receipt.provenance must be a mapping")
+        # IA-03: every declared feature must carry a provenance entry; an
+        # empty provenance mapping no longer yields a vacuous pass.
+        for fid in feature_ids:
+            if fid not in provenance:
+                blockers.append(f"provenance_coverage_missing:{chunk_id}:{fid}")
         for fid, status in provenance.items():
             status = _provenance_status(chunk_id, fid, status)
             feature_count += 1
@@ -136,6 +155,15 @@ def assess_provenance_release(receipts: Sequence[Mapping[str, Any]], release_tar
                 entry = plan_ledger.get(fid)
                 if not isinstance(entry, Mapping):
                     blockers.append(f"provenance_ledger_missing:{chunk_id}:{fid}")
+                    continue
+                ledger_status = entry.get("status")
+                if not isinstance(ledger_status, str) or ledger_status not in _PROVENANCE_STATES:
+                    raise ValueError(f"{chunk_id}:{fid}: invalid ledger status: {ledger_status!r}")
+                # IA-03: receipt evidence contradicting the plan ledger blocks;
+                # execution must not upgrade what the plan recorded.
+                if ledger_status != status:
+                    blockers.append(f"provenance_ledger_contradiction:{chunk_id}:{fid}:"
+                                    f"receipt_{status}_vs_ledger_{ledger_status}")
                     continue
                 if status == "approved_assumption" and not entry.get("assumption_id"):
                     blockers.append(f"assumption_link_missing:{chunk_id}:{fid}")

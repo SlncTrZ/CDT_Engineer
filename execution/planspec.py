@@ -51,8 +51,23 @@ class PlanSpecValidationResult:
         }
 
 
+def _load_schema_text() -> str:
+    # IA-05: installed wheels have no source-tree docs/; prefer packaged
+    # resources (cdt_engineer/data/schemas via wheel force-include), fall back
+    # to the source checkout path. Same convention as cdt_engineer.server.
+    try:
+        from importlib import resources
+        packaged = resources.files("cdt_engineer").joinpath("data").joinpath("schemas").joinpath(
+            "plan-spec.schema.json")
+        if packaged.is_file():
+            return packaged.read_text(encoding="utf-8")
+    except (ImportError, ModuleNotFoundError, FileNotFoundError):
+        pass
+    return _SCHEMA_PATH.read_text(encoding="utf-8")
+
+
 def _load_validator() -> Draft202012Validator:
-    schema = json.loads(_SCHEMA_PATH.read_text(encoding="utf-8"))
+    schema = json.loads(_load_schema_text())
     Draft202012Validator.check_schema(schema)
     return Draft202012Validator(schema)
 

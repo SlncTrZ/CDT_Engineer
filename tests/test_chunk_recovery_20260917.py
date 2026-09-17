@@ -151,6 +151,45 @@ class TestChunkRecovery(unittest.TestCase):
         self.assertEqual(ex.seen_keys[0], ex.seen_keys[1])
         self.assertTrue(ex.seen_keys[0].startswith("plan:wall_shell:01:"))
 
+    def test_ia01_committed_receipt_with_empty_observation_blocks(self):
+        # Producer claims committed + expected state, but independent
+        # observation shows empty: the receipt must not become a commit.
+        ex = _ScriptedExecutor({"plan:wall_shell:01": ["success"]})
+        calls = []
+        inner = ex.observe
+        ex.observe = lambda cid: calls.append(cid) or {}
+        record = execute_chunk_with_recovery(_chunk(), ex.execute, ex.observe, ex.compensate)
+        self.assertEqual(record.final, "blocked")
+        self.assertEqual(len(calls), 1)
+        self.assertTrue(any("fingerprint_mismatch" in d for d in record.decisions))
+
+    def test_ia01_committed_receipt_with_blind_observer_blocks(self):
+        ex = _ScriptedExecutor({"plan:wall_shell:01": ["success"]})
+        def _blind(_cid):
+            raise RuntimeError("observer down")
+        record = execute_chunk_with_recovery(_chunk(), ex.execute, _blind, ex.compensate)
+        self.assertEqual(record.final, "blocked")
+        self.assertTrue(any("committed_receipt_without_observable_state" in d
+                            for d in record.decisions))
+
+    def test_ia02_compensation_noop_blocks_without_second_execute(self):
+        ex = _ScriptedExecutor({"plan:wall_shell:01": ["partial", "success"]})
+        ex.compensate = lambda _cid: False  # no-op: store keeps partial state
+        record = execute_chunk_with_recovery(_chunk(), ex.execute, ex.observe, ex.compensate)
+        self.assertEqual(record.final, "blocked")
+        self.assertIn("compensation_unverified_state_remains", record.decisions)
+        self.assertEqual(ex.calls, {"plan:wall_shell:01": 1})
+
+    def test_ia02_compensation_exception_blocks(self):
+        ex = _ScriptedExecutor({"plan:wall_shell:01": ["partial", "success"]})
+        def _boom(_cid):
+            raise RuntimeError("compensator down")
+        ex.compensate = _boom
+        record = execute_chunk_with_recovery(_chunk(), ex.execute, ex.observe, ex.compensate)
+        self.assertEqual(record.final, "blocked")
+        self.assertTrue(any(d.startswith("compensation_failed") for d in record.decisions))
+        self.assertEqual(ex.calls, {"plan:wall_shell:01": 1})
+
     def test_reconcile_pure_function_matrix(self):
         fp = fingerprint_state({"a": {"x": 1}})
         # Uncertain + full match -> adopt, no replay.

@@ -10,7 +10,9 @@ from execution.plan_compiler import compile_plan_spec
 from execution.provenance_release import assess_provenance_release, build_chunk_receipt
 from execution.source_calibration import calibrate_plan_source
 
-IMAGE = "_test_workspace/references/Test6_House_3_Floors_Layout.jpg"
+# IA-07: self-contained tracked fixture. The real customer reference is not
+# required for a clean checkout; Benchmark M documents it as the dev input.
+IMAGE = "tests/fixtures/calibration_frame.png"
 ANCHOR_MM = 15000.0
 
 
@@ -60,8 +62,8 @@ def _run_calibration():
         source={"source_id": "test6_house_3_floors", "kind": "reference_image",
                 "pixel_width": width, "pixel_height": height},
         pixel_features=[
-            {"feature_id": "wall_w1", "kind": "polyline", "pixels": [[320.0, 200.0], [720.0, 200.0]]},
-            {"feature_id": "wall_w2", "kind": "polyline", "pixels": [[720.0, 200.0], [720.0, 520.0]]},
+            {"feature_id": "wall_w1", "kind": "polyline", "pixels": [[80.0, 100.0], [480.0, 100.0]]},
+            {"feature_id": "wall_w2", "kind": "polyline", "pixels": [[480.0, 100.0], [480.0, 420.0]]},
         ],
         anchors=[{"anchor_id": "anchor_total_width",
                   "statement": "Toan bo chieu ngang mat bang = 15 000 mm (owner assumption)",
@@ -124,7 +126,7 @@ def _planspec_from_calibration(cal):
                  "net_area": 20.0},
             ],
             "dimensions": [
-                {"dimension_id": "dim_01", "dimension_type": "linear", "measured_value": 5000.0,
+                {"dimension_id": "dim_01", "dimension_type": "linear", "measured_value": 10000.0,
                  "witness_points": [w1[0], w1[1]], "feature_refs": ["wall_w1"]},
             ],
         },
@@ -162,12 +164,12 @@ class TestReconstructionPipelineBenchmarkM(unittest.TestCase):
 
     def test_calibrated_dimension_fidelity(self):
         cal = _run_calibration()
-        self.assertAlmostEqual(cal.frame["scale_unit_per_pixel"], 12.5, places=9)
+        self.assertAlmostEqual(cal.frame["scale_unit_per_pixel"], 25.0, places=9)
         by_id = {f["feature_id"]: f for f in cal.features}
-        # 400 px span at 12.5 mm/px -> 5000 mm wall in PlanSpec.
+        # 400 px span at 25.0 mm/px -> 10000 mm wall in PlanSpec.
         w1 = by_id["wall_w1"]["coords_mm"]
         length = abs(w1[1][0] - w1[0][0])
-        self.assertAlmostEqual(length, 5000.0, places=6)
+        self.assertAlmostEqual(length, 10000.0, places=6)
 
     def test_openings_execute_after_wall_shell(self):
         compiled = compile_plan_spec(_planspec_from_calibration(_run_calibration()))

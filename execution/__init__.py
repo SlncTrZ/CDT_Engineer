@@ -1,6 +1,7 @@
 """Deterministic execution/acceptance helpers for CDT_Engineer."""
 from execution.chunk_recovery import (
     ChunkExecutionRecord,
+    chunk_to_recovery_params,
     execute_chunk_with_recovery,
     fingerprint_state,
     reconcile,
@@ -19,6 +20,7 @@ __all__ = [
     "PROVENANCE_MAX_RELEASE",
     "CalibratedSource",
     "ChunkExecutionRecord",
+    "chunk_to_recovery_params",
     "PlanCompileResult",
     "PlanReviewResult",
     "PlanSpecValidationResult",

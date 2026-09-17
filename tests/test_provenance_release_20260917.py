@@ -153,6 +153,44 @@ class TestProvenanceRelease(unittest.TestCase):
         self.assertTrue(any("door_d1" in r for r in res["reason_codes"]))
         self.assertEqual(res["feature_count"], 3)
 
+    def test_ia03_empty_provenance_with_features_blocks(self):
+        receipt = _receipt()
+        receipt["feature_ids"] = ["missing"]
+        receipt["provenance"] = {}
+        for target in ("concept", "design_review", "ready_for_professional_review"):
+            res = assess_provenance_release([receipt], target)
+            self.assertEqual(res["result"], "blocked", f"target={target}")
+            self.assertTrue(any("provenance_coverage_missing" in r and "missing" in r
+                                for r in res["reason_codes"]))
+        self.assertEqual(res["feature_count"], 0)
+
+    def test_ia03_ledger_contradiction_blocks(self):
+        receipts = [_receipt(provenance={"f": "specified"})]
+        ledger = {"f": {"status": "unknown", "source_id": None,
+                        "assumption_id": None, "confidence": None}}
+        res = assess_provenance_release(receipts, "design_review", plan_ledger=ledger)
+        self.assertEqual(res["result"], "blocked")
+        self.assertTrue(any("provenance_ledger_contradiction" in r and ":f:" in r
+                            for r in res["reason_codes"]))
+
+    def test_ia03_failed_verification_receipt_never_committed(self):
+        chunk = {"chunk_id": "c1", "batch_session_id": "plan", "semantic_type": "wall_shell",
+                 "feature_ids": ["w1"], "provenance": {"w1": "specified"}}
+        receipt = build_chunk_receipt(chunk, engine_receipt_id="e1",
+                                      created_or_modified_ids=[],
+                                      transaction_mode="nonrecoverable",
+                                      verification_status="fail")
+        self.assertEqual(receipt["status"], "verification_failed")
+        res = assess_provenance_release([receipt], "concept")
+        self.assertEqual(res["result"], "blocked")
+        self.assertTrue(any("receipt_not_committed:c1" in r for r in res["reason_codes"]))
+
+    def test_ia03_invalid_ledger_status_raises(self):
+        receipts = [_receipt(provenance={"f": "specified"})]
+        with self.assertRaises(ValueError):
+            assess_provenance_release(receipts, "design_review",
+                                      plan_ledger={"f": {"status": "guessed"}})
+
     def test_end_to_end_compile_receipts_release(self):
         compiled = compile_plan_spec(_arch_spec())
         self.assertTrue(compiled.ok, f"errors: {compiled.errors}")

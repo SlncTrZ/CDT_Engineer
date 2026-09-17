@@ -16,7 +16,9 @@ def run(cmd):
  return p.stdout, p.stderr
 
 def main():
- test_stdout,test_stderr=run([sys.executable,'-m','unittest','discover','-s','tests','-v'])
+ # IA-06: unittest discover misses top-level test functions (e.g. provider
+ # tests); the gate runs the full pytest suite and propagates failures.
+ test_stdout,test_stderr=run([sys.executable,'-m','pytest','-q','--tb=no','-p','no:cacheprovider'])
  schemas=[*ROOT.glob('domains/*/domain.schema.json'),*ROOT.glob('docs/schemas/*.json'),*ROOT.glob('catalogs/schemas/*.json')]
  for p in schemas: Draft202012Validator.check_schema(json.loads(p.read_text(encoding='utf-8')))
  profile_schema=json.loads((ROOT/'docs/schemas/agent-profile.schema.json').read_text(encoding='utf-8'))
@@ -62,7 +64,15 @@ def main():
  private_stdout,_=run(['git','ls-files','_private/**'])
  private=private_stdout.strip().splitlines()
  if private: raise SystemExit(f'private files tracked: {private}')
- count=(test_stdout+test_stderr).count(' ... ok')
- print(json.dumps({'result':'PASS','unit_tests':count,'schemas':len(schemas),'profiles':len(profiles),'catalogs':len(catalogs),'markdown_files':len(md),'documentation_classes':'PASS','git_diff_check':'PASS','private_tracked':0},indent=2))
+ combined=test_stdout+test_stderr
+ passed_matches=re.findall(r'(\d+) passed',combined)
+ failed_matches=re.findall(r'(\d+) failed',combined)
+ if not passed_matches:
+  raise SystemExit(f'could not parse pytest summary: {combined[-500:]}')
+ count=int(passed_matches[-1])
+ failed=int(failed_matches[-1]) if failed_matches else 0
+ if failed:
+  raise SystemExit(f'pytest reported {failed} failures')
+ print(json.dumps({'result':'PASS','unit_tests':count,'unit_test_failures':failed,'schemas':len(schemas),'profiles':len(profiles),'catalogs':len(catalogs),'markdown_files':len(md),'documentation_classes':'PASS','git_diff_check':'PASS','private_tracked':0},indent=2))
 
 if __name__=='__main__': main()

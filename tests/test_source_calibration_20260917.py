@@ -3,16 +3,22 @@ Wing: code | Topic: source-calibration | Updated: 2026-09-18 00:50
 """
 from __future__ import annotations
 
+import os
 import unittest
 from execution.source_calibration import calibrate_plan_source
 
+# IA-07: self-contained tracked fixture (600x800). The real customer reference
+# is exercised only when present, never required for a clean checkout.
+TRACKED_FIXTURE = "tests/fixtures/calibration_frame.png"
+REAL_REFERENCE = "_test_workspace/references/Test6_House_3_Floors_Layout.jpg"
 
-def _image_frame():
+
+def _image_frame(path=TRACKED_FIXTURE, source_id="tracked_calibration_frame"):
     from PIL import Image
-    with Image.open("_test_workspace/references/Test6_House_3_Floors_Layout.jpg") as im:
+    with Image.open(path) as im:
         width, height = im.size
     return {
-        "source_id": "test6_house_3_floors",
+        "source_id": source_id,
         "kind": "reference_image",
         "pixel_width": width,
         "pixel_height": height,
@@ -32,15 +38,15 @@ def _width_anchor(pixel_width, real_length=15000.0, confidence=0.9):
 
 
 class TestSourceCalibration(unittest.TestCase):
-    def test_single_anchor_scale_from_real_reference(self):
+    def test_single_anchor_scale_from_tracked_fixture(self):
         source = _image_frame()
-        self.assertEqual((source["pixel_width"], source["pixel_height"]), (1200, 1600))
+        self.assertEqual((source["pixel_width"], source["pixel_height"]), (600, 800))
         res = calibrate_plan_source(
-            source=source, pixel_features=[], anchors=[_width_anchor(1200)],
+            source=source, pixel_features=[], anchors=[_width_anchor(600)],
         )
         self.assertEqual(res.verdict, "CALIBRATED")
-        # 15 000 mm over 1200 px -> 12.5 mm/px. Anchor is assumption, not truth.
-        self.assertAlmostEqual(res.frame["scale_unit_per_pixel"], 12.5, places=9)
+        # 15 000 mm over 600 px -> 25.0 mm/px. Anchor is assumption, not truth.
+        self.assertAlmostEqual(res.frame["scale_unit_per_pixel"], 25.0, places=9)
         self.assertEqual(res.frame["unit"], "mm")
         anchor_entry = res.provenance_ledger["anchor_total_width"]
         self.assertEqual(anchor_entry["status"], "approved_assumption")
@@ -51,36 +57,36 @@ class TestSourceCalibration(unittest.TestCase):
             source=source,
             pixel_features=[
                 {"feature_id": "wall_probe_a", "kind": "point", "pixels": [0.0, 0.0]},
-                {"feature_id": "wall_probe_b", "kind": "point", "pixels": [1200.0, 1600.0]},
+                {"feature_id": "wall_probe_b", "kind": "point", "pixels": [600.0, 800.0]},
             ],
-            anchors=[_width_anchor(1200)],
+            anchors=[_width_anchor(600)],
         )
         self.assertEqual(res.verdict, "CALIBRATED")
         by_id = {f["feature_id"]: f for f in res.features}
         # Origin pixel maps to (0, H*s); opposite corner to (W*s, 0): y-up frame.
-        self.assertEqual(by_id["wall_probe_a"]["coords_mm"], [0.0, 1600.0 * 12.5])
-        self.assertEqual(by_id["wall_probe_b"]["coords_mm"], [1200.0 * 12.5, 0.0])
+        self.assertEqual(by_id["wall_probe_a"]["coords_mm"], [0.0, 800.0 * 25.0])
+        self.assertEqual(by_id["wall_probe_b"]["coords_mm"], [600.0 * 25.0, 0.0])
         self.assertEqual(by_id["wall_probe_a"]["provenance"], "derived")
 
     def test_two_consistent_anchors_agree(self):
         source = _image_frame()
         anchors = [
-            _width_anchor(1200, real_length=15000.0),
+            _width_anchor(600, real_length=15000.0),
             {"anchor_id": "anchor_half_width", "statement": "Half width check",
-             "pixel_from": [0.0, 0.0], "pixel_to": [600.0, 0.0],
+             "pixel_from": [0.0, 0.0], "pixel_to": [300.0, 0.0],
              "real_length": 7500.0, "unit": "mm", "confidence": 0.9},
         ]
         res = calibrate_plan_source(source=source, pixel_features=[], anchors=anchors)
         self.assertEqual(res.verdict, "CALIBRATED")
-        self.assertAlmostEqual(res.frame["scale_unit_per_pixel"], 12.5, places=9)
+        self.assertAlmostEqual(res.frame["scale_unit_per_pixel"], 25.0, places=9)
         self.assertAlmostEqual(res.scale_disagreement_rel, 0.0, places=9)
 
     def test_contradictory_anchors_rejected(self):
         source = _image_frame()
         anchors = [
-            _width_anchor(1200, real_length=15000.0),
+            _width_anchor(600, real_length=15000.0),
             {"anchor_id": "anchor_conflict", "statement": "Conflicting width claim",
-             "pixel_from": [0.0, 0.0], "pixel_to": [1200.0, 0.0],
+             "pixel_from": [0.0, 0.0], "pixel_to": [600.0, 0.0],
              "real_length": 16000.0, "unit": "mm", "confidence": 0.9},
         ]
         res = calibrate_plan_source(source=source, pixel_features=[], anchors=anchors)
@@ -115,16 +121,28 @@ class TestSourceCalibration(unittest.TestCase):
         self.assertEqual(res.verdict, "INVALID_SOURCE")
         self.assertTrue(any("anchor_out_of_bounds" in e for e in res.errors))
 
+    @unittest.skipUnless(os.path.exists(REAL_REFERENCE),
+                         "real customer reference present only on dev machine")
+    def test_real_reference_anchor_scale(self):
+        source = _image_frame(REAL_REFERENCE, "test6_house_3_floors")
+        self.assertEqual((source["pixel_width"], source["pixel_height"]), (1200, 1600))
+        res = calibrate_plan_source(
+            source=source, pixel_features=[], anchors=[_width_anchor(1200)],
+        )
+        self.assertEqual(res.verdict, "CALIBRATED")
+        # 15 000 mm over 1200 px -> 12.5 mm/px on the real reference image.
+        self.assertAlmostEqual(res.frame["scale_unit_per_pixel"], 12.5, places=9)
+
     def test_provenance_ledger_statuses(self):
         source = _image_frame()
         res = calibrate_plan_source(
             source=source,
-            pixel_features=[{"feature_id": "wall_probe", "kind": "point", "pixels": [600.0, 800.0]}],
-            anchors=[_width_anchor(1200)],
+            pixel_features=[{"feature_id": "wall_probe", "kind": "point", "pixels": [300.0, 400.0]}],
+            anchors=[_width_anchor(600)],
         )
         self.assertEqual(res.verdict, "CALIBRATED")
         ledger = res.provenance_ledger
-        self.assertEqual(ledger["test6_house_3_floors"]["status"], "observed")
+        self.assertEqual(ledger["tracked_calibration_frame"]["status"], "observed")
         self.assertEqual(ledger["wall_probe.pixels"]["status"], "observed")
         self.assertEqual(ledger["anchor_total_width"]["status"], "approved_assumption")
         self.assertEqual(ledger["wall_probe"]["status"], "derived")
@@ -135,10 +153,10 @@ class TestSourceCalibration(unittest.TestCase):
         res = calibrate_plan_source(
             source=source,
             pixel_features=[
-                {"feature_id": "good_probe", "kind": "point", "pixels": [600.0, 800.0]},
+                {"feature_id": "good_probe", "kind": "point", "pixels": [300.0, 400.0]},
                 {"feature_id": "bad_probe", "kind": "point", "pixels": [5000.0, 10.0]},
             ],
-            anchors=[_width_anchor(1200)],
+            anchors=[_width_anchor(600)],
         )
         self.assertEqual(res.verdict, "CALIBRATED")
         by_id = {f["feature_id"]: f for f in res.features}
@@ -150,9 +168,9 @@ class TestSourceCalibration(unittest.TestCase):
     def test_confidence_is_minimum_of_anchors(self):
         source = _image_frame()
         anchors = [
-            _width_anchor(1200, real_length=15000.0, confidence=0.9),
+            _width_anchor(600, real_length=15000.0, confidence=0.9),
             {"anchor_id": "anchor_half_width", "statement": "Half width check",
-             "pixel_from": [0.0, 0.0], "pixel_to": [600.0, 0.0],
+             "pixel_from": [0.0, 0.0], "pixel_to": [300.0, 0.0],
              "real_length": 7500.0, "unit": "mm", "confidence": 0.6},
         ]
         res = calibrate_plan_source(source=source, pixel_features=[], anchors=anchors)

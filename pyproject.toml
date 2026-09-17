@@ -34,6 +34,7 @@ packages = ["cdt_engineer", "execution", "domains", "professional_practice"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "docs/TOOL_GUIDE.md" = "cdt_engineer/docs/TOOL_GUIDE.md"
+"docs/schemas" = "cdt_engineer/data/schemas"
 "software" = "cdt_engineer/data/software"
 
 [tool.pytest.ini_options]
