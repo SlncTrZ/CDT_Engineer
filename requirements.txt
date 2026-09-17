@@ -1,3 +1,6 @@
-# CDT_Engineer offline validation dependencies
+# CDT_Engineer provider runtime + validation dependencies
+fastmcp>=3.4.5,<4
 jsonschema>=4.10,<5
 PyYAML>=6.0,<7
+pytest>=8,<9
+pytest-asyncio>=0.23,<1

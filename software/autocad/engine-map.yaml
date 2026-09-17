@@ -1,11 +1,11 @@
-map_version: 0.3.0
+map_version: 0.4.0
 software_id: autocad
 purpose: Current public-contract semantic capability map for CDT_Engineer workflows.
 source_snapshot:
   repository: CDT-AutoCAD
-  head: 7bcc8597160ef29167c07e48721e1dd17efb0c38
-  provider_version: 0.4.0rc1
-  contract_version: autocad-generic-v1-rc1
+  head: 295a064c7b6163b912d9a70708e3be741b9b0730
+  provider_version: 0.4.0rc2
+  contract_version: autocad-generic-v1-rc2
   public_tool_count: 86
   primary_certification: AutoCAD 2027 Windows x64 / AutoCAD.Application.26
   working_tree_dirty_at_inspection: false
@@ -17,6 +17,7 @@ runtime_preflight:
   - provider version/contract and contract hash
   - system_status and system_capabilities runtime result
   - native_integrity_status when strong-integrity mutation is required
+  - active document_pid + predecessor fingerprint when native strong-integrity mutation is planned
   - backend mode and required path policy
   blocker_codes: [software_not_installed, provider_not_ready, configuration_required, version_mismatch, capability_missing, runtime_unknown]
 capability_mappings:
@@ -43,11 +44,11 @@ capability_mappings:
 - semantic: technical_2d.create
   support: expected
   expected_public_tools: [feature_execute, batch_create_entities, entity_create_line, entity_create_polyline, block_insert]
-  verification: prefer feature_execute for accepted strong-integrity action families; read-after-write required
+  verification: prefer feature_execute for accepted strong-integrity action families; caller must bind document_pid + expected_parent_fp from the planned predecessor state; read-after-write required
 - semantic: technical_2d.modify
   support: expected
   expected_public_tools: [feature_execute, batch_transform_entities, object_move, object_rotate, object_scale, object_set_properties]
-  verification: capability-specific strong-integrity or compatibility path plus read-after-write
+  verification: capability-specific strong-integrity or compatibility path plus read-after-write; native strong routes require caller document_pid + expected_parent_fp and refuse stale/wrong planning state
 - semantic: model.query
   support: expected
   expected_public_tools: [object_get, object_list, object_query]
@@ -93,3 +94,5 @@ known_blockers:
   effect: ActiveX solid inspection does not provide authoritative face/edge topology
 - code: post_seal_staleness_external
   effect: CDT_Engineer must invalidate prior QA if an accepted artifact changes after seal
+- code: stale_com_proxy_after_autocad_restart
+  effect: current RC2 runtime has a deferred operational recovery debt; after RPC/COM disconnect do not blind-retry mutation, recover a clean Session-1 supervisor/worker and re-run read-only preflight before continuing

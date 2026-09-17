@@ -28,6 +28,7 @@ This index separates stable public product architecture/contracts from contribut
 - [Standards Governance](STANDARDS_GOVERNANCE.md)
 - [Engineering Asset Catalog Contract](../catalogs/ENGINEERING_ASSET_CATALOG_CONTRACT.md)
 - [SlncTrZ-MCP Provider Standard](../MCP_PROVIDER_STANDARD.md)
+- [CDT_Engineer MCP Tool Guide](TOOL_GUIDE.md)
 
 ## Public production packages
 

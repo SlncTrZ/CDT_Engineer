@@ -10,6 +10,8 @@ CDT_Engineer is the engineering operating layer used by AI Agents to perform acc
 
 CDT_Engineer is **not** a CAD/DCC engine and is not a prompt-only skill collection. It owns professional engineering semantics, deterministic domain logic, standards applicability, engineering workflows, software operating guidance, QA/QC and handoff evidence. Native application mechanics remain in engine/provider repositories.
 
+CDT_Engineer is also a **first-class MCP provider surface** behind SlncTrZ-MCP. The provider exposes engineering semantics, deterministic checks and evidence operations as `cdt-engineer.*` after gateway namespacing. It does not proxy or hide native CAD calls. The client Agent orchestrates CDT_Engineer and independent CDT-* Generic Engine providers side-by-side; SlncTrZ-MCP remains the gateway/authority/routing layer.
+
 ## 2. Canonical operating model
 
 ```text

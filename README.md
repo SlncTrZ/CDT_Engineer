@@ -27,6 +27,14 @@ Yêu cầu / nguồn đầu vào
 
 CDT_Engineer không chứa native COM/Ruby/bpy/SolidWorks backend. Các repository CDT-* engine là Generic Execution Engines; CDT_Engineer sở hữu **chuyên môn kỹ sư, quy tắc, semantic meaning, workflow và QA**.
 
+## MCP provider surface
+
+CDT_Engineer được expose như một first-class MCP provider theo SlncTrZ Provider Standard. Provider dùng bare tool names; SlncTrZ-MCP canonicalize thành `cdt-engineer.*`. Model/Agent nhìn thấy `cdt-engineer.*` song song với `cdt-autocad.*`, `cdt-sketchup.*`, `cdt-solidworks.*` và tự orchestration vòng **think → execute → observe → verify**.
+
+Provider CDT_Engineer chỉ expose engineering semantics/checks/evidence; nó **không proxy native CAD calls** và không tự gọi CDT-* engines phía sau. SlncTrZ-MCP giữ vai trò gateway/authority/routing; model là orchestration layer; các CDT-* engine giữ native execution mechanics.
+
+Xem [MCP Tool Guide](docs/TOOL_GUIDE.md) cho public tool contract hiện hành.
+
 ## Tài liệu chuẩn
 
 - [Documentation Map](docs/README.md)
