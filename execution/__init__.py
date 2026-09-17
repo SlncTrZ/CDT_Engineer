@@ -1,4 +1,10 @@
 """Deterministic execution/acceptance helpers for CDT_Engineer."""
+from execution.chunk_recovery import (
+    ChunkExecutionRecord,
+    execute_chunk_with_recovery,
+    fingerprint_state,
+    reconcile,
+)
 from execution.plan_compiler import PlanCompileResult, compile_plan_spec
 from execution.plan_review import PlanReviewResult, review_plan_spec
 from execution.planspec import PlanSpecValidationResult, validate_plan_spec
@@ -12,6 +18,7 @@ from execution.source_calibration import CalibratedSource, calibrate_plan_source
 __all__ = [
     "PROVENANCE_MAX_RELEASE",
     "CalibratedSource",
+    "ChunkExecutionRecord",
     "PlanCompileResult",
     "PlanReviewResult",
     "PlanSpecValidationResult",
@@ -19,6 +26,9 @@ __all__ = [
     "build_chunk_receipt",
     "calibrate_plan_source",
     "compile_plan_spec",
+    "execute_chunk_with_recovery",
+    "fingerprint_state",
+    "reconcile",
     "review_plan_spec",
     "validate_plan_spec",
 ]
