@@ -37,6 +37,10 @@ def chunk_to_recovery_params(chunk: Mapping[str, Any]) -> dict[str, Any]:
             raise ValueError(f"{chunk_id}: feature ids must be non-empty strings")
         if not isinstance(feat, Mapping):
             raise ValueError(f"{chunk_id}:{fid}: feature must be a mapping")
+        # A dict keyed by id would silently collapse duplicates, shrinking
+        # the reconciled identity set. Duplicates fail closed instead.
+        if fid in params:
+            raise ValueError(f"{chunk_id}: duplicate feature id: {fid}")
         params[fid] = dict(feat)
     return params
 
@@ -143,9 +147,11 @@ def execute_chunk_with_recovery(chunk: Mapping[str, Any],
     - `execute(chunk, idempotency_key)` returns {"outcome", "state"} or raises
       on transport uncertainty; {"outcome": "failed"} means explicit failure.
     - `observe(chunk_id)` reads executor state independently of receipts and
-      MUST return the current state mapping, or None iff the chunk is absent.
-      A receipt's own "state" is a producer claim, never verification evidence:
-      every committed claim is re-checked against `observe` (IA-01).
+      MUST return the current state mapping, or an EMPTY mapping as positive
+      proof the chunk is absent. None (or raising) means NO observation, never
+      proof of absence: a blind observer must not launder a dirty state into a
+      retry. A receipt's own "state" is a producer claim, never verification
+      evidence: every committed claim is re-checked against `observe` (IA-01).
     - `compensate(chunk_id)` removes partial state before any retry; recovery
       is verified by post-compensation `observe` (empty/absent), never by the
       compensation return value (IA-02).
@@ -237,6 +243,11 @@ def _settle(chunk_id: str, attempts: int, decisions: list[str], verdict: dict[st
             recovered = observe(chunk_id)
         except Exception as exc:
             decisions.append(f"compensation_unverifiable:{exc}")
+            return ChunkExecutionRecord(chunk_id, "blocked", attempts, decisions, None)
+        if recovered is None:
+            # Absence of evidence is not evidence of recovery: a None read
+            # cannot distinguish "compensated" from "observer went blind".
+            decisions.append("compensation_unverified_absent_unconfirmed")
             return ChunkExecutionRecord(chunk_id, "blocked", attempts, decisions, None)
         if isinstance(recovered, Mapping) and len(recovered) > 0:
             decisions.append("compensation_unverified_state_remains")

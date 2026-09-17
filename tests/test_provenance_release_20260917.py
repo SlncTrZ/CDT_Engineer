@@ -185,6 +185,28 @@ class TestProvenanceRelease(unittest.TestCase):
         self.assertEqual(res["result"], "blocked")
         self.assertTrue(any("receipt_not_committed:c1" in r for r in res["reason_codes"]))
 
+    def test_receipt_missing_status_blocks_not_defaults(self):
+        receipt = _receipt()
+        del receipt["status"]
+        res = assess_provenance_release([receipt], "concept")
+        self.assertEqual(res["result"], "blocked")
+        self.assertTrue(any("receipt_status_missing" in r for r in res["reason_codes"]))
+
+    def test_receipt_committed_with_failed_verification_blocks(self):
+        receipt = _receipt()
+        receipt["verification"] = {"status": "fail"}
+        res = assess_provenance_release([receipt], "concept")
+        self.assertEqual(res["result"], "blocked")
+        self.assertTrue(any("receipt_verification_contradiction" in r
+                            for r in res["reason_codes"]))
+
+    def test_receipt_missing_verification_blocks(self):
+        receipt = _receipt()
+        del receipt["verification"]
+        res = assess_provenance_release([receipt], "concept")
+        self.assertEqual(res["result"], "blocked")
+        self.assertTrue(any("receipt_verification_missing" in r for r in res["reason_codes"]))
+
     def test_ia03_invalid_ledger_status_raises(self):
         receipts = [_receipt(provenance={"f": "specified"})]
         with self.assertRaises(ValueError):

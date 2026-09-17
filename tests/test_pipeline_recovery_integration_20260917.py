@@ -85,8 +85,9 @@ class _FaultyLane:
         raise AssertionError(f"unknown behavior {behavior}")
 
     def observe(self, chunk_id):
+        # Observer contract: explicit empty mapping = confirmed absent.
         state = self.store.get(chunk_id)
-        return None if state is None else dict(state)
+        return {} if state is None else dict(state)
 
     def compensate(self, chunk_id):
         self.store.pop(chunk_id, None)
@@ -103,6 +104,15 @@ class TestCompileRecoveryIntegration(unittest.TestCase):
         with self.assertRaises(ValueError):
             chunk_to_recovery_params({"chunk_id": "c1", "feature_ids": ["a"],
                                       "features": ["not-a-mapping"]})
+
+    def test_adapter_rejects_duplicate_feature_ids(self):
+        # Two distinct features sharing one id must not collapse silently:
+        # the second would vanish from the reconciled identity set.
+        with self.assertRaises(ValueError) as ctx:
+            chunk_to_recovery_params({"chunk_id": "c1",
+                                      "feature_ids": ["w1", "w1"],
+                                      "features": [{"length": 5000.0}, {"length": 4000.0}]})
+        self.assertIn("duplicate feature id: w1", str(ctx.exception))
 
     def test_compile_recovery_receipt_release_with_faults(self):
         compiled = compile_plan_spec(_arch_spec())

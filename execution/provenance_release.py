@@ -126,9 +126,25 @@ def assess_provenance_release(receipts: Sequence[Mapping[str, Any]], release_tar
         if not isinstance(receipt, Mapping):
             raise ValueError("each receipt must be a mapping")
         chunk_id = receipt.get("chunk_id", "?")
-        # IA-03: only verified-committed execution evidence is assessable.
-        if receipt.get("status", "committed") != "committed":
-            blockers.append(f"receipt_not_committed:{chunk_id}:{receipt.get('status')}")
+        # IA-03 + follow-up: only verified-committed execution evidence is
+        # assessable. A missing status is never defaulted to committed, and a
+        # "committed" top-level status contradicting its own verification
+        # evidence blocks instead of passing.
+        top_status = receipt.get("status")
+        if top_status is None:
+            blockers.append(f"receipt_status_missing:{chunk_id}")
+            continue
+        if top_status != "committed":
+            blockers.append(f"receipt_not_committed:{chunk_id}:{top_status}")
+            continue
+        verification = receipt.get("verification")
+        if not isinstance(verification, Mapping):
+            blockers.append(f"receipt_verification_missing:{chunk_id}")
+            continue
+        verification_status = verification.get("status")
+        if verification_status != "pass":
+            blockers.append(f"receipt_verification_contradiction:{chunk_id}:"
+                            f"status_committed_vs_verification_{verification_status}")
             continue
         feature_ids = receipt.get("feature_ids", [])
         if isinstance(feature_ids, (str, bytes)) or not isinstance(feature_ids, Sequence):

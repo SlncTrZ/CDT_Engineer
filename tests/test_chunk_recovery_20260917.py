@@ -68,8 +68,10 @@ class _ScriptedExecutor:
         return {"compensated": chunk_id}
 
     def observe(self, chunk_id):
+        # Observer contract: explicit empty mapping = confirmed absent;
+        # None is reserved for the blind-observer test below.
         state = self.state_store.get(chunk_id)
-        return None if state is None else dict(state)
+        return {} if state is None else dict(state)
 
 
 def _chunk(chunk_id="plan:wall_shell:01"):
@@ -178,6 +180,25 @@ class TestChunkRecovery(unittest.TestCase):
         record = execute_chunk_with_recovery(_chunk(), ex.execute, ex.observe, ex.compensate)
         self.assertEqual(record.final, "blocked")
         self.assertIn("compensation_unverified_state_remains", record.decisions)
+        self.assertEqual(ex.calls, {"plan:wall_shell:01": 1})
+
+    def test_compensation_cleared_but_observer_none_blocks(self):
+        # First read proves a live observer (partial state); the post-
+        # compensation read goes blind (None): absence of evidence is not
+        # proof of recovery -> no retry on a blind read.
+        ex = _ScriptedExecutor({"plan:wall_shell:01": ["partial", "success"]})
+        reads = {"n": 0}
+
+        def _flaky(cid):
+            reads["n"] += 1
+            if reads["n"] == 1:
+                return dict(ex.state_store.get(cid, {}))
+            return None
+
+        ex.observe = _flaky
+        record = execute_chunk_with_recovery(_chunk(), ex.execute, ex.observe, ex.compensate)
+        self.assertEqual(record.final, "blocked")
+        self.assertIn("compensation_unverified_absent_unconfirmed", record.decisions)
         self.assertEqual(ex.calls, {"plan:wall_shell:01": 1})
 
     def test_ia02_compensation_exception_blocks(self):
