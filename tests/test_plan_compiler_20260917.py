@@ -222,6 +222,21 @@ class TestPlanCompiler(unittest.TestCase):
         self.assertEqual(post["layer_count"], 2)
         self.assertAlmostEqual(post["total_thickness"], 0.20, places=9)
 
+    def test_chunks_carry_lane_layers(self):
+        spec = _valid_arch_spec("arch_layer_carry")
+        for wall in spec["payload"]["walls"]:
+            wall["layer"] = "A-WALL"
+        for op in spec["payload"]["openings"]:
+            op["layer"] = "A-DOOR"
+        res = compile_plan_spec(spec)
+        self.assertTrue(res.ok, f"errors: {res.errors}")
+        walls = _chunk_by_type(res, "wall_shell")
+        self.assertEqual(walls[0]["layers"], ["A-WALL"])
+        openings = _chunk_by_type(res, "openings")
+        self.assertEqual(openings[0]["layers"], ["A-DOOR"])
+        axes = _chunk_by_type(res, "grid_axes")
+        self.assertEqual(axes[0]["layers"], [])
+
     def test_compile_is_deterministic(self):
         first = compile_plan_spec(_valid_arch_spec("arch_determinism"))
         second = compile_plan_spec(_valid_arch_spec("arch_determinism"))

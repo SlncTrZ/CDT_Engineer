@@ -140,6 +140,9 @@ def _validate_architectural_payload(payload: Mapping[str, Any]) -> tuple[list[st
     feature_ids: set[str] = set()
 
     walls_map: dict[str, dict[str, Any]] = {}
+    # Local cache only: the validator must never mutate caller payloads
+    # (a previous revision wrote wall["_length"] into the input mapping).
+    wall_lengths: dict[str, float] = {}
 
     # 1. Axes
     for ax in payload.get("axes", []):
@@ -161,7 +164,7 @@ def _validate_architectural_payload(payload: Mapping[str, Any]) -> tuple[list[st
                 length = math.hypot(dx, dy)
                 if length < 1e-4:
                     errors.append(f"degenerate_wall_zero_length:{wid}")
-                wall["_length"] = length
+                wall_lengths[wid] = length
 
     # 3. Columns
     for col in payload.get("columns", []):
@@ -179,7 +182,7 @@ def _validate_architectural_payload(payload: Mapping[str, Any]) -> tuple[list[st
                 errors.append(f"unresolved_host_wall:{oid}->{hwid}")
             else:
                 host_wall = walls_map[hwid]
-                wall_len = host_wall.get("_length", 0.0)
+                wall_len = wall_lengths.get(hwid, 0.0)
                 offset = op.get("offset_along_wall", 0.0)
                 width = op.get("width", 0.0)
                 if offset + width > wall_len + 1e-4:

@@ -201,6 +201,21 @@ class TestChunkRecovery(unittest.TestCase):
         self.assertIn("compensation_unverified_absent_unconfirmed", record.decisions)
         self.assertEqual(ex.calls, {"plan:wall_shell:01": 1})
 
+    def test_post_compensation_wrong_types_never_retry(self):
+        # Unavailable/malformed observation must not authorize another mutation.
+        for value in (False, True, [], ["entity"], "", "unavailable", 0, 1):
+            with self.subTest(observation=value):
+                ex = _ScriptedExecutor({"plan:wall_shell:01": ["partial", "success"]})
+                reads = {"n": 0}
+                def observe(cid):
+                    reads["n"] += 1
+                    return dict(ex.state_store[cid]) if reads["n"] == 1 else value
+                ex.compensate = lambda cid: False
+                record = execute_chunk_with_recovery(_chunk(), ex.execute, observe, ex.compensate)
+                self.assertEqual(record.final, "blocked")
+                self.assertEqual(ex.calls, {"plan:wall_shell:01": 1})
+                self.assertIn("compensation_unverified_observation_type", record.decisions)
+
     def test_ia02_compensation_exception_blocks(self):
         ex = _ScriptedExecutor({"plan:wall_shell:01": ["partial", "success"]})
         def _boom(_cid):

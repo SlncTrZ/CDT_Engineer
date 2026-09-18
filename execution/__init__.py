@@ -8,6 +8,7 @@ from execution.chunk_recovery import (
 )
 from execution.plan_compiler import PlanCompileResult, compile_plan_spec
 from execution.plan_review import PlanReviewResult, review_plan_spec
+from execution.plan_revise import PlanReviseResult, revise_plan_spec
 from execution.planspec import PlanSpecValidationResult, validate_plan_spec
 from execution.provenance_release import (
     PROVENANCE_MAX_RELEASE,
@@ -23,6 +24,7 @@ __all__ = [
     "chunk_to_recovery_params",
     "PlanCompileResult",
     "PlanReviewResult",
+    "PlanReviseResult",
     "PlanSpecValidationResult",
     "assess_provenance_release",
     "build_chunk_receipt",
@@ -32,5 +34,6 @@ __all__ = [
     "fingerprint_state",
     "reconcile",
     "review_plan_spec",
+    "revise_plan_spec",
     "validate_plan_spec",
 ]

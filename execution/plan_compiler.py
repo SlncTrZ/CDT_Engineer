@@ -259,6 +259,11 @@ def compile_plan_spec(spec: Mapping[str, Any],
                 "verification_policy": "read_after_write",
                 "ui_yield": True,
                 "provenance": provenance,
+                # Layer discipline (G13): lane layer names travel with the
+                # chunk so the executor binds native layers deterministically.
+                "layers": sorted({item.get("layer") for _, item in part
+                                  if isinstance(item, Mapping)
+                                  and isinstance(item.get("layer"), str)}),
             })
             group_ids.append(chunk_id)
             feature_total += len(part)

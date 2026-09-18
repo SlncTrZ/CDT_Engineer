@@ -249,7 +249,10 @@ def _settle(chunk_id: str, attempts: int, decisions: list[str], verdict: dict[st
             # cannot distinguish "compensated" from "observer went blind".
             decisions.append("compensation_unverified_absent_unconfirmed")
             return ChunkExecutionRecord(chunk_id, "blocked", attempts, decisions, None)
-        if isinstance(recovered, Mapping) and len(recovered) > 0:
+        if not isinstance(recovered, Mapping):
+            decisions.append("compensation_unverified_observation_type")
+            return ChunkExecutionRecord(chunk_id, "blocked", attempts, decisions, None)
+        if recovered:
             decisions.append("compensation_unverified_state_remains")
             fp = fingerprint_state(recovered)
             return ChunkExecutionRecord(chunk_id, "blocked", attempts, decisions, fp)

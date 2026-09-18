@@ -42,9 +42,16 @@ def _normalize_requirements(requirements: Mapping[str, Any] | None) -> dict[str,
         raise ValueError(f"invalid release_target: {release}")
     for key in ("dimension_tolerance", "endpoint_snap_tolerance", "grade_tolerance_percent",
                 "min_door_width", "min_space_area", "min_clear_dimension",
-                "max_grade_percent", "min_vertical_curve_radius", "max_cross_slope_percent"):
+                "max_grade_percent", "min_vertical_curve_radius", "max_cross_slope_percent",
+                "min_opening_edge_distance"):
         if key in merged and merged[key] is not None:
             _finite(merged[key], f"requirements.{key}")
+    if "strict_column_grid" in merged and merged["strict_column_grid"] is not None \
+            and not isinstance(merged["strict_column_grid"], bool):
+        raise ValueError("requirements.strict_column_grid must be bool")
+    if "require_layers" in merged and merged["require_layers"] is not None \
+            and not isinstance(merged["require_layers"], bool):
+        raise ValueError("requirements.require_layers must be bool")
     return merged
 
 
@@ -424,6 +431,213 @@ def _gate_g9_cross_section(payload: Mapping[str, Any], plan_type: str, req: Mapp
     return finding
 
 
+def _point_segment_distance(pt: Sequence[float], a: Sequence[float], b: Sequence[float]) -> float:
+    abx, aby = b[0] - a[0], b[1] - a[1]
+    seg_len_sq = abx * abx + aby * aby
+    if seg_len_sq <= _EPS * _EPS:
+        return math.hypot(pt[0] - a[0], pt[1] - a[1])
+    t = max(0.0, min(1.0, ((pt[0] - a[0]) * abx + (pt[1] - a[1]) * aby) / seg_len_sq))
+    return math.hypot(pt[0] - (a[0] + t * abx), pt[1] - (a[1] + t * aby))
+
+
+def _segments_cross(a0: Sequence[float], a1: Sequence[float],
+                    b0: Sequence[float], b1: Sequence[float]) -> list[float] | None:
+    dx_a, dy_a = a1[0] - a0[0], a1[1] - a0[1]
+    dx_b, dy_b = b1[0] - b0[0], b1[1] - b0[1]
+    denom = dx_a * dy_b - dy_a * dx_b
+    if abs(denom) <= _EPS:
+        return None
+    t = ((b0[0] - a0[0]) * dy_b - (b0[1] - a0[1]) * dx_b) / denom
+    u = ((b0[0] - a0[0]) * dy_a - (b0[1] - a0[1]) * dx_a) / denom
+    if -_EPS <= t <= 1.0 + _EPS and -_EPS <= u <= 1.0 + _EPS:
+        return [a0[0] + t * dx_a, a0[1] + t * dy_a]
+    return None
+
+
+def _point_in_polygon(pt: Sequence[float], poly: Sequence[Sequence[float]]) -> bool:
+    inside = False
+    n = len(poly)
+    for i in range(n):
+        a, b = poly[i], poly[(i + 1) % n]
+        if (a[1] > pt[1]) != (b[1] > pt[1]):
+            xinters = (b[0] - a[0]) * (pt[1] - a[1]) / (b[1] - a[1]) + a[0]
+            if pt[0] < xinters:
+                inside = not inside
+    return inside
+
+
+def _column_bbox(column: Mapping[str, Any]) -> tuple[float, float, float, float] | None:
+    center = column.get("center", [])
+    dims = column.get("dimensions", [])
+    if len(center) != 2 or not dims:
+        return None
+    try:
+        cx, cy = _finite(center[0], "column.x"), _finite(center[1], "column.y")
+    except ValueError:
+        return None
+    if column.get("shape") == "circle":
+        try:
+            r = _finite(dims[0], "column.diameter") / 2.0
+        except ValueError:
+            return None
+        return (cx - r, cy - r, cx + r, cy + r)
+    if len(dims) < 2:
+        return None
+    try:
+        hw, hh = _finite(dims[0], "column.w") / 2.0, _finite(dims[1], "column.h") / 2.0
+    except ValueError:
+        return None
+    return (cx - hw, cy - hh, cx + hw, cy + hh)
+
+
+def _gate_g10_columns(payload: Mapping[str, Any], plan_type: str, req: Mapping[str, Any]) -> dict[str, Any]:
+    if plan_type != "architectural_floor_plan":
+        return _na("R08-G10-column_placement", "column_placement")
+    snap = max(float(req["endpoint_snap_tolerance"]), 1e-6)
+    strict = bool(req.get("strict_column_grid", False))
+    axes = [(ax.get("start", []), ax.get("end", [])) for ax in payload.get("axes", [])]
+    axes = [(a, b) for a, b in axes if len(a) == 2 and len(b) == 2]
+    intersections: list[list[float]] = []
+    for i in range(len(axes)):
+        for j in range(i + 1, len(axes)):
+            hit = _segments_cross(axes[i][0], axes[i][1], axes[j][0], axes[j][1])
+            if hit is not None:
+                intersections.append(hit)
+    columns = [c for c in payload.get("columns", []) if c.get("column_id")]
+    reasons: list[str] = []
+    refs: list[str] = []
+    boxes: list[tuple[str, tuple[float, float, float, float]]] = []
+    for col in columns:
+        cid = col.get("column_id", "?")
+        refs.append(cid)
+        center = col.get("center", [])
+        if len(center) != 2:
+            reasons.append(f"column_center_invalid:{cid}")
+            continue
+        on_axis = any(_point_segment_distance(center, a, b) <= snap + _EPS for a, b in axes)
+        if not on_axis:
+            reasons.append(f"column_off_grid:{cid}")
+            continue
+        if strict and intersections and not any(
+                math.hypot(center[0] - p[0], center[1] - p[1]) <= snap + _EPS for p in intersections):
+            reasons.append(f"column_off_intersection:{cid}")
+        box = _column_bbox(col)
+        if box is None:
+            reasons.append(f"column_bbox_unresolvable:{cid}")
+        else:
+            boxes.append((cid, box))
+    for i in range(len(boxes)):
+        for j in range(i + 1, len(boxes)):
+            a, b = boxes[i][1], boxes[j][1]
+            if a[0] < b[2] - _EPS and b[0] < a[2] - _EPS and a[1] < b[3] - _EPS and b[1] < a[3] - _EPS:
+                reasons.append(f"column_overlap:{boxes[i][0]}:{boxes[j][0]}")
+    return _finding("R08-G10-column_placement", "column_placement", "MAJOR",
+                    "fail" if reasons else "pass", reasons, refs)
+
+
+def _gate_g11_opening_clearances(payload: Mapping[str, Any], plan_type: str,
+                                 req: Mapping[str, Any]) -> dict[str, Any]:
+    if plan_type != "architectural_floor_plan":
+        return _na("R08-G11-opening_clearances", "opening_clearances")
+    min_edge = req.get("min_opening_edge_distance")
+    walls = {w.get("wall_id"): w for w in payload.get("walls", []) if w.get("wall_id")}
+    reasons: list[str] = []
+    refs: list[str] = []
+    spans: dict[str, list[tuple[str, float, float]]] = {}
+    for op in payload.get("openings", []):
+        oid = op.get("opening_id", "?")
+        refs.append(oid)
+        host = walls.get(op.get("host_wall_id"))
+        if host is None:
+            continue  # unresolved host already fails G4
+        wall_len = _wall_length(host)
+        offset = op.get("offset_along_wall", 0.0)
+        width = op.get("width", 0.0)
+        if min_edge is not None:
+            near = min(offset, wall_len - (offset + width))
+            if near + _EPS < float(min_edge):
+                reasons.append(f"opening_too_close_to_wall_end:{oid}")
+        spans.setdefault(op.get("host_wall_id"), []).append((oid, offset, offset + width))
+    for host_id, intervals in spans.items():
+        ordered = sorted(intervals, key=lambda t: t[1])
+        for (a_id, a0, a1), (b_id, b0, _b1) in zip(ordered, ordered[1:]):
+            if b0 < a1 - _EPS:
+                reasons.append(f"opening_overlap:{a_id}:{b_id}@wall_{host_id}")
+    seen: list[str] = []
+    for r in reasons:
+        if r not in seen:
+            seen.append(r)
+    return _finding("R08-G11-opening_clearances", "opening_clearances", "BLOCKER",
+                    "fail" if seen else "pass", seen, refs)
+
+
+def _gate_g12_fixture_containment(payload: Mapping[str, Any], plan_type: str,
+                                  req: Mapping[str, Any]) -> dict[str, Any]:  # noqa: ARG001
+    if plan_type != "architectural_floor_plan":
+        return _na("R08-G12-fixture_containment", "fixture_containment")
+    spaces = {sp.get("space_id"): sp for sp in payload.get("spaces", []) if sp.get("space_id")}
+    reasons: list[str] = []
+    refs: list[str] = []
+    for fx in payload.get("fixtures", []):
+        fid = fx.get("fixture_id", "?")
+        refs.append(fid)
+        host_id = fx.get("host_space_id")
+        if not host_id:
+            continue  # unhosted fixtures are out of scope for this gate
+        space = spaces.get(host_id)
+        if space is None:
+            reasons.append(f"fixture_host_space_unresolved:{fid}->{host_id}")
+            continue
+        poly = space.get("boundary_polygon", [])
+        pos = fx.get("position", [])
+        if len(poly) < 3 or len(pos) != 2 or _polygon_self_intersects(poly):
+            reasons.append(f"fixture_containment_unverifiable:{fid}")
+            continue
+        if not _point_in_polygon(pos, poly):
+            reasons.append(f"fixture_outside_host_space:{fid}->{host_id}")
+    return _finding("R08-G12-fixture_containment", "fixture_containment", "MAJOR",
+                    "fail" if reasons else "pass", reasons, refs)
+
+
+_LAYER_KINDS = (
+    ("axes", "axis_id"), ("walls", "wall_id"), ("columns", "column_id"),
+    ("openings", "opening_id"), ("spaces", "space_id"),
+    ("fixtures", "fixture_id"), ("dimensions", "dimension_id"),
+)
+
+
+def _gate_g13_layers(payload: Mapping[str, Any], plan_type: str,
+                     req: Mapping[str, Any]) -> dict[str, Any]:
+    if plan_type != "architectural_floor_plan":
+        return _na("R08-G13-layer_discipline", "layer_discipline")
+    if not req.get("require_layers", False):
+        return _finding("R08-G13-layer_discipline", "layer_discipline",
+                        "OBSERVATION", "pass", ["layer_discipline_not_required"])
+    reasons: list[str] = []
+    refs: list[str] = []
+    kind_layers: dict[str, set[str]] = {}
+    for key, id_key in _LAYER_KINDS:
+        for item in payload.get(key, []) or []:
+            if not isinstance(item, Mapping):
+                continue
+            fid = item.get(id_key, "?")
+            refs.append(fid)
+            layer = item.get("layer")
+            if not isinstance(layer, str) or not layer:
+                reasons.append(f"missing_layer:{fid}")
+            else:
+                kind_layers.setdefault(key, set()).add(layer)
+    for kind in sorted(kind_layers):
+        if len(kind_layers[kind]) > 1:
+            reasons.append(f"split_layer:{kind}:{sorted(kind_layers[kind])}")
+    seen: list[str] = []
+    for r in reasons:
+        if r not in seen:
+            seen.append(r)
+    return _finding("R08-G13-layer_discipline", "layer_discipline", "MAJOR",
+                    "fail" if seen else "pass", seen, refs)
+
+
 @dataclass(frozen=True)
 class PlanReviewResult:
     approved: bool
@@ -464,6 +678,10 @@ def review_plan_spec(spec: Mapping[str, Any], requirements: Mapping[str, Any] | 
     findings.append(_gate_g7_provenance(spec, req))
     findings.append(_gate_g8_profile(payload, plan_type, req))
     findings.append(_gate_g9_cross_section(payload, plan_type, req))
+    findings.append(_gate_g10_columns(payload, plan_type, req))
+    findings.append(_gate_g11_opening_clearances(payload, plan_type, req))
+    findings.append(_gate_g12_fixture_containment(payload, plan_type, req))
+    findings.append(_gate_g13_layers(payload, plan_type, req))
 
     blocked: list[str] = []
     for f in findings:

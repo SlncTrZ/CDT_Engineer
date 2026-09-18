@@ -144,7 +144,8 @@
               "axis_id": { "type": "string", "minLength": 1 },
               "label": { "type": "string", "minLength": 1 },
               "start": { "$ref": "#/$defs/point2d" },
-              "end": { "$ref": "#/$defs/point2d" }
+              "end": { "$ref": "#/$defs/point2d" },
+              "layer": { "type": "string", "minLength": 1 }
             }
           }
         },
@@ -162,7 +163,8 @@
               "end": { "$ref": "#/$defs/point2d" },
               "baseline": { "enum": ["center", "finish_face_interior", "finish_face_exterior"] },
               "level_ref": { "type": "string" },
-              "height": { "type": "number", "exclusiveMinimum": 0 }
+              "height": { "type": "number", "exclusiveMinimum": 0 },
+              "layer": { "type": "string", "minLength": 1 }
             }
           }
         },
@@ -181,7 +183,8 @@
                 "minItems": 1,
                 "maxItems": 2
               },
-              "center": { "$ref": "#/$defs/point2d" }
+              "center": { "$ref": "#/$defs/point2d" },
+              "layer": { "type": "string", "minLength": 1 }
             }
           }
         },
@@ -200,7 +203,8 @@
               "height": { "type": "number", "exclusiveMinimum": 0 },
               "sill_height": { "type": "number", "minimum": 0 },
               "head_height": { "type": "number", "minimum": 0 },
-              "swing_type": { "type": "string" }
+              "swing_type": { "type": "string" },
+              "layer": { "type": "string", "minLength": 1 }
             }
           }
         },
@@ -219,7 +223,8 @@
                 "minItems": 3
               },
               "net_area": { "type": "number", "exclusiveMinimum": 0 },
-              "min_area": { "type": "number", "exclusiveMinimum": 0 }
+              "min_area": { "type": "number", "exclusiveMinimum": 0 },
+              "layer": { "type": "string", "minLength": 1 }
             }
           }
         },
@@ -235,7 +240,8 @@
               "position": { "$ref": "#/$defs/point2d" },
               "rotation": { "type": "number" },
               "host_wall_id": { "type": "string" },
-              "host_space_id": { "type": "string" }
+              "host_space_id": { "type": "string" },
+              "layer": { "type": "string", "minLength": 1 }
             }
           }
         },
@@ -258,7 +264,8 @@
               "feature_refs": {
                 "type": "array",
                 "items": { "type": "string" }
-              }
+              },
+              "layer": { "type": "string", "minLength": 1 }
             }
           }
         }

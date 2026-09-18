@@ -112,6 +112,152 @@ class TestPlanReviewGates(unittest.TestCase):
         self.assertEqual(res.verdict, "APPROVED_FOR_EXECUTION", f"findings: {[f for f in res.findings if f['result'] == 'fail']}")
         self.assertTrue(res.approved)
 
+    def _spec_with_column(self, center, name="col_c1", dims=(220.0, 220.0)):
+        spec = _valid_arch_spec(f"arch_{name}")
+        spec["payload"]["columns"] = [
+            {"column_id": name, "shape": "rect",
+             "dimensions": [dims[0], dims[1]], "center": [center[0], center[1]]},
+        ]
+        spec["provenance_ledger"][name] = {
+            "status": "specified", "source_id": "dwg_ref_01",
+            "assumption_id": None, "confidence": 1.0,
+        }
+        return spec
+
+    def test_column_on_grid_intersection_passes(self):
+        res = review_plan_spec(self._spec_with_column([0.0, 0.0]))
+        f = _finding(res, "R08-G10-column_placement")
+        self.assertIsNotNone(f)
+        self.assertEqual(f["result"], "pass")
+
+    def test_column_off_grid_rejected(self):
+        res = review_plan_spec(self._spec_with_column([777.0, 888.0]))
+        self.assertEqual(res.verdict, "REJECTED")
+        f = _finding(res, "R08-G10-column_placement")
+        self.assertIn("column_off_grid:col_c1", f["reason_codes"])
+
+    def test_column_off_intersection_strict_only(self):
+        # (2500, 0) lies on axis A but on no intersection.
+        relaxed = review_plan_spec(self._spec_with_column([2500.0, 0.0]))
+        self.assertEqual(_finding(relaxed, "R08-G10-column_placement")["result"], "pass")
+        strict = review_plan_spec(self._spec_with_column([2500.0, 0.0]),
+                                  requirements={"strict_column_grid": True})
+        self.assertEqual(strict.verdict, "REJECTED")
+        self.assertIn("column_off_intersection:col_c1",
+                      _finding(strict, "R08-G10-column_placement")["reason_codes"])
+
+    def test_column_overlap_rejected(self):
+        spec = self._spec_with_column([0.0, 0.0])
+        spec["payload"]["columns"].append(
+            {"column_id": "col_c2", "shape": "rect",
+             "dimensions": [220.0, 220.0], "center": [100.0, 0.0]},
+        )
+        spec["provenance_ledger"]["col_c2"] = {
+            "status": "specified", "source_id": "dwg_ref_01",
+            "assumption_id": None, "confidence": 1.0,
+        }
+        res = review_plan_spec(spec)
+        self.assertEqual(res.verdict, "REJECTED")
+        self.assertIn("column_overlap:col_c1:col_c2",
+                      _finding(res, "R08-G10-column_placement")["reason_codes"])
+
+    def test_opening_overlap_same_wall_rejected(self):
+        spec = _valid_arch_spec("arch_opening_overlap")
+        spec["payload"]["openings"].append(
+            {"opening_id": "door_d2", "host_wall_id": "wall_w1", "opening_type": "door",
+             "offset_along_wall": 1500.0, "width": 900.0, "height": 2200.0,
+             "sill_height": 0.0, "head_height": 2200.0},
+        )
+        spec["provenance_ledger"]["door_d2"] = {
+            "status": "specified", "source_id": "spec_sheet_01",
+            "assumption_id": None, "confidence": 1.0,
+        }
+        res = review_plan_spec(spec)
+        self.assertEqual(res.verdict, "REJECTED")
+        f = _finding(res, "R08-G11-opening_clearances")
+        self.assertTrue(any(r.startswith("opening_overlap:door_d1:door_d2") for r in f["reason_codes"]))
+
+    def test_opening_edge_distance_requirement(self):
+        spec = _valid_arch_spec("arch_edge_ok")
+        ok_res = review_plan_spec(spec, requirements={"min_opening_edge_distance": 500.0})
+        self.assertEqual(_finding(ok_res, "R08-G11-opening_clearances")["result"], "pass")
+        spec["payload"]["openings"][0]["offset_along_wall"] = 100.0
+        bad_res = review_plan_spec(spec, requirements={"min_opening_edge_distance": 500.0})
+        self.assertEqual(bad_res.verdict, "REJECTED")
+        self.assertIn("opening_too_close_to_wall_end:door_d1",
+                      _finding(bad_res, "R08-G11-opening_clearances")["reason_codes"])
+
+    def _spec_with_fixture(self, position, host="space_living"):
+        spec = _valid_arch_spec("arch_fixture_check")
+        spec["payload"]["fixtures"] = [
+            {"fixture_id": "fx_wc1", "fixture_type": "water_closet",
+             "position": [position[0], position[1]], "host_space_id": host},
+        ]
+        spec["provenance_ledger"]["fx_wc1"] = {
+            "status": "specified", "source_id": "spec_sheet_01",
+            "assumption_id": None, "confidence": 1.0,
+        }
+        return spec
+
+    def test_fixture_inside_host_space_passes(self):
+        res = review_plan_spec(self._spec_with_fixture([2500.0, 2000.0]))
+        self.assertEqual(_finding(res, "R08-G12-fixture_containment")["result"], "pass")
+
+    def test_fixture_outside_host_space_rejected(self):
+        res = review_plan_spec(self._spec_with_fixture([9000.0, 9000.0]))
+        self.assertEqual(res.verdict, "REJECTED")
+        self.assertIn("fixture_outside_host_space:fx_wc1->space_living",
+                      _finding(res, "R08-G12-fixture_containment")["reason_codes"])
+
+    def test_fixture_unresolved_host_space_rejected(self):
+        res = review_plan_spec(self._spec_with_fixture([2500.0, 2000.0], host="space_ghost"))
+        self.assertEqual(res.verdict, "REJECTED")
+        self.assertIn("fixture_host_space_unresolved:fx_wc1->space_ghost",
+                      _finding(res, "R08-G12-fixture_containment")["reason_codes"])
+
+    def _spec_with_layers(self, split_walls=False, drop_door_layer=False):
+        spec = _valid_arch_spec("arch_layered")
+        for ax in spec["payload"]["axes"]:
+            ax["layer"] = "A-GRID"
+        for i, wall in enumerate(spec["payload"]["walls"]):
+            wall["layer"] = "A-WALL-B" if (split_walls and i == 1) else "A-WALL"
+        for op in spec["payload"]["openings"]:
+            if not drop_door_layer:
+                op["layer"] = "A-DOOR"
+        for sp in spec["payload"]["spaces"]:
+            sp["layer"] = "A-SPACE"
+        for dm in spec["payload"]["dimensions"]:
+            dm["layer"] = "A-DIM"
+        return spec
+
+    def test_layer_discipline_passes_when_assigned(self):
+        res = review_plan_spec(self._spec_with_layers(),
+                               requirements={"require_layers": True})
+        f = _finding(res, "R08-G13-layer_discipline")
+        self.assertIsNotNone(f)
+        self.assertEqual(f["result"], "pass")
+        self.assertEqual(res.verdict, "APPROVED_FOR_EXECUTION")
+
+    def test_layer_discipline_optional_by_default(self):
+        res = review_plan_spec(_valid_arch_spec("arch_no_layers"))
+        f = _finding(res, "R08-G13-layer_discipline")
+        self.assertEqual(f["result"], "pass")
+        self.assertIn("layer_discipline_not_required", f["reason_codes"])
+
+    def test_missing_layer_rejected(self):
+        res = review_plan_spec(self._spec_with_layers(drop_door_layer=True),
+                               requirements={"require_layers": True})
+        self.assertEqual(res.verdict, "REJECTED")
+        self.assertIn("missing_layer:door_d1",
+                      _finding(res, "R08-G13-layer_discipline")["reason_codes"])
+
+    def test_split_layer_per_kind_rejected(self):
+        res = review_plan_spec(self._spec_with_layers(split_walls=True),
+                               requirements={"require_layers": True})
+        self.assertEqual(res.verdict, "REJECTED")
+        self.assertTrue(any(r.startswith("split_layer:walls:") for r in
+                            _finding(res, "R08-G13-layer_discipline")["reason_codes"]))
+
     def test_missing_axes_grid_rejected(self):
         spec = _valid_arch_spec("arch_no_axes")
         spec["payload"]["axes"] = []
