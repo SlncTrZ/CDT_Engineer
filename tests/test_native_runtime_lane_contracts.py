@@ -41,17 +41,66 @@ class NativeRuntimeLaneContractTests(unittest.TestCase):
         self.assertIn("artifact_seal", text)
         self.assertIn("create_mesh", text)
 
-    def test_solidworks_map_fails_closed_on_provider_skeleton(self):
+    def test_solidworks_map_tracks_current_public_provider_without_overclaiming_seal(self):
         data = yaml.safe_load((ROOT / "software/solidworks/engine-map.yaml").read_text(encoding="utf-8"))
         snapshot = data["source_snapshot"]
         self.assertEqual("CDT-SolidWorks", snapshot["repository"])
-        self.assertEqual("3bd2bfb2e6527cf2440fa8d2e23610ed4d77a6ab", snapshot["head"])
-        self.assertEqual(0, snapshot["public_tool_count"])
-        for row in data["capability_mappings"]:
-            self.assertEqual("blocked", row["support"], row["semantic"])
-            self.assertEqual([], row["expected_public_tools"], row["semantic"])
+        self.assertEqual("ddaef7b60611f8f094f614914e37f9adccc298f3", snapshot["head"])
+        self.assertEqual("0.1.0", snapshot["provider_version"])
+        self.assertEqual("0.1.0", snapshot["contract_version"])
+        self.assertEqual(149, snapshot["public_tool_count"])
+        self.assertEqual(125, snapshot["public_capability_count"])
+        self.assertFalse(snapshot["runtime_proof"])
+        self.assertEqual("accepted", snapshot["native_acceptance"])
+
+        by_semantic = {row["semantic"]: row for row in data["capability_mappings"]}
+        expected = {
+            "solid.feature.create",
+            "solid.boolean",
+            "model.query",
+            "checkpoint.create",
+            "model_3d.measure",
+            "topology.inspect",
+            "artifact.native_save",
+            "artifact.reopen",
+            "artifact.exchange_export",
+        }
+        for semantic in expected:
+            self.assertEqual("expected", by_semantic[semantic]["support"], semantic)
+            self.assertTrue(by_semantic[semantic]["expected_public_tools"], semantic)
+
+        self.assertIn("part_create_rect_extrude", by_semantic["solid.feature.create"]["expected_public_tools"])
+        self.assertIn("body_combine", by_semantic["solid.boolean"]["expected_public_tools"])
+        self.assertIn("document_reconcile", by_semantic["checkpoint.create"]["expected_public_tools"])
+        self.assertIn("evaluation_measure", by_semantic["model_3d.measure"]["expected_public_tools"])
+        self.assertIn("topology_inspect", by_semantic["topology.inspect"]["expected_public_tools"])
+        self.assertIn("export_document", by_semantic["artifact.exchange_export"]["expected_public_tools"])
+
+        seal = by_semantic["artifact.seal"]
+        self.assertEqual("blocked", seal["support"])
+        self.assertEqual([], seal["expected_public_tools"])
         blockers = {row["code"] for row in data["known_blockers"]}
-        self.assertIn("provider_not_implemented", blockers)
+        self.assertNotIn("provider_not_implemented", blockers)
+        self.assertIn("artifact_seal_missing", blockers)
+        self.assertIn("source_snapshot_not_runtime_proof", blockers)
+
+    def test_solidworks_source_map_remains_fail_closed_without_runtime_discovery(self):
+        from execution.stage_runner import capability_facts_from_engine_maps
+
+        data = yaml.safe_load((ROOT / "software/solidworks/engine-map.yaml").read_text(encoding="utf-8"))
+        facts = capability_facts_from_engine_maps([data])
+
+        self.assertEqual("unknown", facts["solid.feature.create"]["result"])
+        self.assertIn(
+            "runtime_fact_required:solidworks:solid.feature.create",
+            facts["solid.feature.create"]["reason_codes"],
+        )
+        self.assertEqual("unknown", facts["model_3d.measure"]["result"])
+        self.assertEqual("blocked", facts["artifact.seal"]["result"])
+        self.assertIn(
+            "source_map_blocked:solidworks:artifact.seal",
+            facts["artifact.seal"]["reason_codes"],
+        )
 
     def test_native_benchmarks_define_recovery_and_current_typed_blockers(self):
         building = (ROOT / "domains/building-architecture/benchmark-pack.md").read_text(encoding="utf-8")
@@ -70,7 +119,11 @@ class NativeRuntimeLaneContractTests(unittest.TestCase):
         self.assertIn("external hash", site.lower())
 
         mechanical = (ROOT / "domains/mechanical-reconstruction/benchmark-pack.md").read_text(encoding="utf-8")
-        self.assertIn("provider_not_implemented", mechanical)
+        self.assertNotIn("provider_not_implemented", mechanical)
+        self.assertIn("artifact_seal_missing", mechanical)
+        self.assertIn("document_reconcile", mechanical)
+        self.assertIn("evaluation_measure", mechanical)
+        self.assertIn("topology_inspect", mechanical)
         for token in ["early", "middle", "late", "uncertain"]:
             self.assertIn(token, mechanical.lower())
 

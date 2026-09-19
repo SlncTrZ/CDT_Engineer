@@ -1,75 +1,116 @@
-map_version: 0.2.0
+map_version: 0.3.0
 software_id: solidworks
-purpose: Current public-contract truth for Mechanical reconstruction against the CDT-SolidWorks provider repository.
+purpose: Current public-contract semantic capability map for Mechanical reconstruction against the CDT-SolidWorks provider.
 source_snapshot:
   repository: CDT-SolidWorks
-  head: 3bd2bfb2e6527cf2440fa8d2e23610ed4d77a6ab
-  provider_state: skeleton_no_callable_mcp
-  provider_version: null
-  contract_version: null
-  public_tool_count: 0
-  working_tree_dirty_at_inspection: false
+  head: ddaef7b60611f8f094f614914e37f9adccc298f3
+  provider_state: implemented_public_mcp_runtime
+  provider_version: 0.1.0
+  contract_version: 0.1.0
+  public_tool_count: 149
+  public_capability_count: 125
+  measured_application: SOLIDWORKS 2024 SP0.1
+  measured_application_revision: 32.0.1
+  working_tree_dirty_at_inspection: true
   runtime_proof: false
+  native_acceptance: accepted
+  native_acceptance_date: '2026-09-19'
 runtime_preflight:
   required: true
   discover:
-  - SolidWorks installation path/version/build/edition
-  - required COM/add-in host readiness
-  - CDT-SolidWorks provider implementation/version/contract
-  - runtime tool/capability surface
+  - SOLIDWORKS installation path/version/build/edition
+  - provider version/contract and exact capability surface
+  - system_status and system_capabilities observed runtime state
+  - application_probe result and provider-owned/attached session state when native execution is required
+  - required public tool availability for the selected workflow
+  - path-policy roots and output destinations
   blocker_codes:
   - software_not_installed
   - provider_not_ready
-  - provider_not_implemented
   - configuration_required
   - version_mismatch
   - capability_missing
   - runtime_unknown
 capability_mappings:
 - semantic: solid.feature.create
-  support: blocked
-  expected_public_tools: []
-  verification: current CDT-SolidWorks snapshot has no callable MCP server or native feature tool
+  support: expected
+  expected_public_tools:
+  - part_create_rect_extrude
+  - part_add_rect_extrude
+  - part_profile_extrude
+  - part_cut_extrude
+  - part_simple_hole
+  - part_revolve
+  - part_fillet
+  - part_chamfer
+  verification: bounded semantic feature creation through the public provider; verify feature identity/parameters, rebuild state and expected body state after each chunk
 - semantic: solid.boolean
-  support: blocked
-  expected_public_tools: []
-  verification: current CDT-SolidWorks snapshot has no callable MCP server or Boolean tool
+  support: expected
+  expected_public_tools:
+  - body_combine
+  - part_combine_all_bodies
+  verification: public native Boolean/combine routes with post-operation body inspection; do not infer authoritative face semantics from a Boolean receipt alone
 - semantic: model.query
-  support: blocked
-  expected_public_tools: []
-  verification: current CDT-SolidWorks snapshot has no callable MCP model query tool
+  support: expected
+  expected_public_tools:
+  - document_info
+  - document_list_features
+  - document_list_bodies
+  - part_feature_get
+  - part_feature_parameters_get
+  - body_inspect
+  verification: independent read-back of persisted document, feature and body state rather than reuse of producer receipts
 - semantic: checkpoint.create
-  support: blocked
-  expected_public_tools: []
-  verification: no public native checkpoint/save route exists in the current provider snapshot
+  support: expected
+  expected_public_tools:
+  - document_save
+  - document_reopen
+  - document_reconcile
+  - part_cut_reconcile
+  - part_simple_hole_reconcile
+  - part_revolve_reconcile
+  verification: persisted save/reopen boundary plus explicit uncertain-mutation reconciliation; this is not a claim of native transaction rollback or whole-chunk atomicity
 - semantic: model_3d.measure
-  support: blocked
-  expected_public_tools: []
-  verification: no public independent native measurement route exists in the current provider snapshot
+  support: expected
+  expected_public_tools:
+  - evaluation_measure
+  - evaluation_bounding_box
+  - evaluation_geometry_sanity
+  verification: deterministic native measurement/sanity from the current persisted artifact; domain tolerances and semantic interpretation remain CDT_Engineer responsibilities
 - semantic: topology.inspect
-  support: blocked
-  expected_public_tools: []
-  verification: no public topology inspection route exists in the current provider snapshot
+  support: expected
+  expected_public_tools:
+  - topology_query
+  - topology_resolve
+  - topology_inspect
+  verification: provider-native bounded topology query plus authenticated reference resolution and analytic inspection; use independent QA role/context for acceptance evidence
 - semantic: artifact.native_save
-  support: blocked
-  expected_public_tools: []
-  verification: no public native save route exists in the current provider snapshot
+  support: expected
+  expected_public_tools:
+  - document_save
+  - document_save_as
+  verification: rooted native SLDPRT/SLDASM/SLDDRW persistence; verify exact path, reopen and downstream measurements
 - semantic: artifact.reopen
-  support: blocked
-  expected_public_tools: []
-  verification: no public native reopen route exists in the current provider snapshot
+  support: expected
+  expected_public_tools:
+  - document_open
+  - document_reopen
+  - document_info
+  verification: reopen the exact persisted artifact and re-run required feature/body/measurement/topology checks
 - semantic: artifact.exchange_export
-  support: blocked
-  expected_public_tools: []
-  verification: no public exchange export route exists in the current provider snapshot
+  support: expected
+  expected_public_tools:
+  - export_document
+  - import_document
+  verification: use only formats reported by the current provider/runtime; round-trip acceptance requires reopen/import plus independent units/dimensions/topology comparison
 - semantic: artifact.seal
   support: blocked
   expected_public_tools: []
-  verification: no public content-addressed seal route exists in the current provider snapshot
+  verification: CDT-SolidWorks does not expose a public content-addressed artifact_seal/artifact_verify primitive at this snapshot
 known_blockers:
-- code: provider_not_implemented
-  effect: current CDT-SolidWorks repository is a provider-native skeleton; docs explicitly state that no callable MCP server/capability is currently claimed
 - code: source_snapshot_not_runtime_proof
-  effect: installed SolidWorks or reference automation examples cannot substitute for a released CDT-SolidWorks public provider
+  effect: accepted source/runtime history never substitutes for Step-0 discovery of the current target host/provider/capability state
+- code: artifact_seal_missing
+  effect: CDT_Engineer final artifact-seal hard gates cannot be satisfied by the SolidWorks provider alone; exact external hashing may be evidence but does not become provider-native artifact.seal
 - code: exact_transaction_mode_unproven
-  effect: failure/recovery acceptance cannot start until a public native mutation/checkpoint route exists and its semantics are runtime-proven
+  effect: save/reopen plus reconcile are accepted recovery primitives, but no whole-chunk native transaction rollback or checkpointed_atomic guarantee is claimed
