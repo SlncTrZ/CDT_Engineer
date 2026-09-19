@@ -45,13 +45,15 @@ class NativeRuntimeLaneContractTests(unittest.TestCase):
         data = yaml.safe_load((ROOT / "software/solidworks/engine-map.yaml").read_text(encoding="utf-8"))
         snapshot = data["source_snapshot"]
         self.assertEqual("CDT-SolidWorks", snapshot["repository"])
-        self.assertEqual("ddaef7b60611f8f094f614914e37f9adccc298f3", snapshot["head"])
+        self.assertEqual("9537cc313020ffb26eb21cfd9ab6810a2671a5dc", snapshot["head"])
         self.assertEqual("0.1.0", snapshot["provider_version"])
         self.assertEqual("0.1.0", snapshot["contract_version"])
         self.assertEqual(149, snapshot["public_tool_count"])
         self.assertEqual(125, snapshot["public_capability_count"])
         self.assertFalse(snapshot["runtime_proof"])
         self.assertEqual("accepted", snapshot["native_acceptance"])
+        self.assertEqual("accepted", snapshot["engineer_closed_loop_acceptance"])
+        self.assertEqual("aba46838a9ab898d34388948d1a16d6addded95b", snapshot["engineer_revision"])
 
         by_semantic = {row["semantic"]: row for row in data["capability_mappings"]}
         expected = {
@@ -124,6 +126,8 @@ class NativeRuntimeLaneContractTests(unittest.TestCase):
         self.assertIn("document_reconcile", mechanical)
         self.assertIn("evaluation_measure", mechanical)
         self.assertIn("topology_inspect", mechanical)
+        self.assertIn("W-CDTE closed-loop acceptance: ACCEPTED", mechanical)
+        self.assertIn("9537cc313020ffb26eb21cfd9ab6810a2671a5dc", mechanical)
         for token in ["early", "middle", "late", "uncertain"]:
             self.assertIn(token, mechanical.lower())
 

@@ -1,13 +1,13 @@
 # Mechanical Reconstruction — Benchmark Pack
 
 > Documentation class: PUBLIC_DOMAIN
-Version: 0.3.0 · Status: CDT-SolidWorks public provider available; Engineer-level closed-loop acceptance required before professional release.
+Version: 0.4.0 · Status: W-CDTE closed-loop accepted for the controlled benchmark; professional release remains separately gated.
 
 ## Baseline
 
 The inspected 2026-09-11 mechanical appendix in the engine benchmark report remains historical source evidence: it describes staged ACIS operations and 14 Boolean receipts, sampled radii/profiles, incomplete face-level hole verification and backend calls outside the current public SolidWorks surface. It must not be treated as current CDT-SolidWorks acceptance or as an independent geometry oracle.
 
-The current public provider baseline is CDT-SolidWorks revision ddaef7b60611f8f094f614914e37f9adccc298f3, provider/contract 0.1.0, measured on SOLIDWORKS 2024 SP0.1 revision 32.0.1. That provider exposes 149 public tools and measured native acceptance for bounded part/assembly/drawing/deployment plus STEP/STL reconstruction paths. Step-0 runtime discovery is still mandatory for every run.
+The current public provider baseline is CDT-SolidWorks revision 9537cc313020ffb26eb21cfd9ab6810a2671a5dc, provider/contract 0.1.0, measured on SOLIDWORKS 2024 SP0.1 revision 32.0.1. That provider exposes 149 public tools and supports authenticated topology references directly in evaluation_measure through the bound topology resolver. Step-0 runtime discovery is still mandatory for every run.
 
 The exact reconstruction fixture, source hashes, frozen dimensions/tolerances and expected topology must be bound before replay. Do not manufacture a golden model or promote sampled historical values into approved Design Basis facts.
 
@@ -42,6 +42,8 @@ Require projection ambiguity, dimension conflict, cyclic feature plan, unsupport
 Scale testing may increase feature count and topology complexity only after the correctness case passes. Respect live provider limits; an over-budget case must fail closed rather than weaken topology or measurement requirements.
 
 ## Independent closed-loop acceptance
+
+W-CDTE closed-loop acceptance: ACCEPTED for CDT_Engineer revision aba46838a9ab898d34388948d1a16d6addded95b against CDT-SolidWorks revision 9537cc313020ffb26eb21cfd9ab6810a2671a5dc on SOLIDWORKS 2024 SP0.1 revision 32.0.1. The controlled acceptance model is an 80×50×12 mm rectangular extrusion with one centered Ø10 mm through-hole. Independent Checker evidence measured the bbox and hole diameter through public read-back/topology routes, verified one clean solid body with zero feature errors, completed STEP export/import round-trip within 0.05 mm and bound native/neutral artifacts by SHA-256. Producer and Checker used separate provider-owned sessions and CDT_Engineer used no direct COM/runtime import.
 
 A valid SW-07 Engineer→SolidWorks loop separates the producing role from the Checker evidence path:
 

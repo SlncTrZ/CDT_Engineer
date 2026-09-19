@@ -1,7 +1,7 @@
 # SolidWorks Operating Guide
 
 > Documentation class: PUBLIC_SOFTWARE_GUIDE
-Version: 0.3.0 · Source contract: provider 0.1.0, contract 0.1.0, 149 public tools / 125 capability descriptors · Measured SOLIDWORKS 2024 SP0.1 revision 32.0.1 · Accepted source revision ddaef7b60611f8f094f614914e37f9adccc298f3.
+Version: 0.4.0 · Source contract: provider 0.1.0, contract 0.1.0, 149 public tools / 125 capability descriptors · Measured SOLIDWORKS 2024 SP0.1 revision 32.0.1 · Accepted source revision 9537cc313020ffb26eb21cfd9ab6810a2671a5dc · CDT_Engineer closed-loop revision aba46838a9ab898d34388948d1a16d6addded95b.
 
 ## Step-0
 
@@ -23,7 +23,7 @@ The current provider exposes a callable public MCP surface. Mechanical workflows
 - solid.boolean: body_combine, part_combine_all_bodies.
 - model.query: document_info, document_list_features, document_list_bodies, part_feature_get, part_feature_parameters_get, body_inspect.
 - checkpoint.create: persisted document_save / document_reopen boundaries plus document_reconcile and feature-specific reconcile routes for uncertain completion.
-- model_3d.measure: evaluation_measure, evaluation_bounding_box, evaluation_geometry_sanity.
+- model_3d.measure: evaluation_measure, evaluation_bounding_box, evaluation_geometry_sanity; evaluation_measure accepts authenticated swref1 topology references through the bound topology resolver.
 - topology.inspect: topology_query, topology_resolve, topology_inspect.
 - artifact.native_save: document_save, document_save_as.
 - artifact.reopen: document_open, document_reopen, document_info.
@@ -85,6 +85,6 @@ The provider does not currently expose content-addressed artifact sealing. An ex
 
 ## Benchmarks
 
-CDT-SolidWorks source revision ddaef7b has measured SOLIDWORKS 2024 SP0.1 native evidence for the public provider, including bounded part/assembly/drawing/deployment paths plus STEP and STL reconstruction. Provider-level acceptance establishes the engine routes; it does not by itself establish a CDT_Engineer professional release.
+CDT-SolidWorks source revision 9537cc3 has measured SOLIDWORKS 2024 SP0.1 native evidence for the public provider, including authenticated topology-reference measurement interoperability required by CDT_Engineer. Provider-level acceptance establishes the engine routes; it does not by itself establish a professional release.
 
-Mechanical SW-07 closed-loop acceptance must therefore exercise the public route from an Engineer-owned frozen feature plan through native mutation, independent measurement/topology read-back and persisted reopen evidence, while preserving producer/Checker separation. Recovery tests must cover early, middle, late and uncertain states without direct COM bypass. Final release remains separately gated by artifact_seal_missing and the domain review rubric.
+Mechanical SW-07 closed-loop acceptance is accepted for CDT_Engineer revision aba4683 against provider revision 9537cc3 on the controlled 80×50×12 mm bracket with one Ø10 mm through-hole. The run used authenticated public MCP only, separate provider-owned Producer and Checker sessions, independent bbox/body/feature/topology read-back, swref1-based Ø10 measurement, STEP export/import round-trip, exact artifact hashes and clean shutdown. This acceptance is intentionally scope-bounded; final professional release remains separately gated by artifact_seal_missing, exact_transaction_mode_unproven and the domain review rubric.

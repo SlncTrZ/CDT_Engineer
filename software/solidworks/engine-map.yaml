@@ -3,7 +3,7 @@ software_id: solidworks
 purpose: Current public-contract semantic capability map for Mechanical reconstruction against the CDT-SolidWorks provider.
 source_snapshot:
   repository: CDT-SolidWorks
-  head: ddaef7b60611f8f094f614914e37f9adccc298f3
+  head: 9537cc313020ffb26eb21cfd9ab6810a2671a5dc
   provider_state: implemented_public_mcp_runtime
   provider_version: 0.1.0
   contract_version: 0.1.0
@@ -11,10 +11,13 @@ source_snapshot:
   public_capability_count: 125
   measured_application: SOLIDWORKS 2024 SP0.1
   measured_application_revision: 32.0.1
-  working_tree_dirty_at_inspection: true
+  working_tree_dirty_at_inspection: false
   runtime_proof: false
   native_acceptance: accepted
   native_acceptance_date: '2026-09-19'
+  engineer_closed_loop_acceptance: accepted
+  engineer_revision: aba46838a9ab898d34388948d1a16d6addded95b
+  engineer_acceptance_date: '2026-09-19'
 runtime_preflight:
   required: true
   discover:
