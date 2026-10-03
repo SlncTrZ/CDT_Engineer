@@ -70,18 +70,20 @@ class AgentProfileAndMapTests(unittest.TestCase):
     def test_autocad_map_matches_current_public_contract_identity_and_tools(self):
         data=yaml.safe_load((ROOT/'software/autocad/engine-map.yaml').read_text(encoding='utf-8'))
         snapshot=data['source_snapshot']
-        self.assertEqual('295a064c7b6163b912d9a70708e3be741b9b0730',snapshot['head'])
-        self.assertEqual('0.4.0rc2',snapshot['provider_version'])
-        self.assertEqual('autocad-generic-v1-rc2',snapshot['contract_version'])
-        self.assertEqual(86,snapshot['public_tool_count'])
+        self.assertEqual('bdd306c8c75e9abf63bce02f34a6a7856cef532e',snapshot['head'])
+        self.assertEqual('0.4.0rc3',snapshot['provider_version'])
+        self.assertEqual('autocad-generic-v1-rc3',snapshot['contract_version'])
+        self.assertEqual(87,snapshot['public_tool_count'])
         self.assertIn('document_pid + predecessor fingerprint','\n'.join(data['runtime_preflight']['discover']))
         tools={t for row in data['capability_mappings'] for t in row.get('expected_public_tools',[])}
-        for required in ['feature_execute','document_dependencies','object_get','object_measure','artifact_seal']:
+        for required in ['native_document_identity_initialize','feature_execute','document_dependencies','object_get','object_measure','artifact_seal']:
             self.assertIn(required,tools)
+        identity=next(row for row in data['capability_mappings'] if row['semantic']=='document.identity.initialize')
+        self.assertEqual(['native_document_identity_initialize','native_integrity_status'],identity['expected_public_tools'])
         feature=next(row for row in data['capability_mappings'] if row['semantic']=='technical_2d.create')
         self.assertIn('document_pid + expected_parent_fp',feature['verification'])
         blockers={row['code'] for row in data['known_blockers']}
-        self.assertIn('stale_com_proxy_after_autocad_restart',blockers)
+        self.assertNotIn('stale_com_proxy_after_autocad_restart',blockers)
         for stale in ['drawing_info','entity_list','entity_get','analysis_measure_entity','drawing_deliver']:
             self.assertNotIn(stale,tools)
 

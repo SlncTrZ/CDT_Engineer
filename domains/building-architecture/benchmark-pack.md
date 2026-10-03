@@ -220,3 +220,54 @@ No QA fixture from native acceptance is a production catalog mapping. Curated ma
 ## Acceptance
 
 Building Architecture v1 is not production-accepted from offline tests or historical executor evidence alone. A native design-review run requires current Step-0 proof, Benchmark B plus C/D/E/F negative cases on the declared runtime, resolved mappings for every required catalog asset, verified registry evidence, artifact save/seal/reopen evidence and an independent Checker. If a production catalog mapping remains unresolved, only that dependent scope blocks/reduces; the provider identity/mesh/seal capability itself is no longer the blocker. Higher release classes still require the additional structural, standards, detail/document and responsible-review evidence defined elsewhere.
+
+## Floor-plan omission and envelope acceptance
+
+Freeze a synthetic complete source inventory before mutating the proposed PlanSpec.
+Positive acceptance requires columns, bearing/partition walls, doors/windows, fixtures
+and dimensions to remain represented. Independently remove each required feature and
+its provenance entry: review/compilation must refuse with no emitted chunks. Also refuse
+empty plans, missing/empty inventories, wrong-family references, duplicate identities,
+unknown structural items, unreviewed N/A and incomplete/unordered image review records.
+
+For hosted fixtures, exercise center-inside/envelope-outside, rotated fitting envelopes,
+degree/radian equivalence, concave-room edge excursions, boundary contact and missing/
+malformed envelopes. Verify all supported anchor units produce canonical millimetres.
+The tracked suite is tests/test_drawing_completeness_20261001.py; it is offline planning
+acceptance, not AutoCAD/SketchUp native acceptance.
+
+## Numeric / computational envelope acceptance
+
+Exercise non-finite coordinates, origins/scales, dimensions and provenance values,
+extreme finite magnitudes, unrepresentable Python integers, recursive/deep input,
+oversized polygons, duplicate-space shadowing and excessive wall-join work.
+Expected: typed rejection before expensive geometry/compilation; zero emitted chunks.
+Calibration overflow must return INVALID_SOURCE without derived output coordinates.
+
+Record Latency for bounded synthetic fixtures and rejection cases on the actual host.
+The safety envelope is specified in [the completeness contract](drawing-completeness.md).
+Regression coverage is tests/test_numeric_review_limits_20261001.py.
+Installed-wheel acceptance uses scripts/smoke_installed_wheel.py with isolated
+build/install environments, positive and omission/numeric negatives, exact wheel hash
+and source fingerprint. An offline PASS does not close native/recovery gates.
+
+## Frozen full-floor-plan native candidate
+
+The [specified source](acceptance-fixtures/full-floor-plan.source.json) and
+[hash-bound PlanSpec](acceptance-fixtures/full-floor-plan.planspec.json) define a
+synthetic 5,000 × 4,000 mm, three-space fixture with exterior/bearing/partition
+walls, six columns, three doors, two windows, three furniture units, grid and
+overall dimensions. Its roles/dimensions are explicitly specified test facts,
+not inferred from a photograph or proof of structural adequacy.
+
+Offline review/compilation proves planning readiness only. The source's
+native_required_checks remain mandatory: appropriate wall/opening representation,
+door swing, distinguishable window/column/wall systems, furniture footprint,
+labels/dimensions/readability, measured identity/geometry/relationships, recovery
+and final save/seal/reopen. An unsupported representation blocks that native route.
+Resolve each check against current public executor contracts during Step-0; neither
+a JSON fixture nor a PlanSpec approval constitutes native PASS.
+
+Use this fixture for bounded AutoCAD/SketchUp acceptance after runtime discovery.
+Photo interpretation remains a separate benchmark with source-derived inventory
+and three recorded visual passes. This specified fixture cannot certify that skill.

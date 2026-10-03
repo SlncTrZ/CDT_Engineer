@@ -4,11 +4,12 @@ Wing: code | Topic: plan-revise-loop | Updated: 2026-09-18 04:00
 from __future__ import annotations
 
 import unittest
-from execution.plan_revise import revise_plan_spec
+from source_inventory_fixture import freeze_test_source
+from execution.plan_revise import plan_fingerprint, revise_plan_spec
 
 
 def _arch_spec(plan_id="revise_case"):
-    return {
+    return freeze_test_source({
         "schema_version": "0.1.0",
         "plan_id": plan_id,
         "domain_id": "building-architecture",
@@ -54,7 +55,7 @@ def _arch_spec(plan_id="revise_case"):
                  "witness_points": [[0.0, 0.0], [5000.0, 0.0]], "feature_refs": ["wall_w1"]},
             ],
         },
-    }
+    })
 
 
 def _xs_spec(plan_id="revise_xs"):
@@ -88,15 +89,21 @@ def _xs_spec(plan_id="revise_xs"):
     }
 
 
-_DIM_AUTH = {"dim_01": {"action": "recompute_dimension_from_witness", "evidence_ref": "review-1"}}
-_PAVEMENT_AUTH = {"pavement_structure": {"action": "renumber_pavement_order", "evidence_ref": "review-2"}}
+def _dim_auth(spec):
+    return {"dim_01": {"action": "recompute_dimension_from_witness", "evidence_ref": "review-1",
+                       "plan_fingerprint": plan_fingerprint(spec)}}
+
+
+def _pavement_auth(spec):
+    return {"pavement_structure": {"action": "renumber_pavement_order", "evidence_ref": "review-2",
+                                   "plan_fingerprint": plan_fingerprint(spec)}}
 
 
 class TestPlanReviseLoop(unittest.TestCase):
     def test_dimension_mismatch_auto_fixed_and_approved(self):
         spec = _arch_spec("revise_dim")
         spec["payload"]["dimensions"][0]["measured_value"] = 4800.0
-        res = revise_plan_spec(spec, repair_authorizations=_DIM_AUTH)
+        res = revise_plan_spec(spec, repair_authorizations=_dim_auth(spec))
         self.assertTrue(res.approved)
         self.assertEqual(res.verdict, "REVISED_APPROVED")
         self.assertEqual(res.rounds, 1)
@@ -121,7 +128,7 @@ class TestPlanReviseLoop(unittest.TestCase):
         spec["provenance_ledger"]["wall_orphan"] = {
             "status": "specified", "source_id": "s1", "assumption_id": None, "confidence": 1.0,
         }
-        res = revise_plan_spec(spec, repair_authorizations=_DIM_AUTH)
+        res = revise_plan_spec(spec, repair_authorizations=_dim_auth(spec))
         self.assertFalse(res.approved)
         self.assertEqual(res.verdict, "NEEDS_MANUAL_DECISION")
         self.assertEqual(res.applied_repairs, [])
@@ -132,7 +139,8 @@ class TestPlanReviseLoop(unittest.TestCase):
         self.assertTrue(proposal["suggestion"])
 
     def test_pavement_order_renumbered_and_approved(self):
-        res = revise_plan_spec(_xs_spec(), repair_authorizations=_PAVEMENT_AUTH)
+        spec = _xs_spec()
+        res = revise_plan_spec(spec, repair_authorizations=_pavement_auth(spec))
         self.assertTrue(res.approved, f"proposals: {res.proposals}")
         self.assertEqual(res.rounds, 1)
         orders = [ly["order"] for ly in res.spec["payload"]["pavement_structure"]]
@@ -149,7 +157,7 @@ class TestPlanReviseLoop(unittest.TestCase):
         spec["provenance_ledger"]["wall_orphan"] = {
             "status": "specified", "source_id": "s1", "assumption_id": None, "confidence": 1.0,
         }
-        res = revise_plan_spec(spec, repair_authorizations=_DIM_AUTH)
+        res = revise_plan_spec(spec, repair_authorizations=_dim_auth(spec))
         self.assertFalse(res.approved)
         self.assertEqual(res.rounds, 1)
         self.assertEqual([r["feature_id"] for r in res.applied_repairs], ["dim_01"])
@@ -174,7 +182,7 @@ class TestPlanReviseLoop(unittest.TestCase):
         spec["provenance_ledger"]["wall_orphan"] = {
             "status": "specified", "source_id": "s1", "assumption_id": None, "confidence": 1.0,
         }
-        res = revise_plan_spec(spec, max_rounds=1, repair_authorizations=_DIM_AUTH)
+        res = revise_plan_spec(spec, max_rounds=1, repair_authorizations=_dim_auth(spec))
         self.assertFalse(res.approved)
         self.assertLessEqual(res.rounds, 1)
 
@@ -192,11 +200,24 @@ class TestPlanReviseLoop(unittest.TestCase):
         spec["payload"]["dimensions"][0]["measured_value"] = 4800.0
         spec["provenance_ledger"]["dim_01"]["status"] = "specified"
         result = revise_plan_spec(spec, repair_authorizations={
-            "dim_01": {"action": "recompute_dimension_from_witness", "evidence_ref": "review-1"},
+            "dim_01": {"action": "recompute_dimension_from_witness", "evidence_ref": "review-1",
+                       "plan_fingerprint": plan_fingerprint(spec)},
         })
         self.assertFalse(result.approved)
         self.assertEqual(result.applied_repairs, [])
         self.assertEqual(result.spec["payload"]["dimensions"][0]["measured_value"], 4800.0)
+
+    def test_stale_authority_fingerprint_never_changes_plan(self):
+        spec = _arch_spec("revise_stale_authority")
+        spec["payload"]["dimensions"][0]["measured_value"] = 4800.0
+        authorization = _dim_auth(spec)
+        spec["coordinate_system"]["origin"] = [10.0, 0.0]
+        result = revise_plan_spec(spec, repair_authorizations=authorization)
+        self.assertFalse(result.approved)
+        self.assertEqual(result.applied_repairs, [])
+        self.assertEqual(result.spec, spec)
+        dimension = next(p for p in result.proposals if "dimension_witness_mismatch" in p["reason"])
+        self.assertFalse(dimension["auto_fixable"])
 
     def test_pavement_without_authority_is_not_renumbered(self):
         result = revise_plan_spec(_xs_spec())
@@ -206,8 +227,10 @@ class TestPlanReviseLoop(unittest.TestCase):
 
     def test_malformed_authority_never_changes_dimension(self):
         for authorization in (None, {}, False,
-                              {"action": "other", "evidence_ref": "review-1"},
-                              {"action": "recompute_dimension_from_witness", "evidence_ref": " "}):
+                              {"action": "other", "evidence_ref": "review-1", "plan_fingerprint": "a" * 64},
+                              {"action": "recompute_dimension_from_witness", "evidence_ref": " ", "plan_fingerprint": "a" * 64},
+                              {"action": "recompute_dimension_from_witness", "evidence_ref": "review-1"},
+                              {"action": "recompute_dimension_from_witness", "evidence_ref": "review-1", "plan_fingerprint": "a" * 64}):
             with self.subTest(authorization=authorization):
                 spec = _arch_spec()
                 spec["payload"]["dimensions"][0]["measured_value"] = 4800.0

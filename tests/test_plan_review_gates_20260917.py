@@ -4,6 +4,7 @@ Wing: code | Topic: plan-review-gates | Updated: 2026-09-18 00:05
 from __future__ import annotations
 
 import unittest
+from source_inventory_fixture import freeze_test_source
 from execution.plan_review import review_plan_spec
 
 
@@ -63,7 +64,7 @@ def _valid_arch_spec(plan_id="arch_review_ok"):
             ],
         },
     })
-    return spec
+    return freeze_test_source(spec)
 
 
 def _valid_profile_spec(plan_id="profile_review_ok"):
@@ -122,7 +123,7 @@ class TestPlanReviewGates(unittest.TestCase):
             "status": "specified", "source_id": "dwg_ref_01",
             "assumption_id": None, "confidence": 1.0,
         }
-        return spec
+        return freeze_test_source(spec)
 
     def test_column_on_grid_intersection_passes(self):
         res = review_plan_spec(self._spec_with_column([0.0, 0.0]))
@@ -191,13 +192,14 @@ class TestPlanReviewGates(unittest.TestCase):
         spec = _valid_arch_spec("arch_fixture_check")
         spec["payload"]["fixtures"] = [
             {"fixture_id": "fx_wc1", "fixture_type": "water_closet",
-             "position": [position[0], position[1]], "host_space_id": host},
+             "position": [position[0], position[1]], "host_space_id": host,
+             "dimensions": [400.0, 400.0]},
         ]
         spec["provenance_ledger"]["fx_wc1"] = {
             "status": "specified", "source_id": "spec_sheet_01",
             "assumption_id": None, "confidence": 1.0,
         }
-        return spec
+        return freeze_test_source(spec)
 
     def test_fixture_inside_host_space_passes(self):
         res = review_plan_spec(self._spec_with_fixture([2500.0, 2000.0]))

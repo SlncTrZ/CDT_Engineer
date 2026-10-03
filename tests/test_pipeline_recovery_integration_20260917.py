@@ -4,6 +4,7 @@ Wing: code | Topic: pipeline-recovery-integration | Updated: 2026-09-18 02:40
 from __future__ import annotations
 
 import unittest
+from source_inventory_fixture import freeze_test_source
 from execution.chunk_recovery import (
     chunk_to_recovery_params,
     execute_chunk_with_recovery,
@@ -13,7 +14,7 @@ from execution.provenance_release import assess_provenance_release, build_chunk_
 
 
 def _arch_spec(plan_id="ia04_integration"):
-    return {
+    return freeze_test_source({
         "schema_version": "0.1.0",
         "plan_id": plan_id,
         "domain_id": "building-architecture",
@@ -30,9 +31,12 @@ def _arch_spec(plan_id="ia04_integration"):
             "wall_w2": {"status": "specified", "source_id": "s1", "assumption_id": None, "confidence": 1.0},
             "door_d1": {"status": "specified", "source_id": "s1", "assumption_id": None, "confidence": 1.0},
             "window_w1": {"status": "specified", "source_id": "s1", "assumption_id": None, "confidence": 1.0},
+            "space_living": {"status": "derived", "source_id": "s1"},
         },
         "assumptions": [],
         "payload": {
+            "spaces": [{"space_id": "space_living", "name": "Living",
+                        "boundary_polygon": [[0, 0], [5000, 0], [5000, 4000], [0, 4000]]}],
             "axes": [
                 {"axis_id": "axis_A", "label": "A", "start": [0.0, 0.0], "end": [5000.0, 0.0]},
                 {"axis_id": "axis_1", "label": "1", "start": [0.0, 0.0], "end": [0.0, 4000.0]},
@@ -52,7 +56,7 @@ def _arch_spec(plan_id="ia04_integration"):
                  "sill_height": 900.0, "head_height": 2400.0},
             ],
         },
-    }
+    })
 
 
 class _FaultyLane:

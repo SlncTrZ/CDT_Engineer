@@ -4,6 +4,7 @@ Wing: code | Topic: plan-compiler | Updated: 2026-09-18 00:25
 from __future__ import annotations
 
 import unittest
+from source_inventory_fixture import freeze_test_source
 from execution.plan_compiler import compile_plan_spec
 
 
@@ -63,7 +64,7 @@ def _valid_arch_spec(plan_id="arch_compile_ok"):
             ],
         },
     })
-    return spec
+    return freeze_test_source(spec)
 
 
 def _chunk_by_type(result, semantic_type):
@@ -139,6 +140,7 @@ class TestPlanCompiler(unittest.TestCase):
         for i in range(3, 7):
             spec["payload"]["walls"][i - 1]["end"] = [float((i + 1) * 10000), 0.0]
             spec["payload"]["walls"][i]["start"] = [float((i + 1) * 10000), 0.0]
+        freeze_test_source(spec)  # This is the declared larger synthetic source.
         res = compile_plan_spec(spec, requirements={"max_features_per_chunk": 2})
         self.assertTrue(res.ok, f"errors: {res.errors}")
         shells = _chunk_by_type(res, "wall_shell")
@@ -280,14 +282,16 @@ class TestPlanCompiler(unittest.TestCase):
 
     def test_empty_groups_skipped(self):
         spec = _valid_arch_spec("arch_minimal")
-        spec["payload"]["spaces"] = []
+        spec["payload"]["openings"] = []
         spec["payload"]["dimensions"] = []
-        for fid in ("space_living", "dim_01"):
+        for fid in ("door_d1", "dim_01"):
             del spec["provenance_ledger"][fid]
+        # Explicitly scoped source has no openings/dimensions; it is not an omission.
+        freeze_test_source(spec)
         res = compile_plan_spec(spec)
         self.assertTrue(res.ok, f"errors: {res.errors}")
         types = [c["semantic_type"] for c in res.chunks]
-        self.assertNotIn("spaces_fixtures", types)
+        self.assertNotIn("openings", types)
         self.assertNotIn("annotation_dimensions", types)
         _assert_dag_valid(self, res)
 

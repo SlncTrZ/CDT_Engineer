@@ -3,6 +3,8 @@ Wing: code | Topic: plan-compiler | Updated: 2026-09-18 00:30
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import math
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Sequence
@@ -202,6 +204,15 @@ def compile_plan_spec(spec: Mapping[str, Any],
     budget = req["max_features_per_chunk"]
     ledger = spec.get("provenance_ledger", {})
     payload = spec.get("payload", {})
+    source_inventory = spec.get("source_inventory")
+    source_binding = {}
+    if source_inventory is not None:
+        source_binding = {
+            "source_sha256": source_inventory["source_sha256"],
+            "source_inventory_sha256": hashlib.sha256(json.dumps(
+                source_inventory, sort_keys=True, separators=(",", ":"),
+                ensure_ascii=False, allow_nan=False).encode("utf-8")).hexdigest(),
+        }
 
     chunks: list[dict[str, Any]] = []
     semantic_chunk_ids: dict[str, list[str]] = {}
@@ -259,6 +270,7 @@ def compile_plan_spec(spec: Mapping[str, Any],
                 "verification_policy": "read_after_write",
                 "ui_yield": True,
                 "provenance": provenance,
+                **source_binding,
                 # Layer discipline (G13): lane layer names travel with the
                 # chunk so the executor binds native layers deterministically.
                 "layers": sorted({item.get("layer") for _, item in part

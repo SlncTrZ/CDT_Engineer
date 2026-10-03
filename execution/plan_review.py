@@ -7,6 +7,7 @@ import math
 from dataclasses import dataclass, field
 from typing import Any, Mapping, Sequence
 
+from execution.completeness_checker import assess_inventory
 from execution.planspec import validate_plan_spec
 
 _EPS = 1e-9
@@ -24,9 +25,15 @@ _DEFAULT_REQUIREMENTS: dict[str, Any] = {
 
 
 def _finite(value: Any, name: str) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{name} must be finite numeric")
-    return float(value)
+    try:
+        number = float(value)
+    except (OverflowError, ValueError):
+        raise ValueError(f"{name} must be finite numeric") from None
+    if not math.isfinite(number):
+        raise ValueError(f"{name} must be finite numeric")
+    return number
 
 
 def _normalize_requirements(requirements: Mapping[str, Any] | None) -> dict[str, Any]:
@@ -218,7 +225,9 @@ def _gate_g3_topology(payload: Mapping[str, Any], plan_type: str, req: Mapping[s
         if _polygon_self_intersects(poly):
             reasons.append(f"self_intersecting_boundary:{sid}")
         area = _polygon_area(poly)
-        if area <= _EPS:
+        if not math.isfinite(area):
+            reasons.append(f"space_area_unrepresentable:{sid}")
+        elif area <= _EPS:
             reasons.append(f"degenerate_space_zero_area:{sid}")
         elif min_area is not None and area + _EPS < float(min_area):
             reasons.append(f"space_below_minimum_area:{sid}")
@@ -572,7 +581,7 @@ def _gate_g11_opening_clearances(payload: Mapping[str, Any], plan_type: str,
 
 
 def _gate_g12_fixture_containment(payload: Mapping[str, Any], plan_type: str,
-                                  req: Mapping[str, Any]) -> dict[str, Any]:  # noqa: ARG001
+                                  req: Mapping[str, Any], angle_unit: str = "deg") -> dict[str, Any]:
     if plan_type != "architectural_floor_plan":
         return _na("R08-G12-fixture_containment", "fixture_containment")
     spaces = {sp.get("space_id"): sp for sp in payload.get("spaces", []) if sp.get("space_id")}
@@ -583,7 +592,8 @@ def _gate_g12_fixture_containment(payload: Mapping[str, Any], plan_type: str,
         refs.append(fid)
         host_id = fx.get("host_space_id")
         if not host_id:
-            continue  # unhosted fixtures are out of scope for this gate
+            reasons.append(f"fixture_host_space_missing:{fid}")
+            continue
         space = spaces.get(host_id)
         if space is None:
             reasons.append(f"fixture_host_space_unresolved:{fid}->{host_id}")
@@ -593,8 +603,24 @@ def _gate_g12_fixture_containment(payload: Mapping[str, Any], plan_type: str,
         if len(poly) < 3 or len(pos) != 2 or _polygon_self_intersects(poly):
             reasons.append(f"fixture_containment_unverifiable:{fid}")
             continue
-        if not _point_in_polygon(pos, poly):
+        if not _inside_or_boundary(pos, poly):
             reasons.append(f"fixture_outside_host_space:{fid}->{host_id}")
+            continue
+        dims = fx.get("dimensions")
+        if dims is None:
+            reasons.append(f"fixture_envelope_unknown:{fid}")
+            continue
+        width = _finite(dims[0], f"fixtures.{fid}.width")
+        depth = _finite(dims[1], f"fixtures.{fid}.depth")
+        angle = _finite(fx.get("rotation", 0.0), f"fixtures.{fid}.rotation")
+        if angle_unit == "deg":
+            angle = math.radians(angle)
+        cs, sn = math.cos(angle), math.sin(angle)
+        footprint = [(pos[0] + x * cs - y * sn, pos[1] + x * sn + y * cs)
+                     for x, y in ((-width / 2, -depth / 2), (width / 2, -depth / 2),
+                                  (width / 2, depth / 2), (-width / 2, depth / 2))]
+        if not _footprint_contained(footprint, poly):
+            reasons.append(f"fixture_envelope_outside_host_space:{fid}->{host_id}")
     return _finding("R08-G12-fixture_containment", "fixture_containment", "MAJOR",
                     "fail" if reasons else "pass", reasons, refs)
 
@@ -636,6 +662,146 @@ def _gate_g13_layers(payload: Mapping[str, Any], plan_type: str,
             seen.append(r)
     return _finding("R08-G13-layer_discipline", "layer_discipline", "MAJOR",
                     "fail" if seen else "pass", seen, refs)
+
+
+_SOURCE_FAMILIES = {
+    "axes": ("axes", "axis_id", None),
+    "walls": ("walls", "wall_id", None),
+    "bearing_walls": ("walls", "wall_id", ("wall_type", "bearing")),
+    "partition_walls": ("walls", "wall_id", ("wall_type", "partition")),
+    "columns": ("columns", "column_id", None),
+    "doors": ("openings", "opening_id", ("opening_type", "door")),
+    "windows": ("openings", "opening_id", ("opening_type", "window")),
+    "spaces": ("spaces", "space_id", None),
+    "fixtures": ("fixtures", "fixture_id", None),
+    "dimensions": ("dimensions", "dimension_id", None),
+}
+
+
+def _gate_g14_source_inventory(spec: Mapping[str, Any], req: Mapping[str, Any]) -> dict[str, Any]:
+    """Check planned coverage against independently frozen source requirements.
+
+    The completeness adapter below checks PlanSpec presence only. It is NOT
+    native implementation/verification evidence and never releases an artifact.
+    """
+    if spec.get("plan_type") != "architectural_floor_plan":
+        return _na("R08-G14-source_completeness", "source_completeness")
+    payload = spec.get("payload", {})
+    reasons: list[str] = []
+    if not payload.get("walls") or not payload.get("spaces"):
+        reasons.append("floor_plan_requires_walls_and_spaces")
+    inventory = spec.get("source_inventory")
+    if inventory is None:
+        reasons.append("source_inventory_missing")
+        return _finding("R08-G14-source_completeness", "source_completeness", "BLOCKER",
+                        "fail" if reasons else "pass", reasons)
+
+    if inventory["source_type"] == "image" and inventory["review_passes"] != [
+            "context", "detail", "confirmation"]:
+        reasons.append("image_review_passes_incomplete_or_unordered")
+    items = inventory["items"]
+    if not items:
+        reasons.append("source_inventory_empty")
+    family_ids = {
+        family: {v[id_key] for v in payload.get(key, [])
+                 if selector is None or v.get(selector[0]) == selector[1]}
+        for family, (key, id_key, selector) in _SOURCE_FAMILIES.items()
+    }
+    payload_ids = [v[id_key] for key, id_key in _LAYER_KINDS for v in payload.get(key, [])]
+    if len(payload_ids) != len(set(payload_ids)):
+        reasons.append("duplicate_plan_feature_id")
+    represented = set()
+    seen = set()
+    coverage = []
+    accounted_refs = {family: set() for family in _SOURCE_FAMILIES}
+    refs = []
+    for item in items:
+        iid = item["item_id"]
+        if iid in seen:
+            reasons.append(f"duplicate_source_item_id:{iid}")
+            continue
+        seen.add(iid)
+        family = item["semantic_family"]
+        represented.add(family)
+        expected = item["feature_refs"]
+        refs.extend(expected)
+        known_evidence = item["evidence_state"] not in _LOW_PROVENANCE
+        evidence = item.get("source_evidence", [])
+        if not evidence:
+            reasons.append(f"source_item_evidence_missing:{iid}")
+        if not known_evidence:
+            reasons.append(f"source_item_unresolved:{iid}")
+        if family not in family_ids:
+            reasons.append(f"source_family_unsupported:{family}")
+        available = family_ids.get(family, set())
+        if not item["required"]:
+            if not item.get("exclusion_reason") or not item.get("reviewed_by"):
+                reasons.append(f"source_exclusion_unreviewed:{iid}")
+            if expected or available:
+                reasons.append(f"source_exclusion_contradicts_plan:{iid}")
+            continue
+        if family in accounted_refs:
+            accounted_refs[family].update(expected)
+        if not expected:
+            reasons.append(f"source_required_refs_missing:{iid}")
+        for fid in expected:
+            if fid not in available:
+                reasons.append(f"source_feature_missing_or_wrong_family:{iid}:{fid}")
+        coverage.append({
+            "item_id": iid, "required": True,
+            "implementation_state": "implemented" if expected and set(expected) <= available else "missing",
+            "verification_state": "verified" if evidence and known_evidence else "unverified",
+        })
+    for family in sorted(set(_SOURCE_FAMILIES) - represented):
+        reasons.append(f"source_family_unaccounted:{family}")
+    for family in sorted(family_ids):
+        for fid in sorted(family_ids[family] - accounted_refs[family]):
+            reasons.append(f"plan_feature_not_in_source_inventory:{family}:{fid}")
+    if not coverage:
+        reasons.append("source_inventory_no_required_items")
+    reasons.extend(assess_inventory(coverage)["reason_codes"])
+    return _finding("R08-G14-source_completeness", "source_completeness", "BLOCKER",
+                    "fail" if reasons else "pass", reasons, refs)
+
+
+def _inside_or_boundary(pt: Sequence[float], polygon: Sequence[Sequence[float]]) -> bool:
+    return _point_in_polygon(pt, polygon) or any(
+        _point_on_segment(pt, a, polygon[(i + 1) % len(polygon)], _EPS)
+        for i, a in enumerate(polygon))
+
+
+def _footprint_contained(footprint: Sequence[Sequence[float]],
+                         polygon: Sequence[Sequence[float]]) -> bool:
+    """Check edge intervals as well as vertices; concave notches cannot be bridged."""
+    if not all(_inside_or_boundary(pt, polygon) for pt in footprint):
+        return False
+    for i, a in enumerate(footprint):
+        b = footprint[(i + 1) % len(footprint)]
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        span2 = dx * dx + dy * dy
+        if span2 <= _EPS * _EPS:
+            return False
+        cuts = {0.0, 1.0}
+        for j, c in enumerate(polygon):
+            d = polygon[(j + 1) % len(polygon)]
+            ex, ey = d[0] - c[0], d[1] - c[1]
+            denominator = dx * ey - dy * ex
+            if abs(denominator) > _EPS:
+                t = ((c[0] - a[0]) * ey - (c[1] - a[1]) * ex) / denominator
+                u = ((c[0] - a[0]) * dy - (c[1] - a[1]) * dx) / denominator
+                if -_EPS <= t <= 1 + _EPS and -_EPS <= u <= 1 + _EPS:
+                    cuts.add(max(0.0, min(1.0, t)))
+            else:
+                for pt in (c, d):
+                    if _point_on_segment(pt, a, b, _EPS):
+                        cuts.add(max(0.0, min(1.0, ((pt[0] - a[0]) * dx +
+                                                  (pt[1] - a[1]) * dy) / span2)))
+        ordered = sorted(cuts)
+        for left, right in zip(ordered, ordered[1:]):
+            t = (left + right) / 2
+            if not _inside_or_boundary((a[0] + t * dx, a[1] + t * dy), polygon):
+                return False
+    return True
 
 
 @dataclass(frozen=True)
@@ -680,8 +846,9 @@ def review_plan_spec(spec: Mapping[str, Any], requirements: Mapping[str, Any] | 
     findings.append(_gate_g9_cross_section(payload, plan_type, req))
     findings.append(_gate_g10_columns(payload, plan_type, req))
     findings.append(_gate_g11_opening_clearances(payload, plan_type, req))
-    findings.append(_gate_g12_fixture_containment(payload, plan_type, req))
+    findings.append(_gate_g12_fixture_containment(payload, plan_type, req, spec["units"]["angle"]))
     findings.append(_gate_g13_layers(payload, plan_type, req))
+    findings.append(_gate_g14_source_inventory(spec, req))
 
     blocked: list[str] = []
     for f in findings:

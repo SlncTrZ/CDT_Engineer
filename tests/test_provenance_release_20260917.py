@@ -4,6 +4,7 @@ Wing: code | Topic: provenance-release | Updated: 2026-09-18 01:15
 from __future__ import annotations
 
 import unittest
+from source_inventory_fixture import freeze_test_source
 from execution.plan_compiler import compile_plan_spec
 from execution.provenance_release import assess_provenance_release, build_chunk_receipt
 
@@ -25,7 +26,7 @@ def _receipt(chunk_id="plan:wall_shell:01", provenance=None):
 
 
 def _arch_spec(plan_id="arch_prov_e2e"):
-    return {
+    return freeze_test_source({
         "schema_version": "0.1.0",
         "plan_id": plan_id,
         "domain_id": "building-architecture",
@@ -71,7 +72,7 @@ def _arch_spec(plan_id="arch_prov_e2e"):
                  "witness_points": [[0.0, 0.0], [5000.0, 0.0]], "feature_refs": ["wall_w1"]},
             ],
         },
-    }
+    })
 
 
 class TestProvenanceRelease(unittest.TestCase):

@@ -73,3 +73,13 @@ Mandatory Building v1 negative cases include:
 - corner return depth consumes the opposing casework leg;
 - drawer/appliance does not fit the clear opening with its sourced clearances;
 - image-derived cabinet dimension or manufacturer clearance promoted to exact without an authoritative dimensional/source basis.
+
+## Executable floor-plan completeness gate
+
+The [Floor-plan Source Completeness Contract](drawing-completeness.md) specializes ARCH-01/07
+for PlanSpec review/compilation. Gate G14 blocks missing/empty source inventory, unaccounted
+families, omitted or wrong-family required references, unknown source requirements and
+unreviewed exclusions at every architectural release target. Image sources require three
+ordered review records. G12 checks the full rotated rectangular fixture envelope against
+its host-space polygon. Compiled chunks bind exact source and inventory hashes.
+These planning checks supplement, and never replace, independent final native QA.

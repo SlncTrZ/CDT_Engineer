@@ -1,6 +1,6 @@
 [project]
 name = "cdt-engineer-provider"
-version = "0.1.0a1"
+version = "0.1.0a4"
 description = "CDT_Engineer Engineering OS MCP provider for AI agents"
 readme = "README.md"
 authors = [{ name = "Trương Công Định (SlncTrZ)" }]
@@ -16,6 +16,7 @@ dependencies = [
 dev = [
   "pytest>=8,<9",
   "pytest-asyncio>=0.23,<1",
+  "Pillow>=10,<13",
 ]
 
 [project.scripts]

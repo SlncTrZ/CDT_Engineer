@@ -74,7 +74,17 @@ def build_chunk_receipt(chunk: Mapping[str, Any], *, engine_receipt_id: str,
         raise ValueError(f"{chunk_id}: created_or_modified_ids must be a sequence")
     if not isinstance(engine_receipt_id, str) or not engine_receipt_id:
         raise ValueError(f"{chunk_id}: engine_receipt_id must be a non-empty string")
+    source_bindings = {}
+    for key in ("source_sha256", "source_inventory_sha256"):
+        if key in chunk:
+            value = chunk[key]
+            if not isinstance(value, str) or len(value) != 64 or set(value) - set("0123456789abcdef"):
+                raise ValueError(f"{chunk_id}: invalid {key}")
+            source_bindings[key] = value
+    if source_bindings and len(source_bindings) != 2:
+        raise ValueError(f"{chunk_id}: incomplete source inventory binding")
     return {
+        **source_bindings,
         "chunk_id": chunk_id,
         "batch_session_id": chunk.get("batch_session_id"),
         "semantic_type": chunk.get("semantic_type"),

@@ -6,6 +6,7 @@ from __future__ import annotations
 import hashlib
 import json
 import unittest
+from source_inventory_fixture import freeze_test_source
 from execution.plan_compiler import compile_plan_spec
 from execution.provenance_release import assess_provenance_release, build_chunk_receipt
 from execution.source_calibration import calibrate_plan_source
@@ -76,7 +77,7 @@ def _planspec_from_calibration(cal):
     by_id = {f["feature_id"]: f for f in cal.features}
     w1 = by_id["wall_w1"]["coords_mm"]
     w2 = by_id["wall_w2"]["coords_mm"]
-    return {
+    return freeze_test_source({
         "schema_version": "0.1.0",
         "plan_id": "benchmark_m_house",
         "domain_id": "building-architecture",
@@ -130,7 +131,7 @@ def _planspec_from_calibration(cal):
                  "witness_points": [w1[0], w1[1]], "feature_refs": ["wall_w1"]},
             ],
         },
-    }
+    })
 
 
 class TestReconstructionPipelineBenchmarkM(unittest.TestCase):

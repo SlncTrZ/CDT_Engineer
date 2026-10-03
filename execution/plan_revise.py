@@ -4,6 +4,8 @@ Wing: code | Topic: plan-revise-loop | Updated: 2026-09-18 03:40
 from __future__ import annotations
 
 import copy
+import hashlib
+import json
 import math
 from dataclasses import dataclass, field
 from typing import Any, Mapping
@@ -15,6 +17,15 @@ from execution.planspec import validate_plan_spec
 # geometry. Everything else needs a manual design decision and becomes a
 # proposal. The allowlist is deliberately narrow: recompute, never invent.
 _AUTO_FIXABLE_PREFIXES = ("dimension_witness_mismatch:", "pavement_order_not_sequential:")
+
+
+def plan_fingerprint(spec: Mapping[str, Any]) -> str:
+    """Return a canonical SHA-256 binding for one exact PlanSpec revision."""
+    if not isinstance(spec, Mapping):
+        raise ValueError("spec must be a mapping")
+    canonical = json.dumps(spec, sort_keys=True, separators=(",", ":"), ensure_ascii=False,
+                           allow_nan=False)
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 _SUGGESTIONS = (
     ("orphan_wall:", "reconnect both wall endpoints to the wall network or remove the isolated wall"),
@@ -123,9 +134,11 @@ def revise_plan_spec(spec: Mapping[str, Any], requirements: Mapping[str, Any] | 
     (action: recompute_dimension_from_witness) or pavement_structure (action:
     renumber_pavement_order), each with a nonempty evidence_ref. Dimensions must
     also have derived provenance; specified dimensions are never overwritten.
-    The caller must validate authority and bind evidence to the current plan;
-    this local function does not authenticate approval evidence. Other BLOCKER /
-    MAJOR failures become structured proposals for a manual design decision.
+    Authorization evidence is bound to the exact input PlanSpec through its
+    canonical SHA-256 fingerprint; stale/missing bindings cannot authorize a
+    deterministic repair. This function validates binding but does not authenticate
+    the external identity that issued the evidence. Other BLOCKER / MAJOR failures
+    become structured proposals for a manual design decision.
     The input mapping is never mutated. Rounds are bounded by max_rounds.
     """
     if not isinstance(spec, Mapping):
@@ -135,6 +148,7 @@ def revise_plan_spec(spec: Mapping[str, Any], requirements: Mapping[str, Any] | 
     if repair_authorizations is not None and not isinstance(repair_authorizations, Mapping):
         raise ValueError("repair_authorizations must be a mapping")
     authorizations = copy.deepcopy(dict(repair_authorizations or {}))
+    source_plan_fingerprint = plan_fingerprint(spec)
     working: dict[str, Any] = copy.deepcopy(dict(spec))
     applied: list[dict[str, Any]] = []
     attempted: set[str] = set()
@@ -159,13 +173,16 @@ def revise_plan_spec(spec: Mapping[str, Any], requirements: Mapping[str, Any] | 
         if rounds >= max_rounds:
             return PlanReviseResult(approved=False, verdict="NEEDS_MANUAL_DECISION",
                                     rounds=rounds, applied_repairs=applied,
-                                    proposals=_proposals(review, attempted, working, authorizations),
+                                    proposals=_proposals(review, attempted, working, authorizations,
+                                                         source_plan_fingerprint),
                                     spec=working, blocked_gates=list(review.blocked_gates))
-        fixed_this_round = _apply_allowlisted_fixes(working, review, attempted, applied, authorizations)
+        fixed_this_round = _apply_allowlisted_fixes(working, review, attempted, applied, authorizations,
+                                                    source_plan_fingerprint)
         if not fixed_this_round:
             return PlanReviseResult(approved=False, verdict="NEEDS_MANUAL_DECISION",
                                     rounds=rounds, applied_repairs=applied,
-                                    proposals=_proposals(review, attempted, working, authorizations),
+                                    proposals=_proposals(review, attempted, working, authorizations,
+                                                         source_plan_fingerprint),
                                     spec=working, blocked_gates=list(review.blocked_gates))
         rounds += 1
 
@@ -179,7 +196,8 @@ def _blocking_reasons(review) -> list[tuple[str, str, str, list[str]]]:
     return out
 
 
-def _repair_authorization(spec, reason: str, authorizations) -> Mapping[str, Any] | None:
+def _repair_authorization(spec, reason: str, authorizations,
+                          source_plan_fingerprint: str) -> Mapping[str, Any] | None:
     if reason.startswith("dimension_witness_mismatch:"):
         target = _reason_feature_id(reason)
         provenance = spec.get("provenance_ledger", {}).get(target, {})
@@ -197,10 +215,13 @@ def _repair_authorization(spec, reason: str, authorizations) -> Mapping[str, Any
     evidence = authorization.get("evidence_ref")
     if not isinstance(evidence, str) or not evidence.strip():
         return None
+    if authorization.get("plan_fingerprint") != source_plan_fingerprint:
+        return None
     return authorization
 
 
-def _proposals(review, attempted: set[str], working, authorizations) -> list[dict[str, Any]]:
+def _proposals(review, attempted: set[str], working, authorizations,
+               source_plan_fingerprint: str) -> list[dict[str, Any]]:
     proposals: list[dict[str, Any]] = []
     seen: set[str] = set()
     for finding_id, gate, reason, refs in _blocking_reasons(review):
@@ -214,14 +235,16 @@ def _proposals(review, attempted: set[str], working, authorizations) -> list[dic
             "reason": reason,
             "feature_refs": refs,
             "suggestion": _suggestion_for(reason),
-            "auto_fixable": _repair_authorization(working, reason, authorizations) is not None
+            "auto_fixable": _repair_authorization(working, reason, authorizations,
+                                                   source_plan_fingerprint) is not None
                              and key not in attempted,
         })
     return proposals
 
 
 def _apply_allowlisted_fixes(working: dict[str, Any], review, attempted: set[str],
-                             applied: list[dict[str, Any]], authorizations) -> bool:
+                             applied: list[dict[str, Any]], authorizations,
+                             source_plan_fingerprint: str) -> bool:
     fixed = False
     for finding_id, _gate, reason, _refs in _blocking_reasons(review):
         key = f"{finding_id}:{reason}"
@@ -229,7 +252,8 @@ def _apply_allowlisted_fixes(working: dict[str, Any], review, attempted: set[str
             continue
         if not any(reason.startswith(p) for p in _AUTO_FIXABLE_PREFIXES):
             continue
-        authorization = _repair_authorization(working, reason, authorizations)
+        authorization = _repair_authorization(working, reason, authorizations,
+                                              source_plan_fingerprint)
         if authorization is None:
             continue
         attempted.add(key)
@@ -240,6 +264,7 @@ def _apply_allowlisted_fixes(working: dict[str, Any], review, attempted: set[str
             repair = _fix_pavement_order(working)
         if repair is not None:
             repair["authorization_evidence_ref"] = authorization["evidence_ref"]
+            repair["authorization_plan_fingerprint"] = source_plan_fingerprint
             applied.append(repair)
             fixed = True
     return fixed

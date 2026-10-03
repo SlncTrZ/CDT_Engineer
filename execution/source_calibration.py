@@ -11,12 +11,19 @@ _VERDICTS = {"CALIBRATED", "CONTRADICTORY", "NEEDS_ANCHOR", "INVALID_SOURCE"}
 _FEATURE_KINDS = {"point", "polyline"}
 
 _DEFAULT_MAX_SCALE_DISAGREEMENT_REL = 0.02
+_UNIT_TO_MM = {"mm": 1.0, "cm": 10.0, "m": 1000.0, "in": 25.4, "ft": 304.8}
 
 
 def _finite(value: Any, name: str) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{name} must be finite numeric")
-    return float(value)
+    try:
+        number = float(value)
+    except (OverflowError, ValueError):
+        raise ValueError(f"{name} must be finite numeric") from None
+    if not math.isfinite(number):
+        raise ValueError(f"{name} must be finite numeric")
+    return number
 
 
 def _pixel(value: Any, name: str) -> list[float]:
@@ -67,6 +74,7 @@ def calibrate_plan_source(*, source: Mapping[str, Any],
     `approved_assumption` (never promoted to ground truth); calibrated
     coordinates are `derived`. Two or more anchors implying inconsistent
     scales fail closed as CONTRADICTORY instead of averaging silently.
+    Anchor values retain their input units; frame and coords_mm are canonical mm.
     Image axes are assumed aligned with plan axes (uniform scale, y-flip
     to y-up engineering frame); rotation correction is out of scope.
     """
@@ -138,6 +146,13 @@ def calibrate_plan_source(*, source: Mapping[str, Any],
             errors.append(f"anchor_zero_pixel_span:{anchor_id}")
             continue
         unit = anchor.get("unit", "mm")
+        if not isinstance(unit, str) or unit not in _UNIT_TO_MM:
+            errors.append(f"anchor_unsupported_unit:{anchor_id}")
+            continue
+        scale_mm = real_length * _UNIT_TO_MM[unit] / pixel_span
+        if not math.isfinite(scale_mm) or scale_mm <= 0:
+            errors.append(f"anchor_scale_unrepresentable:{anchor_id}")
+            continue
         units.add(unit)
         parsed_anchors.append({
             "anchor_id": anchor_id,
@@ -149,6 +164,7 @@ def calibrate_plan_source(*, source: Mapping[str, Any],
             "unit": unit,
             "confidence": confidence,
             "computed_scale": real_length / pixel_span,
+            "computed_scale_mm": scale_mm,
         })
     if errors:
         return CalibratedSource(verdict="INVALID_SOURCE", provenance_ledger=ledger, errors=errors)
@@ -157,8 +173,8 @@ def calibrate_plan_source(*, source: Mapping[str, Any],
                                 errors=[f"mixed_anchor_units:{sorted(units)}"])
     unit = next(iter(units))
 
-    scales = [a["computed_scale"] for a in parsed_anchors]
-    mean_scale = sum(scales) / len(scales)
+    scales = [a["computed_scale_mm"] for a in parsed_anchors]
+    mean_scale = sum(s / len(scales) for s in scales)
     disagreement = (max(abs(s - mean_scale) for s in scales) / mean_scale) if mean_scale > 0 else 0.0
     for anchor in parsed_anchors:
         ledger[anchor["anchor_id"]] = {"status": "approved_assumption", "source_id": None,
@@ -177,7 +193,7 @@ def calibrate_plan_source(*, source: Mapping[str, Any],
                     f">tolerance_rel={max_disagreement}"],
         )
 
-    frame = {"unit": unit, "scale_unit_per_pixel": mean_scale,
+    frame = {"unit": "mm", "anchor_unit": unit, "scale_unit_per_pixel": mean_scale,
              "origin_pixel": [0.0, 0.0], "y_direction": "up",
              "image_size": [width, height],
              "alignment_note": "image axes assumed aligned with plan axes; no rotation correction"}
@@ -220,9 +236,16 @@ def calibrate_plan_source(*, source: Mapping[str, Any],
             continue
         ledger[f"{fid}.pixels"] = {"status": "observed", "source_id": source_id,
                                    "assumption_id": None, "confidence": 1.0}
+        coords = [[p[0] * mean_scale, (height - p[1]) * mean_scale] for p in pts]
+        if not all(math.isfinite(v) for point in coords for v in point):
+            ledger[fid] = {"status": "unknown", "source_id": source_id,
+                           "assumption_id": None, "confidence": None}
+            return CalibratedSource(
+                verdict="INVALID_SOURCE", anchors=parsed_anchors,
+                provenance_ledger=ledger, assumptions=assumptions,
+                errors=[f"feature_coordinate_unrepresentable:{fid}"])
         ledger[fid] = {"status": "derived", "source_id": source_id,
                        "assumption_id": None, "confidence": confidence}
-        coords = [[p[0] * mean_scale, (height - p[1]) * mean_scale] for p in pts]
         features.append({"feature_id": fid, "kind": kind, "pixels": pts,
                          "coords_mm": coords[0] if kind == "point" else coords,
                          "provenance": "derived", "confidence": confidence})

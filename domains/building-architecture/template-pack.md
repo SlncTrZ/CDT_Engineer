@@ -78,3 +78,12 @@ Freeze every source layer incl. background/covered/switched-off layers with visi
 ## Handoff record
 
 Native/exchange/document artifacts and hashes; Design Basis/domain/profile/skill/catalog versions; included/excluded/deferred scope; proxies/custom items; unresolved structural/standards dependencies; reopen measurements; Checker verdict; explicit release-class label and limitations.
+
+## Floor-plan source-to-PlanSpec handoff
+
+Follow the [Floor-plan Source Completeness Contract](drawing-completeness.md).
+Freeze the source inventory before drawing; image sources require context/detail/confirmation
+reads in order. Account for axes, walls, bearing/partition walls, columns, doors, windows,
+spaces, fixtures and dimensions with stable feature references or evidence-backed reviewed
+exclusions. Missing/hidden information remains unknown. Hosted furniture uses an explicitly
+sourced centered rectangular envelope and angle units, not just an insertion point.

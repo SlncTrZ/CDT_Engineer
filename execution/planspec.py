@@ -74,6 +74,82 @@ def _load_validator() -> Draft202012Validator:
 
 _VALIDATOR = _load_validator()
 
+# Computational envelope for this bounded PlanSpec implementation. These are
+# safety limits, not physical design limits or a claim of project capacity.
+PLAN_INPUT_LIMITS = {
+    "max_nodes": 50000,
+    "max_depth": 48,
+    "max_string_length": 65536,
+    "max_features": 1024,
+    "max_polygon_vertices": 256,
+    "max_chunk_dependencies": 256,
+    "max_review_work": 250000,
+    "max_abs_number": 1e100,
+}
+
+
+def _input_safety_errors(spec: Any) -> list[str]:
+    """Bound traversal before recursive schema/domain checks; reject unsafe numbers."""
+    stack = [(spec, "$", 0)]
+    visited = 0
+    while stack:
+        value, path, depth = stack.pop()
+        visited += 1
+        if visited > PLAN_INPUT_LIMITS["max_nodes"] or depth > PLAN_INPUT_LIMITS["max_depth"]:
+            return [f"input_budget_exceeded:{path}"]
+        if isinstance(value, (int, float)) and not isinstance(value, bool):
+            # Compare magnitude first: math.isfinite(huge Python int) can raise.
+            if abs(value) > PLAN_INPUT_LIMITS["max_abs_number"]:
+                return [f"numeric_magnitude_exceeds_envelope:{path}"]
+            if not math.isfinite(value):
+                return [f"nonfinite_numeric:{path}"]
+        elif isinstance(value, Mapping):
+            if len(value) + len(stack) > PLAN_INPUT_LIMITS["max_nodes"] - visited:
+                return [f"input_budget_exceeded:{path}"]
+            for key, child in value.items():
+                if not isinstance(key, str):
+                    return [f"non_json_mapping_key:{path}"]
+                stack.append((child, f"{path}.{key}", depth + 1))
+        elif isinstance(value, (list, tuple)):
+            if len(value) + len(stack) > PLAN_INPUT_LIMITS["max_nodes"] - visited:
+                return [f"input_budget_exceeded:{path}"]
+            for idx, child in enumerate(value):
+                stack.append((child, f"{path}[{idx}]", depth + 1))
+        elif isinstance(value, str):
+            if len(value) > PLAN_INPUT_LIMITS["max_string_length"]:
+                return [f"input_string_budget_exceeded:{path}"]
+    chunks = spec.get("chunk_dependencies", []) if isinstance(spec, Mapping) else []
+    if isinstance(chunks, (list, tuple)) and len(chunks) > \
+            PLAN_INPUT_LIMITS["max_chunk_dependencies"]:
+        return ["chunk_dependency_budget_exceeded"]
+    return []
+
+
+def _architectural_review_budget_errors(payload: Mapping[str, Any]) -> list[str]:
+    """Conservative work estimate before pairwise topology/joins/containment."""
+    keys = ("axes", "walls", "columns", "openings", "spaces", "fixtures", "dimensions")
+    if sum(len(payload.get(key, [])) for key in keys) > PLAN_INPUT_LIMITS["max_features"]:
+        return ["review_budget_exceeded:feature_count"]
+    polygon_sizes = [(sp["space_id"], len(sp["boundary_polygon"]))
+                     for sp in payload.get("spaces", [])]
+    vertices: dict[str, int] = {}
+    for sid, n in polygon_sizes:
+        vertices[sid] = max(vertices.get(sid, 0), n)
+    if any(n > PLAN_INPUT_LIMITS["max_polygon_vertices"] for _, n in polygon_sizes):
+        return ["review_budget_exceeded:polygon_vertices"]
+    walls = len(payload.get("walls", []))
+    axes = len(payload.get("axes", []))
+    columns = len(payload.get("columns", []))
+    work = 10 * walls * walls + axes * axes + columns * (axes * axes + axes) + columns * columns
+    work += sum(n * n for _, n in polygon_sizes)
+    for fixture in payload.get("fixtures", []):
+        n = vertices.get(fixture.get("host_space_id"), 0)
+        work += 8 * n * n
+    if work > PLAN_INPUT_LIMITS["max_review_work"]:
+        return ["review_budget_exceeded:pairwise_work"]
+    return []
+
+
 
 def _scan_for_cad_primitives(data: Any, path: str = "") -> list[str]:
     violations: list[str] = []
@@ -210,7 +286,9 @@ def _validate_architectural_payload(payload: Mapping[str, Any]) -> tuple[list[st
                     area += poly[i][0] * poly[j][1]
                     area -= poly[j][0] * poly[i][1]
                 area = abs(area) / 2.0
-                if area < 1e-4:
+                if not math.isfinite(area):
+                    errors.append(f"space_area_unrepresentable:{sid}")
+                elif area < 1e-4:
                     errors.append(f"degenerate_space_zero_area:{sid}")
 
     # 6. Fixtures
@@ -305,12 +383,19 @@ def validate_plan_spec(spec: Mapping[str, Any]) -> PlanSpecValidationResult:
     errors: list[str] = []
     warnings: list[str] = []
 
+    # 0. Numeric/resource safety before recursive schema or geometric work.
+    safety_errors = _input_safety_errors(spec)
+    if safety_errors:
+        return PlanSpecValidationResult(valid=False, verdict="REJECTED",
+                                        errors=safety_errors)
+
     # 1. Schema gate
     schema_errors = list(_VALIDATOR.iter_errors(spec))
     if schema_errors:
         for err in schema_errors:
             path = ".".join(str(p) for p in err.path)
             errors.append(f"schema_violation:{path}:{err.message}")
+        errors.extend(_scan_for_cad_primitives(spec.get("payload", {})))
         return PlanSpecValidationResult(
             valid=False,
             verdict="REJECTED",
@@ -319,6 +404,12 @@ def validate_plan_spec(spec: Mapping[str, Any]) -> PlanSpecValidationResult:
             provenance_summary={},
             feature_count=0,
         )
+
+    if spec.get("plan_type") == "architectural_floor_plan":
+        budget_errors = _architectural_review_budget_errors(spec["payload"])
+        if budget_errors:
+            return PlanSpecValidationResult(valid=False, verdict="REJECTED",
+                                            errors=budget_errors)
 
     # 2. Gate CAD Primitive Ban
     cad_primitive_violations = _scan_for_cad_primitives(spec.get("payload", {}))
