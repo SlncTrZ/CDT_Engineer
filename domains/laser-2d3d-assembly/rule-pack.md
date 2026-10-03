@@ -1,7 +1,7 @@
 # Laser 2D-to-3D Assembly — Rule Pack
 
 > Documentation class: PUBLIC_DOMAIN
-Version: 0.1.0 · Status: draft pilot for decorative laser-cut assemblies · Origin: session photo-to-DWG requirement 2026-09-14.
+Version: 0.2.0 · Status: LASER-01..06 deterministic guards implemented in `domains.laser_2d3d_assembly.guards`; pilot for decorative laser-cut assemblies · Updated: 2026-10-03.
 
 Scope: two profile variants — `cross-slot` (planar interlocking puzzle, e.g. Pegasus) and `stacked-slice` (parallel contour lamination, e.g. torso). Deliverable is the 2D cut drawing (DWG/DXF + PDF guide); physical construction stays with the requester.
 
@@ -15,6 +15,15 @@ Scope: two profile variants — `cross-slot` (planar interlocking puzzle, e.g. P
 | LASER-06 Nesting | Parts nested inside declared sheet/bed size; grain direction noted for wood; over-bed layout blocks | BLOCK on over-bed or undeclared sheet | Nesting extents vs sheet |
 | LASER-07 Exchange export | Required DXF flavor + PDF assembly guide exported; DXF reopened with identified reader; units/scale compared | BLOCK on unavailable exporter or unit drift | Native + DXF hashes + reopen measurements |
 | LASER-08 Drawing usability | Views, part labels/quantities, datum, notes (material/thickness/kerf), revision identity, readability verified for human cutting | BLOCK on missing label/BOM/notes for requested release | Independent package check |
+
+## Deterministic implementation
+
+`domains.laser_2d3d_assembly.guards` implements:
+- `evaluate_material_intake`: validates material triple (thickness, kerf, clearance); blocks non-concept releases on unknown/missing values (LASER-01);
+- `evaluate_cross_slot_dfm`: verifies slot width clearance, depth limits against part severance and mating slot coaxiality (LASER-03);
+- `evaluate_cut_contour`: validates closed polyline, non-zero segment lengths, non-self-intersection and positive contour area (LASER-04);
+- `evaluate_slice_step`: verifies elevation delta equals sheet thickness and alignment features are present (LASER-05);
+- `evaluate_nesting_layout`: checks that nested parts extents fit within the sheet bed size minus safety margins (LASER-06).
 
 Result vocabulary: pass/fail/unknown/not_applicable, linked to rule version and evidence. `unknown` material triple is structurally valid input but a fabrication_candidate drawing remains BLOCK/unknown under LASER-01 until specified or approved_assumption. No construction/manufacturing certification from drawing rules alone.
 
