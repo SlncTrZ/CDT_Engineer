@@ -15,11 +15,15 @@ from fastmcp.server.auth import StaticTokenVerifier
 from fastmcp.server.middleware import Middleware, MiddlewareContext
 from fastmcp.tools.tool import ToolResult
 
+from domains.building_structural.interfaces import evaluate_architecture_structural_interfaces
 from execution.artifact_evidence import artifact_manifest as build_artifact_manifest
 from execution.artifact_evidence import evidence_is_stale
 from execution.catalog_resolver import resolve_catalog_assets
 from execution.completeness_checker import assess_inventory, assess_layer_ledger
+from execution.impact_graph import assess_evidence_freshness, compute_impact
+from execution.observation import assess_observation
 from execution.qa_checker import checker_verdict
+from execution.release_bundle import assess_release_bundle
 from execution.release_scope import assess_dependencies
 from execution.stage_runner import run_profile
 from professional_practice.human_deliverables import assess_human_deliverables
@@ -109,6 +113,23 @@ _TOOL_DESCRIPTIONS = {
         "Compare recorded artifact evidence with the current artifact SHA-256 and report whether the "
         "evidence is stale after a later mutation or artifact replacement."
     ),
+    "observation_assess": (
+        "Assess independent read-back evidence against the expected semantic/native identity, exact "
+        "revision and deterministic state without trusting the producing mutation receipt."
+    ),
+    "impact_assess": (
+        "Compute deterministic transitive dependency impact and verify revision-bound evidence "
+        "freshness so affected downstream artifacts cannot reuse stale PASS evidence."
+    ),
+    "architecture_structural_interface_assess": (
+        "Assess the bounded Building Architecture to Building Structural handoff contract using "
+        "current source revisions, explicit units/frame, conflict ownership and evidence."
+    ),
+    "release_bundle_check": (
+        "Apply the final machine release gate to current verified source hashes, exact Engineer/runtime "
+        "identity, current artifact hashes, reopen/seal state, independent Checker evidence and "
+        "recovery-negative-test evidence."
+    ),
 }
 
 
@@ -162,6 +183,14 @@ def _capabilities() -> dict[str, dict[str, Any]]:
         "engineering.human_deliverable_check": "Release-aware human deliverable acceptance checks.",
         "engineering.qa_check": "Independent finding aggregation with stale-evidence enforcement.",
         "engineering.artifact_evidence": "Hash-bound artifact manifest and staleness checks.",
+        "engineering.observation_assess": "Independent identity/revision/state read-back assessment.",
+        "engineering.impact_assess": "Transitive dependency impact and revision-bound evidence freshness.",
+        "engineering.architecture_structural_interface_assess": (
+            "Bounded Architecture↔Structural handoff freshness, units/frame and conflict assessment."
+        ),
+        "engineering.release_bundle_check": (
+            "Final fail-closed source/runtime/artifact/reviewer/recovery machine release gate."
+        ),
     }
     result = {
         key: {"supported": True, "mode": "deterministic", "reason": description}
@@ -437,6 +466,63 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
             "result": "stale" if stale else "current",
             "current_artifact_sha256": current_artifact_sha256,
         }
+
+    @provider_tool(tags={"evidence", "qa", "read"})
+    async def observation_assess(
+        observation: dict[str, Any],
+        expected_semantic_id: str,
+        expected_revision: str,
+        expected_native_id: str | None = None,
+        expected_state: dict[str, Any] | None = None,
+        expect_absent: bool = False,
+    ) -> dict[str, Any]:
+        return assess_observation(
+            observation,
+            expected_semantic_id=expected_semantic_id,
+            expected_revision=expected_revision,
+            expected_native_id=expected_native_id,
+            expected_state=expected_state,
+            expect_absent=expect_absent,
+        )
+
+    @provider_tool(tags={"evidence", "dependency", "read"})
+    async def impact_assess(
+        nodes: list[dict[str, Any]],
+        changed_ids: list[str],
+        evidence: list[dict[str, Any]] | None = None,
+    ) -> dict[str, Any]:
+        return {
+            "impact": compute_impact(nodes, changed_ids),
+            "evidence": assess_evidence_freshness(nodes, evidence or []),
+        }
+
+    @provider_tool(tags={"domain", "qa", "handoff", "read"})
+    async def architecture_structural_interface_assess(
+        records: list[dict[str, Any]],
+        current_revisions: dict[str, str],
+        expected_unit_system: str,
+        expected_coordinate_frame_id: str,
+    ) -> dict[str, Any]:
+        return evaluate_architecture_structural_interfaces(
+            records,
+            current_revisions=current_revisions,
+            expected_unit_system=expected_unit_system,
+            expected_coordinate_frame_id=expected_coordinate_frame_id,
+        )
+
+    @provider_tool(tags={"release", "qa", "evidence", "read"})
+    async def release_bundle_check(
+        bundle: dict[str, Any],
+        current_source_hashes: dict[str, str],
+        current_artifact_hashes: dict[str, str],
+        current_runtime_identity: dict[str, str],
+    ) -> dict[str, Any]:
+        return assess_release_bundle(
+            bundle,
+            current_source_hashes=current_source_hashes,
+            current_artifact_hashes=current_artifact_hashes,
+            current_runtime_identity=current_runtime_identity,
+        )
 
     app._cdt_settings = settings  # type: ignore[attr-defined]
     return app

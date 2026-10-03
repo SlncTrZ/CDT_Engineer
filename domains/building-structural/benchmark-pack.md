@@ -1,7 +1,7 @@
 # Building Structural v0.2 — Benchmark Pack
 
 > Documentation class: PUBLIC_DOMAIN
-Version: 0.2.0 · Scope: low-rise structural intent, coordination and bounded source-bound calculation evidence.
+Version: 0.2.1 · Scope: low-rise structural intent, coordination and bounded source-bound calculation evidence.
 
 ## Benchmark A — Design-review structural intent
 
@@ -26,6 +26,12 @@ Expected: STR-04 FAIL with the affected loaded node identified.
 Place a column/member inside a frozen architectural opening/required clearance zone.
 
 Expected: STR-05 FAIL/BLOCK until coordinated/dispositioned.
+
+## Benchmark C2 — Revision-bound Architecture↔Structural handoff
+
+Inputs: an accepted Architecture→Structural interface record bound to the current architecture source revision, explicit handoff revision, project unit system/reference frame, conflict disposition owner/evidence, plus a revisioned dependency chain `architecture → handoff → structural-output` with Checker evidence bound to all three revisions.
+
+Expected: the current fixture passes. Advancing only the Architecture source revision while retaining the prior handoff must simultaneously BLOCK STR-05 as `interface_source_revision_stale`, mark the handoff and structural output transitively impacted, and invalidate the earlier downstream Checker evidence. An open coordination conflict BLOCKS even when source revision and prior evidence are otherwise current.
 
 ## Benchmark D — Unsupported construction claim
 

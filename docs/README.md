@@ -47,3 +47,9 @@ Contributor documentation describes how to validate or work on the public packag
 ## Private development material
 
 Roadmaps, internal ADRs, audits, closure reports, handoffs, provider backlogs, private benchmark evidence, external reference repositories and historical snapshots live under ignored `_private/`. They are intentionally excluded from public semantics and are not linked as product dependencies.
+
+## Floor-plan completeness
+
+- [Floor-plan Source Completeness Contract](../domains/building-architecture/drawing-completeness.md):
+  mandatory source inventory, three image review passes, required-family coverage,
+  fixture envelopes, canonical calibration units and source-bound planning chunks.

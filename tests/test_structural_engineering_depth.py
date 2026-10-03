@@ -12,6 +12,16 @@ from domains.building_structural.standards import evaluate_standard_applicabilit
 from domains.guard_primitives import GuardInputError
 
 
+INTERFACE_CONTEXT={
+    'current_revisions':{
+        'building-architecture':'arch-r4',
+        'building-structural':'struct-r2',
+    },
+    'expected_unit_system':'mm',
+    'expected_coordinate_frame_id':'project-grid-A',
+}
+
+
 VERIFIED_BASIS={
     'source_class':'project_rule',
     'record_id':'project-structural-basis',
@@ -140,12 +150,19 @@ class StructuralEngineeringDepthTests(unittest.TestCase):
             'status':'accepted',
             'verification_state':'verified',
             'source_revision':'arch-r4',
+            'handoff_revision':'coord-r7',
+            'unit_system':'mm',
+            'coordinate_frame_id':'project-grid-A',
+            'conflict_state':'none',
             'evidence_refs':['measurement:opening-01','decision:struct-17'],
         }]
-        self.assertEqual('pass',evaluate_architecture_structural_interfaces(accepted)['result'])
+        self.assertEqual(
+            'pass',
+            evaluate_architecture_structural_interfaces(accepted,**INTERFACE_CONTEXT)['result'],
+        )
 
         open_item=[{**accepted[0],'status':'open','verification_state':'unverified','evidence_refs':[]}]
-        result=evaluate_architecture_structural_interfaces(open_item)
+        result=evaluate_architecture_structural_interfaces(open_item,**INTERFACE_CONTEXT)
         self.assertEqual('blocked',result['result'])
         self.assertIn('required_interface_unresolved:stair-slab-01',result['reason_codes'])
 
@@ -153,26 +170,87 @@ class StructuralEngineeringDepthTests(unittest.TestCase):
         base={
             'interface_id':'na-01','from_discipline':'building-architecture','to_discipline':'building-structural',
             'interface_type':'facade_support','owner_discipline':'building-structural','required':True,
-            'status':'not_applicable','verification_state':'verified','source_revision':'arch-r4','evidence_refs':['decision:na-01'],
+            'status':'not_applicable','verification_state':'verified','source_revision':'arch-r4',
+            'handoff_revision':'coord-r8','unit_system':'mm','coordinate_frame_id':'project-grid-A',
+            'conflict_state':'none','evidence_refs':['decision:na-01'],
         }
-        self.assertEqual('pass',evaluate_architecture_structural_interfaces([base])['result'])
+        self.assertEqual(
+            'pass',
+            evaluate_architecture_structural_interfaces([base],**INTERFACE_CONTEXT)['result'],
+        )
         for patch,reason in [
             ({'verification_state':'unverified'},'not_applicable_interface_not_verified:na-01'),
             ({'verification_state':'stale'},'interface_evidence_stale:na-01'),
             ({'evidence_refs':[]},'not_applicable_interface_without_evidence:na-01'),
         ]:
-            result=evaluate_architecture_structural_interfaces([{**base,**patch}])
+            result=evaluate_architecture_structural_interfaces(
+                [{**base,**patch}],**INTERFACE_CONTEXT
+            )
             self.assertEqual('blocked',result['result'])
             self.assertIn(reason,result['reason_codes'])
 
+
+    def test_interface_stale_revision_invalidates_verified_handoff(self):
+        record={
+            'interface_id':'stair-slab-02','from_discipline':'building-architecture',
+            'to_discipline':'building-structural','interface_type':'stair_slab_opening',
+            'owner_discipline':'building-structural','required':True,'status':'accepted',
+            'verification_state':'verified','source_revision':'arch-r3','handoff_revision':'coord-r9',
+            'unit_system':'mm','coordinate_frame_id':'project-grid-A','conflict_state':'none',
+            'evidence_refs':['measurement:opening-02'],
+        }
+        result=evaluate_architecture_structural_interfaces([record],**INTERFACE_CONTEXT)
+        self.assertEqual('blocked',result['result'])
+        self.assertIn('interface_source_revision_stale:stair-slab-02',result['reason_codes'])
+
+    def test_interface_units_frame_and_open_conflict_are_hard_gates(self):
+        record={
+            'interface_id':'facade-01','from_discipline':'building-architecture',
+            'to_discipline':'building-structural','interface_type':'facade_support',
+            'owner_discipline':'building-structural','required':True,'status':'accepted',
+            'verification_state':'verified','source_revision':'arch-r4','handoff_revision':'coord-r10',
+            'unit_system':'inch','coordinate_frame_id':'local-origin','conflict_state':'open',
+            'evidence_refs':['measurement:facade-01'],
+        }
+        result=evaluate_architecture_structural_interfaces([record],**INTERFACE_CONTEXT)
+        self.assertEqual('blocked',result['result'])
+        self.assertIn('interface_unit_system_mismatch:facade-01',result['reason_codes'])
+        self.assertIn('interface_coordinate_frame_mismatch:facade-01',result['reason_codes'])
+        self.assertIn('interface_conflict_open:facade-01',result['reason_codes'])
+
+    def test_resolved_conflict_requires_owner_and_evidence(self):
+        base={
+            'interface_id':'column-opening-01','from_discipline':'building-architecture',
+            'to_discipline':'building-structural','interface_type':'column_opening',
+            'owner_discipline':'building-structural','required':True,'status':'accepted',
+            'verification_state':'verified','source_revision':'arch-r4','handoff_revision':'coord-r11',
+            'unit_system':'mm','coordinate_frame_id':'project-grid-A','conflict_state':'resolved',
+            'evidence_refs':['measurement:column-opening-01'],
+        }
+        result=evaluate_architecture_structural_interfaces([base],**INTERFACE_CONTEXT)
+        self.assertEqual('blocked',result['result'])
+        self.assertIn('resolved_conflict_owner_missing:column-opening-01',result['reason_codes'])
+        self.assertIn('resolved_conflict_evidence_missing:column-opening-01',result['reason_codes'])
+
+        resolved={
+            **base,
+            'conflict_owner_discipline':'building-architecture',
+            'conflict_evidence_refs':['decision:coord-44'],
+        }
+        self.assertEqual(
+            'pass',
+            evaluate_architecture_structural_interfaces([resolved],**INTERFACE_CONTEXT)['result'],
+        )
 
     def test_architecture_structural_interface_rejects_scope_creep(self):
         with self.assertRaises(GuardInputError):
             evaluate_architecture_structural_interfaces([{
                 'interface_id':'mep-01','from_discipline':'building-structural','to_discipline':'mep',
                 'interface_type':'penetration','owner_discipline':'mep','required':True,'status':'accepted',
-                'verification_state':'verified','source_revision':'mep-r1','evidence_refs':['x'],
-            }])
+                'verification_state':'verified','source_revision':'mep-r1','handoff_revision':'coord-r1',
+                'unit_system':'mm','coordinate_frame_id':'project-grid-A','conflict_state':'none',
+                'evidence_refs':['x'],
+            }],**INTERFACE_CONTEXT)
 
     def test_standard_applicability_requires_exact_edition_verified_source_and_clause_mapping(self):
         records=[{

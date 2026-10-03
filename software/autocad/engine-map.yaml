@@ -1,14 +1,14 @@
-map_version: 0.4.0
+map_version: 0.5.0
 software_id: autocad
 purpose: Current public-contract semantic capability map for CDT_Engineer workflows.
 source_snapshot:
   repository: CDT-AutoCAD
-  head: 295a064c7b6163b912d9a70708e3be741b9b0730
-  provider_version: 0.4.0rc2
-  contract_version: autocad-generic-v1-rc2
-  public_tool_count: 86
+  head: bdd306c8c75e9abf63bce02f34a6a7856cef532e
+  provider_version: 0.4.0rc3
+  contract_version: autocad-generic-v1-rc3
+  public_tool_count: 87
   primary_certification: AutoCAD 2027 Windows x64 / AutoCAD.Application.26
-  working_tree_dirty_at_inspection: false
+  working_tree_dirty_at_inspection: true
   runtime_proof: false
 runtime_preflight:
   required: true
@@ -17,6 +17,7 @@ runtime_preflight:
   - provider version/contract and contract hash
   - system_status and system_capabilities runtime result
   - native_integrity_status when strong-integrity mutation is required
+  - native_document_identity_initialize availability for a new empty drawing without provider lineage
   - active document_pid + predecessor fingerprint when native strong-integrity mutation is planned
   - backend mode and required path policy
   blocker_codes: [software_not_installed, provider_not_ready, configuration_required, version_mismatch, capability_missing, runtime_unknown]
@@ -41,6 +42,10 @@ capability_mappings:
   support: expected
   expected_public_tools: [object_get, object_measure, drawing_extents]
   verification: inspect coordinates/extents and independently validate transform evidence
+- semantic: document.identity.initialize
+  support: expected
+  expected_public_tools: [native_document_identity_initialize, native_integrity_status]
+  verification: initialize provider-owned lineage exactly once only for a new empty current space, then read back document_pid + fingerprint; existing or non-empty drawings must refuse implicit adoption
 - semantic: technical_2d.create
   support: expected
   expected_public_tools: [feature_execute, batch_create_entities, entity_create_line, entity_create_polyline, block_insert]
@@ -89,10 +94,8 @@ known_blockers:
 - code: source_snapshot_not_runtime_proof
   effect: Step-0 runtime discovery remains mandatory
 - code: broad_com_surface_not_full_g3
-  effect: do not infer all 86 tools have strong-integrity G3 semantics
+  effect: do not infer all 87 tools have strong-integrity G3 semantics
 - code: acis_topology_not_authoritative
   effect: ActiveX solid inspection does not provide authoritative face/edge topology
 - code: post_seal_staleness_external
   effect: CDT_Engineer must invalidate prior QA if an accepted artifact changes after seal
-- code: stale_com_proxy_after_autocad_restart
-  effect: current RC2 runtime has a deferred operational recovery debt; after RPC/COM disconnect do not blind-retry mutation, recover a clean Session-1 supervisor/worker and re-run read-only preflight before continuing

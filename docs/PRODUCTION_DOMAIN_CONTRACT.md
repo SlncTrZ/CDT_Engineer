@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_CONTRACT
 
-Version: 0.2.0 · Status: Engineering OS domain baseline · Updated: 2026-09-12
+Version: 0.2.1 · Status: Engineering OS domain baseline · Updated: 2026-09-19
 
 ## Purpose inside Engineering OS
 
@@ -89,6 +89,8 @@ Design Basis / source inventory
 Failed or critical unknown gates suspend dependent work.
 
 A run records at least: `run_id`, Design Basis revision, source hashes, domain/five-pack/skill/workflow versions, standards selections, assumptions/approvals, engine software/contract/backend/application versions, tool receipts, checkpoints, measurements, final artifact hashes and reviewer verdict. Release-critical evidence such as verified source hashes, final artifact hash binding, reopen/round-trip verification and seal state must be machine-required inputs/gates in the operational profile or Checker path; prose-only stop conditions are not sufficient release enforcement.
+
+The public `release_bundle_check` gate enforces the final cross-cutting subset owned by CDT_Engineer: recorded-vs-current verified source hashes, exact Engineer source/provider/contract/wheel bindings, recorded-vs-current runtime identity, recorded-vs-current artifact hashes, reopen/seal state, SHA-256-bound independent Checker evidence and SHA-256-bound PASS evidence for every declared recovery-negative class. Boolean/prose-only claims are insufficient. Domain-specific adequacy/compliance rules still run separately; this final bundle gate cannot turn a failed domain rule into PASS.
 
 ## Capability planning
 

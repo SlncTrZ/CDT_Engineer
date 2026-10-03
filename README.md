@@ -27,6 +27,10 @@ Yêu cầu / nguồn đầu vào
 
 CDT_Engineer không chứa native COM/Ruby/bpy/SolidWorks backend. Các repository CDT-* engine là Generic Execution Engines; CDT_Engineer sở hữu **chuyên môn kỹ sư, quy tắc, semantic meaning, workflow và QA**.
 
+### Chính sách phiên bản phần mềm executor
+
+Mỗi CDT executor công bố **một host application/version được chứng nhận** làm target hiện hành (ví dụ AutoCAD 2027, SketchUp 2024, Blender 4.5.3 LTS, SOLIDWORKS 2024 SP0.1 hoặc KiCad 10.0.6 theo README của provider). CDT_Engineer chỉ tiêu thụ identity/contract/capability của runtime thực tế tại Step 0 và không tự suy rộng support sang phiên bản khác. Khả năng tương thích nhiều version là hướng mở rộng tùy chọn của từng provider, **không phải tiêu chí chất lượng hay điều kiện tính điểm** cho target hiện hành.
+
 ## MCP provider surface
 
 CDT_Engineer được expose như một first-class MCP provider theo SlncTrZ Provider Standard. Provider dùng bare tool names; SlncTrZ-MCP canonicalize thành `cdt-engineer.*`. Model/Agent nhìn thấy `cdt-engineer.*` song song với `cdt-autocad.*`, `cdt-sketchup.*`, `cdt-solidworks.*` và tự orchestration vòng **think → execute → observe → verify**.

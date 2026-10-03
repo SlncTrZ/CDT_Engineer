@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_DOMAIN
 
-`skill_id`: `architecture-structural-coordination` · Version `0.2.0` · Domain `building-structural` · Lifecycle `pilot`.
+`skill_id`: `architecture-structural-coordination` · Version `0.3.0` · Domain `building-structural` · Lifecycle `pilot`.
 
 ## Intent
 
@@ -18,15 +18,17 @@ May identify geometric/interface clashes and request/recommend coordination chan
 
 ## Deterministic checks
 
-- `domains.building_structural.interfaces.evaluate_architecture_structural_interfaces` requires typed Architecture↔Structural ownership, source revision, disposition, verification state and evidence references;
+- `domains.building_structural.interfaces.evaluate_architecture_structural_interfaces` requires typed Architecture↔Structural ownership, handoff/source revision, project unit/frame identity, disposition, conflict state/owner and evidence references;
 
 - `evaluate_architecture_clashes` detects simplified member/opening plan conflicts with explicit clearance;
 - grid/level identities across disciplines must be reconciled;
 - stair/slab opening, facade support, shaft/penetration and cantilever interfaces remain explicit when in scope;
 - unresolved critical conflicts block dependent design-review release;
 - a required interface marked `not_applicable` is a reviewed disposition, not an omission: it requires `verification_state=verified`, a declared `source_revision` and nonempty evidence references;
-- this deterministic guard enforces caller-supplied `verified`/`stale` state but does not discover the current upstream Architecture revision itself; the workflow/Checker must compare the declared `source_revision` with current upstream evidence and mark mismatches stale before this gate;
-- any changed upstream architecture revision invalidates affected coordination evidence.
+- the caller supplies the independently discovered current Architecture/Structural revisions plus expected project unit/frame identity; the guard compares them directly with each handoff rather than trusting its self-declared verification state;
+- any changed upstream source revision invalidates the affected handoff even when its previous `verification_state` was `verified`;
+- unit/reference-frame disagreement is a hard coordination blocker;
+- an open conflict blocks release; a resolved conflict requires an owning participating discipline plus nonempty resolution evidence.
 
 ## Workflow
 

@@ -1,7 +1,7 @@
 # Building Structural v0.2 — Rule Pack
 
 > Documentation class: PUBLIC_DOMAIN
-Version: 0.2.0 · Scope: low-rise structural intent, architecture coordination and bounded source-bound calculation evidence.
+Version: 0.2.1 · Scope: low-rise structural intent, architecture coordination and bounded source-bound calculation evidence.
 
 This vertical does **not** perform or claim final structural member/capacity design. Exact materials, loads, load combinations, analysis model, geotechnical inputs and standards/applicability are required before stronger adequacy/construction claims.
 
@@ -11,7 +11,7 @@ This vertical does **not** perform or claim final structural member/capacity des
 | STR-02 Grid/reference validity | Grid axes are finite, unique and ordered; member/reference identities must be stable | FAIL on malformed/duplicate/inconsistent grid | Grid register and measurements |
 | STR-03 Structural system intent | Record frame/wall/slab/foundation-interface intent and evidence state; unknown hidden facts remain unknown | BLOCK design-review when structural-system intent unresolved | System register, provenance, limitations |
 | STR-04 Load-path intent | Every declared loaded node must have an acyclic path to a declared foundation/ground terminal | FAIL on cycle or missing terminal reachability | Load-path graph and independent traversal result |
-| STR-05 Architecture ↔ structural coordination | Detect declared member/opening/interface clashes and preserve stair/slab/facade-support coordination state | FAIL/BLOCK critical unresolved clash/interface | Architecture handoff, bounds/clearance evidence, interface register |
+| STR-05 Architecture ↔ structural coordination | Detect declared member/opening/interface clashes; bind handoff to current upstream revision, project units/frame and explicit conflict ownership/disposition | FAIL/BLOCK stale handoff, unit/frame mismatch, open/unowned conflict or critical unresolved interface | Architecture handoff, current revision facts, unit/frame convention, bounds/clearance evidence, interface register |
 | STR-06 Release-evidence boundary | `design_review` may preserve unknown materials/loads/standards only with `structural_adequacy_unclaimed`; fabrication/construction candidate requires those inputs plus an accepted analysis/capacity route | BLOCK when requested release exceeds evidence | Material/load/standard states, analysis route, release target |
 | STR-07 Member/system representation | Native/drawing member geometry must preserve semantic member IDs/grid/level/system relationships; native solids/lines are implementation, not proof of capacity | FAIL/BLOCK on identity/relationship mismatch | Read-after-write queries and dimensions |
 | STR-08 QA/handoff | Independent Checker verifies grid/load-path/coordination/release limitations and artifact identity as applicable | BLOCK/STALE on unresolved critical finding or stale evidence | Checker findings, final artifacts/hashes, limitations |
@@ -37,7 +37,7 @@ Domain-local deterministic implementations include:
 - release evidence policy separating design-review intent from adequacy/construction claims;
 - `domains.building_structural.calculations.evaluate_load_combination` for explicit source-bound linear combinations;
 - `domains.building_structural.calculations.evaluate_demand_capacity_checks` for supplied demand/capacity comparisons only;
-- `domains.building_structural.interfaces.evaluate_architecture_structural_interfaces` for typed Architecture↔Structural interface ownership/evidence;
+- `domains.building_structural.interfaces.evaluate_architecture_structural_interfaces` for typed Architecture↔Structural ownership, revision freshness, unit/frame and conflict evidence;
 - `domains.building_structural.standards.evaluate_standard_applicability` for exact edition/source/applicability/clause evidence.
 
 These guards are necessary but insufficient for final structural design.

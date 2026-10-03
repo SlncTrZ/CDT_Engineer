@@ -1,7 +1,7 @@
 # CDT_Engineer MCP Tool Guide
 
 > Documentation class: PUBLIC_INTEGRATION
-> Provider contract: `cdt-engineer-v1-alpha1` · Updated: 2026-09-17
+> Provider contract: `cdt-engineer-v1-alpha4` · Updated: 2026-09-19
 
 ## Purpose
 
@@ -66,6 +66,25 @@ A successful CAD mutation is execution evidence, not an engineering PASS.
 - `artifact_manifest(...)` — create hash-bound artifact evidence metadata; it does not save or modify files.
 - `evidence_stale_check(...)` — detect evidence invalidated by artifact mutation/replacement.
 
+### Independent observation and change impact
+
+- `observation_assess(...)` — assess read-back evidence against the expected semantic/native identity, exact observed revision and deterministic state fingerprint. `unavailable`/`unsupported` remains unknown; stale revision, identity substitution, unexpected absence or state mismatch blocks.
+- `impact_assess(nodes, changed_ids, evidence?)` — compute exact transitive dependents from explicit revisioned dependency nodes and verify that evidence binds its subject plus every transitive dependency at the current revision. Cycles, dangling dependencies and malformed bindings fail closed.
+
+### Bounded cross-discipline coordination
+
+- `architecture_structural_interface_assess(...)` — assess the implemented Building Architecture↔Building Structural handoff lane against independently supplied current source revisions, project units/reference frame, explicit interface ownership/disposition, and conflict ownership/evidence. A self-declared `verified` handoff becomes blocked when its upstream revision is stale, units/frame disagree, or a conflict remains open/unowned.
+
+This tool is intentionally pair-specific. It does not establish a universal cross-domain SDK; additional pairs require another real implemented consumer before common extraction under the Rule-of-Two policy.
+
+### Final machine release gate
+
+- `release_bundle_check(...)` — fail closed unless frozen verified source hashes still match current source hashes and the final bundle also binds CDT_Engineer source/provider/contract/wheel identity, exact current executor/runtime identity, current artifact hashes, reopen + seal state, SHA-256-bound independent Checker evidence and SHA-256-bound PASS evidence for every declared recovery-negative class. Missing current observations, source/artifact hash drift, runtime identity drift or prose/boolean-only recovery claims block release.
+
+The tool validates caller-supplied current observations; it does not discover or mutate executor/runtime state itself.
+
+These tools do not execute CAD or mutate project artifacts. They evaluate evidence supplied by the Agent after independent executor read-back and after known source/model/artifact changes.
+
 ## Boundary with Generic CAD Executors
 
 CDT_Engineer tools must not expose native primitives such as line/circle creation, extrusion, document save, COM/Ruby/bpy/SolidWorks automation or undocumented executor bypasses.
@@ -83,9 +102,23 @@ The same Step-0 preflight applies to the other Generic CAD Executors: discover l
 - Non-loopback HTTP binding additionally requires explicit `CDT_ENGINEER_ALLOW_REMOTE_HTTP=true`.
 - No tool grants gateway authority or changes SlncTrZ policy/provider configuration.
 - No mutation is blindly retried after an executor reports timeout or unknown completion; reconcile the executor state first.
+- Producer receipts are not independent observation. Use read-back evidence with explicit identity/revision/method and invalidate affected downstream evidence after dependency changes.
 
 ## Current scope
 
 This alpha provider slice exposes existing deterministic CDT_Engineer logic. It intentionally does **not** add a project database, hidden orchestration backend, LLM routing layer, universal CAD API, or new professional semantics. Additional tools should be promoted only when backed by public contracts and deterministic behavior.
 
 Blender is defined in the L2 contract model (`docs/CONTRACTS.md` §6) but is **deferred from this alpha slice**: no `software/blender/` Operating Guide or engine map ships yet, and `engine_map_get` does not serve a `blender` key. A Blender guide/map should be added only with pinned public contract evidence, not as an unverified placeholder.
+
+## Offline PlanSpec planning checks
+
+The Python review/compile helpers enforce the
+[Floor-plan Source Completeness Contract](../domains/building-architecture/drawing-completeness.md).
+Architectural callers supply a frozen source inventory at every release target; image
+sources record context/detail/confirmation review passes. Empty/incomplete plans and
+unverified source requirements refuse before CAD execution. Fixtures require a hosted,
+explicit rectangular envelope; calibration outputs canonical millimetres.
+Compiled chunks carry source/inventory SHA-256 bindings for downstream verification.
+
+These helpers are not additional advertised MCP tools. The public completeness/QA tools
+still consume independent final artifact evidence; planning approval is not artifact PASS.

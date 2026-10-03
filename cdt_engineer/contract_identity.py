@@ -8,9 +8,9 @@ from importlib import resources
 from pathlib import Path
 
 PROTOCOL_VERSION = "MCP"
-CONTRACT_VERSION = "cdt-engineer-v1-alpha1"
-UPDATED_AT = "2026-09-17"
-PUBLIC_TOOL_COUNT = 14
+CONTRACT_VERSION = "cdt-engineer-v1-alpha4"
+UPDATED_AT = "2026-09-19"
+PUBLIC_TOOL_COUNT = 18
 EXECUTION_MODEL = "agent-orchestrated-engineering-os-v1"
 
 
