@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_CONTRACT
 
-Version: 0.1.0 · Updated: 2026-09-12 · Status: Engineering OS Step-0 baseline.
+Version: 0.1.0 · Updated: 2026-10-05 18:24 (Asia/Ho_Chi_Minh) · Status: Engineering OS Step-0 baseline.
 
 ## Purpose
 
@@ -93,3 +93,9 @@ If software is installed but execution integration is unavailable, distinguish h
 Software Operating Guides consume Step-0 inventory and define application-specific discovery methods, supported versions, required plugins/providers, capability expectations and compatibility rules. Workflows consume the resulting compatibility classification before capability preflight and Feature-based Chunk planning.
 
 Historical runs pin the inventory observation used for execution so later QA can distinguish environment drift from engineering logic changes.
+
+## Runtime lifecycle extension
+
+The [Execution Lifecycle Contract](EXECUTION_LIFECYCLE_CONTRACT.md) specifies the bounded alpha5 ensure/status/operation-status interface and the broader target shutdown contract after Step-0 discovery. Stop currently returns NATIVE_STOP_NOT_CERTIFIED. This extension does not change the inventory JSON schema.
+
+An installed but stopped engine may be brought online through an explicitly authorized controller and host supervisor. Native readiness must precede gateway sync; gateway activation and client discovery must then be verified. A runtime start does not waive version compatibility, document guards or QA.

@@ -20,10 +20,12 @@ class Settings:
 
     auth_token: str
     allow_remote_http: bool = False
+    execution_controller: str = ""
 
     @classmethod
     def from_env(cls) -> "Settings":
         return cls(
             auth_token=os.getenv("CDT_ENGINEER_AUTH_TOKEN", ""),
             allow_remote_http=_env_bool("CDT_ENGINEER_ALLOW_REMOTE_HTTP", False),
+            execution_controller=os.getenv("CDT_ENGINEER_EXECUTION_CONTROLLER", ""),
         )

@@ -12,6 +12,12 @@ from cdt_engineer.server import _TOOL_DESCRIPTIONS, _validate_http_launch, creat
 
 
 EXPECTED_TOOLS = {
+    "execution_list",
+    "execution_status",
+    "execution_ensure",
+    "execution_stop",
+    "execution_operation_status",
+
     "help",
     "system_status",
     "system_capabilities",
@@ -41,7 +47,7 @@ async def test_provider_surface_is_bounded_and_semantic():
 
     names = {tool.name for tool in tools}
     assert names == EXPECTED_TOOLS == set(_TOOL_DESCRIPTIONS)
-    assert len(names) == PUBLIC_TOOL_COUNT == 18
+    assert len(names) == PUBLIC_TOOL_COUNT == 23
     assert not any(
         token in name
         for name in names

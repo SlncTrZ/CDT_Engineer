@@ -1,5 +1,5 @@
 """FastMCP entrypoint for the CDT_Engineer Engineering OS provider.
-Wing: code | Topic: mcp-provider | Updated: 2026-09-17
+Wing: code | Topic: mcp-provider | Updated: 2026-10-05 17:58 (Asia/Ho_Chi_Minh)
 """
 from __future__ import annotations
 
@@ -30,6 +30,7 @@ from professional_practice.human_deliverables import assess_human_deliverables
 
 from . import __version__
 from .config import Settings
+from .lifecycle_client import request as lifecycle_request
 from .contract_identity import (
     CONTRACT_VERSION,
     EXECUTION_MODEL,
@@ -57,6 +58,12 @@ _ENGINE_MAP_FILES = {
 }
 
 _TOOL_DESCRIPTIONS = {
+    'execution_list': 'List configured execution engines and lifecycle assurance limits.',
+    'execution_status': 'Observe host/application/provider readiness without CAD mutation.',
+    'execution_ensure': 'Ask the authorized controller to ensure AutoCAD and sync its read-only gateway route; returns a durable operation ID.',
+    'execution_stop': 'Request controlled stop; pilot refuses until ownership-safe shutdown is certified.',
+    'execution_operation_status': 'Observe a durable lifecycle operation without replaying an uncertain request.',
+
     "help": (
         "Return the current CDT_Engineer provider contract, operating boundary, tool guidance, and "
         "capability summary without mutating engineering or CAD state."
@@ -196,6 +203,7 @@ def _capabilities() -> dict[str, dict[str, Any]]:
         key: {"supported": True, "mode": "deterministic", "reason": description}
         for key, description in supported.items()
     }
+    result["engineering.execution_lifecycle"] = {"supported": True, "mode": "external_controller", "reason": "Explicit lifecycle delegation; pilot is AutoCAD read-only and refuses uncertified stop."}
     result["native.cad_mutation"] = {
         "supported": False,
         "mode": "external_executor_only",
@@ -331,6 +339,7 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
                 "orchestration_owner": "client_agent",
                 "gateway_owner": "SlncTrZ-MCP",
             },
+            "execution_lifecycle": {"controller_configured": bool(settings.execution_controller), "native_stop_certified": False},
             "source_packages": {
                 "profiles": sorted(_PROFILE_FILES),
                 "engine_maps": sorted(_ENGINE_MAP_FILES),
@@ -346,6 +355,29 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
             "execution_model": EXECUTION_MODEL,
             "capabilities": _capabilities(),
         }
+
+
+    @provider_tool(tags={"execution", "read"})
+    async def execution_list() -> dict[str, Any]:
+        return await lifecycle_request(settings.execution_controller, "list")
+
+    @provider_tool(tags={"execution", "read"})
+    async def execution_status(engine: str = "autocad") -> dict[str, Any]:
+        return await lifecycle_request(settings.execution_controller, "status", engine=engine)
+
+    @provider_tool(tags={"execution", "write"})
+    async def execution_ensure(engine: str, operation_id: str) -> dict[str, Any]:
+        return await lifecycle_request(settings.execution_controller, "ensure", engine=engine, operation_id=operation_id)
+
+    @provider_tool(tags={"execution", "write"})
+    async def execution_stop(engine: str, operation_id: str, scope: str = "provider") -> dict[str, Any]:
+        if scope not in {"provider", "application", "both"}:
+            raise ValueError("invalid_stop_scope")
+        return await lifecycle_request(settings.execution_controller, "stop", engine=engine, operation_id=operation_id, scope=scope)
+
+    @provider_tool(tags={"execution", "read"})
+    async def execution_operation_status(operation_id: str) -> dict[str, Any]:
+        return await lifecycle_request(settings.execution_controller, "operation_status", operation_id=operation_id)
 
     @provider_tool(tags={"source", "read"})
     async def profile_get(domain_id: str) -> dict[str, Any]:

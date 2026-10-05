@@ -1,7 +1,7 @@
 # CDT_Engineer — Engineering OS Architecture
 
 > Documentation class: PUBLIC_ARCHITECTURE
-> Version: 1.1.0 · Updated: 2026-09-12
+> Version: 1.1.0 · Updated: 2026-10-05 18:24 (Asia/Ho_Chi_Minh)
 > Scope: stable public product architecture for the Engineering Operating System / Virtual Engineering Office
 
 ## 1. Product identity
@@ -258,3 +258,9 @@ Do not create a speculative shared Domain SDK. Runtime/code extraction requires 
 - A visually convincing result is not automatically constructible, manufacturable, compliant or complete.
 - Final artifacts require independent QA, identity binding and stale-evidence detection.
 - Public architecture describes current product invariants; roadmap/audit/history never override it.
+
+## 18. Explicit execution lifecycle extension
+
+The [Execution Lifecycle Contract](EXECUTION_LIFECYCLE_CONTRACT.md) defines the bounded alpha5 lifecycle entrypoint and the broader target contract. The 23-tool provider exposes list/status/ensure/operation-status/stop through a configured external controller; host launch, credentials and process ownership belong to that controller/host supervisor. AutoCAD ensure supports application-level read readiness. Stop returns a typed refusal until ownership-safe drain/shutdown is certified.
+
+This preserves the existing no-native-proxy boundary: native CAD calls stay explicit in Generic Engine providers. Runtime readiness precedes authorized gateway sync; post-activation readiness and client catalog refresh are separate checks. Lifecycle tooling must remain reachable while a requested engine is stopped. No native runtime import, arbitrary SSH/shell execution tool, or self-granted gateway administration is introduced by this architecture.
