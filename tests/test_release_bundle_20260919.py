@@ -1,7 +1,9 @@
 """Machine release-bundle hard gate acceptance.
-Wing: code | Topic: release-bundle | Updated: 2026-09-19
+Wing: code | Topic: release-bundle | Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh)
 """
+
 import pytest
+from release_evidence_fixture import bind_test_evidence
 
 from execution.release_bundle import assess_release_bundle
 
@@ -74,11 +76,15 @@ def _sources() -> dict[str, str]:
 
 
 def _assess(bundle: dict, *, artifacts=None, runtime=None, sources=None):
+    records = bind_test_evidence(bundle)
     return assess_release_bundle(
         bundle,
         current_source_hashes=_sources() if sources is None else sources,
         current_artifact_hashes={"drawing": "d" * 64} if artifacts is None else artifacts,
         current_runtime_identity=_runtime() if runtime is None else runtime,
+        evidence_records=records,
+        current_engineer_identity=bundle["version_bindings"],
+        current_design_basis_revision=bundle["design_basis_revision"],
     )
 
 
@@ -135,8 +141,7 @@ def test_release_requires_hash_bound_independent_checker_evidence():
 def test_release_requires_each_declared_recovery_class_with_hash_bound_pass_evidence():
     bundle = _bundle()
     bundle["recovery_negative_evidence"] = [
-        row for row in bundle["recovery_negative_evidence"]
-        if row["recovery_class"] != "uncertain"
+        row for row in bundle["recovery_negative_evidence"] if row["recovery_class"] != "uncertain"
     ]
     bundle["recovery_negative_evidence"][0]["result"] = "blocked"
 

@@ -1,13 +1,15 @@
 """PlanSpec IR — typed intermediate representation and deterministic validator.
-Wing: code | Topic: plan-spec-ir | Updated: 2026-09-17 22:45
+Wing: code | Topic: plan-spec-ir | Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh)
 """
+
 from __future__ import annotations
 
 import json
 import math
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 from jsonschema import Draft202012Validator
 
@@ -57,8 +59,13 @@ def _load_schema_text() -> str:
     # to the source checkout path. Same convention as cdt_engineer.server.
     try:
         from importlib import resources
-        packaged = resources.files("cdt_engineer").joinpath("data").joinpath("schemas").joinpath(
-            "plan-spec.schema.json")
+
+        packaged = (
+            resources.files("cdt_engineer")
+            .joinpath("data")
+            .joinpath("schemas")
+            .joinpath("plan-spec.schema.json")
+        )
         if packaged.is_file():
             return packaged.read_text(encoding="utf-8")
     except (ImportError, ModuleNotFoundError, FileNotFoundError):
@@ -119,8 +126,10 @@ def _input_safety_errors(spec: Any) -> list[str]:
             if len(value) > PLAN_INPUT_LIMITS["max_string_length"]:
                 return [f"input_string_budget_exceeded:{path}"]
     chunks = spec.get("chunk_dependencies", []) if isinstance(spec, Mapping) else []
-    if isinstance(chunks, (list, tuple)) and len(chunks) > \
-            PLAN_INPUT_LIMITS["max_chunk_dependencies"]:
+    if (
+        isinstance(chunks, (list, tuple))
+        and len(chunks) > PLAN_INPUT_LIMITS["max_chunk_dependencies"]
+    ):
         return ["chunk_dependency_budget_exceeded"]
     return []
 
@@ -130,8 +139,9 @@ def _architectural_review_budget_errors(payload: Mapping[str, Any]) -> list[str]
     keys = ("axes", "walls", "columns", "openings", "spaces", "fixtures", "dimensions")
     if sum(len(payload.get(key, [])) for key in keys) > PLAN_INPUT_LIMITS["max_features"]:
         return ["review_budget_exceeded:feature_count"]
-    polygon_sizes = [(sp["space_id"], len(sp["boundary_polygon"]))
-                     for sp in payload.get("spaces", [])]
+    polygon_sizes = [
+        (sp["space_id"], len(sp["boundary_polygon"])) for sp in payload.get("spaces", [])
+    ]
     vertices: dict[str, int] = {}
     for sid, n in polygon_sizes:
         vertices[sid] = max(vertices.get(sid, 0), n)
@@ -141,6 +151,8 @@ def _architectural_review_budget_errors(payload: Mapping[str, Any]) -> list[str]
     axes = len(payload.get("axes", []))
     columns = len(payload.get("columns", []))
     work = 10 * walls * walls + axes * axes + columns * (axes * axes + axes) + columns * columns
+    work += 16 * columns * len(payload.get("openings", []))
+    work += 16 * len(payload.get("fixtures", [])) ** 2
     work += sum(n * n for _, n in polygon_sizes)
     for fixture in payload.get("fixtures", []):
         n = vertices.get(fixture.get("host_space_id"), 0)
@@ -150,12 +162,13 @@ def _architectural_review_budget_errors(payload: Mapping[str, Any]) -> list[str]
     return []
 
 
-
 def _scan_for_cad_primitives(data: Any, path: str = "") -> list[str]:
     violations: list[str] = []
     if isinstance(data, dict):
         for k, v in data.items():
             current_path = f"{path}.{k}" if path else k
+            if k == "shape" and path.startswith("columns[") and v == "circle":
+                continue  # Schema-defined semantic column shape, not a CAD opcode.
             if isinstance(k, str) and k.upper() in _BANNED_CAD_PRIMITIVES:
                 violations.append(f"cad_primitive_forbidden_key:{k} at {current_path}")
             violations.extend(_scan_for_cad_primitives(v, current_path))
@@ -210,7 +223,9 @@ def _check_chunk_dag(chunk_deps: Sequence[Mapping[str, Any]]) -> list[str]:
     return errors
 
 
-def _validate_architectural_payload(payload: Mapping[str, Any]) -> tuple[list[str], list[str], set[str]]:
+def _validate_architectural_payload(
+    payload: Mapping[str, Any],
+) -> tuple[list[str], list[str], set[str]]:
     errors: list[str] = []
     warnings: list[str] = []
     feature_ids: set[str] = set()
@@ -247,6 +262,10 @@ def _validate_architectural_payload(payload: Mapping[str, Any]) -> tuple[list[st
         cid = col.get("column_id")
         if cid:
             feature_ids.add(cid)
+        dimensions = col.get("dimensions", [])
+        required = 1 if col.get("shape") == "circle" else 2
+        if len(dimensions) != required:
+            errors.append(f"column_dimensions_mismatch:{cid}")
 
     # 4. Openings
     for op in payload.get("openings", []):
@@ -262,14 +281,18 @@ def _validate_architectural_payload(payload: Mapping[str, Any]) -> tuple[list[st
                 offset = op.get("offset_along_wall", 0.0)
                 width = op.get("width", 0.0)
                 if offset + width > wall_len + 1e-4:
-                    errors.append(f"opening_exceeds_host_wall_length:{oid}({offset+width}>{wall_len})")
-                
+                    errors.append(
+                        f"opening_exceeds_host_wall_length:{oid}({offset + width}>{wall_len})"
+                    )
+
                 wall_height = host_wall.get("height")
                 if wall_height is not None:
                     sill = op.get("sill_height", 0.0)
                     height = op.get("height", 0.0)
                     if sill + height > wall_height + 1e-4:
-                        errors.append(f"opening_head_exceeds_wall_height:{oid}({sill+height}>{wall_height})")
+                        errors.append(
+                            f"opening_head_exceeds_wall_height:{oid}({sill + height}>{wall_height})"
+                        )
 
     # 5. Spaces
     for sp in payload.get("spaces", []):
@@ -306,7 +329,9 @@ def _validate_architectural_payload(payload: Mapping[str, Any]) -> tuple[list[st
     return errors, warnings, feature_ids
 
 
-def _validate_civil_road_profile(payload: Mapping[str, Any]) -> tuple[list[str], list[str], set[str]]:
+def _validate_civil_road_profile(
+    payload: Mapping[str, Any],
+) -> tuple[list[str], list[str], set[str]]:
     errors: list[str] = []
     warnings: list[str] = []
     feature_ids: set[str] = set()
@@ -339,13 +364,15 @@ def _validate_civil_road_profile(payload: Mapping[str, Any]) -> tuple[list[str],
         if gout is not None and abs(gout) > 20.0:
             warnings.append(f"steep_grade_out_percent:{idx}({gout}%)")
 
-    for idx, cr in enumerate(payload.get("crossings", [])):
+    for idx, _cr in enumerate(payload.get("crossings", [])):
         feature_ids.add(f"crossing_{idx}")
 
     return errors, warnings, feature_ids
 
 
-def _validate_civil_road_cross_section(payload: Mapping[str, Any]) -> tuple[list[str], list[str], set[str]]:
+def _validate_civil_road_cross_section(
+    payload: Mapping[str, Any],
+) -> tuple[list[str], list[str], set[str]]:
     errors: list[str] = []
     warnings: list[str] = []
     feature_ids: set[str] = set()
@@ -386,8 +413,7 @@ def validate_plan_spec(spec: Mapping[str, Any]) -> PlanSpecValidationResult:
     # 0. Numeric/resource safety before recursive schema or geometric work.
     safety_errors = _input_safety_errors(spec)
     if safety_errors:
-        return PlanSpecValidationResult(valid=False, verdict="REJECTED",
-                                        errors=safety_errors)
+        return PlanSpecValidationResult(valid=False, verdict="REJECTED", errors=safety_errors)
 
     # 1. Schema gate
     schema_errors = list(_VALIDATOR.iter_errors(spec))
@@ -408,8 +434,7 @@ def validate_plan_spec(spec: Mapping[str, Any]) -> PlanSpecValidationResult:
     if spec.get("plan_type") == "architectural_floor_plan":
         budget_errors = _architectural_review_budget_errors(spec["payload"])
         if budget_errors:
-            return PlanSpecValidationResult(valid=False, verdict="REJECTED",
-                                            errors=budget_errors)
+            return PlanSpecValidationResult(valid=False, verdict="REJECTED", errors=budget_errors)
 
     # 2. Gate CAD Primitive Ban
     cad_primitive_violations = _scan_for_cad_primitives(spec.get("payload", {}))

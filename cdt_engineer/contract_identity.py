@@ -1,6 +1,7 @@
 """Public contract identity for the CDT_Engineer MCP provider.
-Wing: code | Topic: mcp-provider | Updated: 2026-10-05 17:58 (Asia/Ho_Chi_Minh)
+Wing: code | Topic: mcp-provider | Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh)
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -8,8 +9,8 @@ from importlib import resources
 from pathlib import Path
 
 PROTOCOL_VERSION = "MCP"
-CONTRACT_VERSION = "cdt-engineer-v1-alpha5"
-UPDATED_AT = "2026-10-05 17:58 (Asia/Ho_Chi_Minh)"
+CONTRACT_VERSION = "cdt-engineer-v1-alpha6"
+UPDATED_AT = "2026-10-06 16:03 (Asia/Ho_Chi_Minh)"
 PUBLIC_TOOL_COUNT = 23
 EXECUTION_MODEL = "agent-orchestrated-engineering-os-v1"
 

@@ -15,7 +15,7 @@ This index separates stable public product architecture/contracts from contribut
 
 - [Contract Model](CONTRACTS.md)
 - [Execution Environment Contract](EXECUTION_ENVIRONMENT_CONTRACT.md)
-- [Execution Lifecycle Contract](EXECUTION_LIFECYCLE_CONTRACT.md) — bounded alpha5 ensure/status interface; stop remains fail-closed pending native acceptance.
+- [Execution Lifecycle Contract](EXECUTION_LIFECYCLE_CONTRACT.md) — bounded alpha6 ensure/status interface; stop remains fail-closed pending native acceptance.
 - [Design Basis Contract](DESIGN_BASIS_CONTRACT.md)
 - [Engineering Role Contract](ROLE_CONTRACT.md)
 - [Engineering Skill Contract](ENGINEERING_SKILL_CONTRACT.md)

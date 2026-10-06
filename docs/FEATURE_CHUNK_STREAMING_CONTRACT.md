@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_CONTRACT
 
-Version: 0.1.0 · Updated: 2026-09-12 · Status: Engineering OS execution invariant.
+Version: 0.1.0 · Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh) · Status: Engineering OS execution invariant.
 
 ## 1. Purpose
 
@@ -226,3 +226,25 @@ A mutation-heavy workflow is not production-ready until its benchmark proves:
 6. committed earlier chunks remain traceable;
 7. UI streaming, when enabled, does not change the final engineering result;
 8. the final sealed artifact independently passes domain QA.
+
+## 14. Executable planning and recovery envelope
+
+`execution.plan_compiler` binds the exact PlanSpec revision and normalized planning
+policy, partitions architecture groups by local-plan feature-center cells and
+enforces both feature-count and serialized UTF-8 byte budgets. It preserves whole
+features, source provenance and a sequential dependency DAG; conservative spatial
+bounds are inspection/recovery scopes, not proof that neighboring chunks may run
+concurrently. Unsupported oversized single features refuse before any chunk is
+released. Civil helpers retain their declared semantic station/section groups.
+
+Receipts preserve plan/policy/chunk fingerprints. Full coverage assessment supplies
+the expected compiled chunks and blocks stale bindings, omitted/duplicate receipts
+and dependent receipts preceding verified predecessors. A provenance-only check
+without the expected plan remains narrower than execution completion.
+
+`execution.chunk_recovery` never interprets a failed receipt as verified rollback.
+It observes state before retry, adopts only an exact expected state, compensates
+partial state and verifies absence, or blocks when observation/recovery is missing.
+Partial-state cleanup is attempted even when the retry budget is exhausted; no
+additional execution is admitted beyond that budget. Malformed receipt completion
+is uncertain. State fingerprints reject nonfinite/non-JSON properties.

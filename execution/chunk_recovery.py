@@ -1,12 +1,14 @@
 """Forced-uncertainty chunk recovery with fingerprint reconciliation (ENG-R05).
-Wing: code | Topic: chunk-recovery | Updated: 2026-09-18 02:10
+Wing: code | Topic: chunk-recovery | Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh)
 """
+
 from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any
 
 _DECISIONS = {"committed", "adopted", "retry", "verify_first", "compensate", "blocked"}
 
@@ -24,15 +26,18 @@ def chunk_to_recovery_params(chunk: Mapping[str, Any]) -> dict[str, Any]:
     chunk_id = chunk.get("chunk_id", "?")
     feature_ids = chunk.get("feature_ids")
     features = chunk.get("features")
-    if isinstance(feature_ids, (str, bytes)) or not isinstance(feature_ids, Sequence) \
-            or not feature_ids:
+    if (
+        isinstance(feature_ids, (str, bytes))
+        or not isinstance(feature_ids, Sequence)
+        or not feature_ids
+    ):
         raise ValueError(f"{chunk_id}: chunk.feature_ids must be a non-empty sequence")
     if isinstance(features, (str, bytes)) or not isinstance(features, Sequence):
         raise ValueError(f"{chunk_id}: chunk.features must be a sequence")
     if len(feature_ids) != len(features):
         raise ValueError(f"{chunk_id}: feature_ids/features length mismatch")
     params: dict[str, Any] = {}
-    for fid, feat in zip(feature_ids, features):
+    for fid, feat in zip(feature_ids, features, strict=True):
         if not isinstance(fid, str) or not fid:
             raise ValueError(f"{chunk_id}: feature ids must be non-empty strings")
         if not isinstance(feat, Mapping):
@@ -54,8 +59,12 @@ def fingerprint_state(state: Mapping[str, Any]) -> str:
     """
     if not isinstance(state, Mapping):
         raise ValueError("state must be a mapping")
-    canonical = json.dumps({fid: state[fid] for fid in sorted(state)},
-                           sort_keys=True, separators=(",", ":"), default=str)
+    canonical = json.dumps(
+        {fid: state[fid] for fid in sorted(state)},
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    )
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
@@ -67,9 +76,15 @@ def _expected_fingerprint(chunk: Mapping[str, Any]) -> tuple[str, list[str]]:
     return fingerprint_state(dict(params)), ids
 
 
-def reconcile(expected_fingerprint: str, expected_ids: Sequence[str],
-              observed: Mapping[str, Any] | None, *, last_outcome: str,
-              attempts_used: int, max_attempts: int) -> dict[str, Any]:
+def reconcile(
+    expected_fingerprint: str,
+    expected_ids: Sequence[str],
+    observed: Mapping[str, Any] | None,
+    *,
+    last_outcome: str,
+    attempts_used: int,
+    max_attempts: int,
+) -> dict[str, Any]:
     """Pure reconcile decision: observation evidence first, never blind replay.
 
     Decisions: committed | adopted | retry | verify_first | compensate | blocked.
@@ -91,25 +106,21 @@ def reconcile(expected_fingerprint: str, expected_ids: Sequence[str],
             return _blocked(["identity_set_mismatch:receipt_claims_committed"])
         return {"decision": "committed", "reasons": []}
 
-    if last_outcome == "failed":
-        if attempts_used >= max_attempts:
-            return _blocked(["attempt_budget_exhausted"])
-        return {"decision": "retry", "reasons": ["explicit_failure_with_budget_remaining"]}
-
-    # last_outcome == "uncertain": transport lost the receipt; the mutation
-    # may have committed. Observation decides; replay is never the default.
+    # Both failure and uncertainty can follow partial side effects. A failed
+    # receipt is not proof of absence or verified rollback.
     if observed is None:
-        return {"decision": "verify_first",
-                "reasons": ["verify_first_no_observation"]}
-    if fingerprint_state(observed) == expected_fingerprint \
-            and sorted(observed) == sorted(expected_ids):
+        return {"decision": "verify_first", "reasons": ["verify_first_no_observation"]}
+    if fingerprint_state(observed) == expected_fingerprint and sorted(observed) == sorted(
+        expected_ids
+    ):
         return {"decision": "adopted", "reasons": ["adopted_without_replay"]}
     observed_ids = set(observed)
-    if observed_ids and observed_ids < set(expected_ids):
+    if not observed_ids:
         if attempts_used >= max_attempts:
-            return _blocked(["partial_state_without_retry_budget"])
-        return {"decision": "compensate",
-                "reasons": ["partial_state_compensate_before_retry"]}
+            return _blocked(["attempt_budget_exhausted"])
+        return {"decision": "retry", "reasons": ["absence_verified_before_retry"]}
+    if observed_ids and observed_ids < set(expected_ids):
+        return {"decision": "compensate", "reasons": ["partial_state_compensate_before_retry"]}
     return _blocked(["fingerprint_mismatch:uncertain_state_unreconcilable"])
 
 
@@ -122,9 +133,13 @@ class ChunkExecutionRecord:
     observed_fingerprint: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {"chunk_id": self.chunk_id, "final": self.final,
-                "attempts": self.attempts, "decisions": list(self.decisions),
-                "observed_fingerprint": self.observed_fingerprint}
+        return {
+            "chunk_id": self.chunk_id,
+            "final": self.final,
+            "attempts": self.attempts,
+            "decisions": list(self.decisions),
+            "observed_fingerprint": self.observed_fingerprint,
+        }
 
 
 class _UncertainTransport(Exception):
@@ -136,12 +151,15 @@ class _UncertainTransport(Exception):
     """
 
 
-def execute_chunk_with_recovery(chunk: Mapping[str, Any],
-                                execute: Callable[..., Any],
-                                observe: Callable[[str], Mapping[str, Any] | None],
-                                compensate: Callable[[str], Any],
-                                *, max_attempts: int = 3,
-                                idempotency_key: str | None = None) -> ChunkExecutionRecord:
+def execute_chunk_with_recovery(
+    chunk: Mapping[str, Any],
+    execute: Callable[..., Any],
+    observe: Callable[[str], Mapping[str, Any] | None],
+    compensate: Callable[[str], Any],
+    *,
+    max_attempts: int = 3,
+    idempotency_key: str | None = None,
+) -> ChunkExecutionRecord:
     """Execute one chunk with forced-uncertainty reconciliation.
 
     - `execute(chunk, idempotency_key)` returns {"outcome", "state"} or raises
@@ -163,10 +181,14 @@ def execute_chunk_with_recovery(chunk: Mapping[str, Any],
     chunk_id = chunk.get("chunk_id")
     if not isinstance(chunk_id, str) or not chunk_id:
         raise ValueError("chunk.chunk_id must be a non-empty string")
-    if max_attempts < 1:
+    if isinstance(max_attempts, bool) or not isinstance(max_attempts, int) or max_attempts < 1:
         raise ValueError("max_attempts must be positive")
     expected_fp, expected_ids = _expected_fingerprint(chunk)
-    key = idempotency_key or f"{chunk_id}:attempt-1"
+    if idempotency_key is not None and (
+        not isinstance(idempotency_key, str) or not idempotency_key
+    ):
+        raise ValueError("idempotency_key must be a non-empty string")
+    key = idempotency_key or f"{chunk_id}:{expected_fp}:attempt-1"
 
     decisions: list[str] = []
     attempts = 0
@@ -176,30 +198,97 @@ def execute_chunk_with_recovery(chunk: Mapping[str, Any],
             receipt = execute(chunk, key)
         except Exception:
             outcome, observed = "uncertain", _safe_observe(observe, chunk_id)
-            verdict = reconcile(expected_fp, expected_ids, observed,
-                                last_outcome=outcome, attempts_used=attempts,
-                                max_attempts=max_attempts)
-            return _settle(chunk_id, attempts, decisions, verdict, observed,
-                           compensate, observe, execute, chunk, key,
-                           expected_fp, expected_ids, max_attempts)
-        if not isinstance(receipt, Mapping) or receipt.get("outcome") not in \
-                {"committed", "failed"}:
-            raise ValueError(f"{chunk_id}: executor must return committed/failed outcome")
+            verdict = reconcile(
+                expected_fp,
+                expected_ids,
+                observed,
+                last_outcome=outcome,
+                attempts_used=attempts,
+                max_attempts=max_attempts,
+            )
+            return _settle(
+                chunk_id,
+                attempts,
+                decisions,
+                verdict,
+                observed,
+                compensate,
+                observe,
+                execute,
+                chunk,
+                key,
+                expected_fp,
+                expected_ids,
+                max_attempts,
+            )
+        if not isinstance(receipt, Mapping) or receipt.get("outcome") not in {
+            "committed",
+            "failed",
+        }:
+            observed = _safe_observe(observe, chunk_id)
+            verdict = reconcile(
+                expected_fp,
+                expected_ids,
+                observed,
+                last_outcome="uncertain",
+                attempts_used=attempts,
+                max_attempts=max_attempts,
+            )
+            decisions.append("malformed_receipt_completion_uncertain")
+            return _settle(
+                chunk_id,
+                attempts,
+                decisions,
+                verdict,
+                observed,
+                compensate,
+                observe,
+                execute,
+                chunk,
+                key,
+                expected_fp,
+                expected_ids,
+                max_attempts,
+            )
         if receipt["outcome"] == "failed":
-            verdict = reconcile(expected_fp, expected_ids, None,
-                                last_outcome="failed", attempts_used=attempts,
-                                max_attempts=max_attempts)
+            observed = _safe_observe(observe, chunk_id)
+            verdict = reconcile(
+                expected_fp,
+                expected_ids,
+                observed,
+                last_outcome="failed",
+                attempts_used=attempts,
+                max_attempts=max_attempts,
+            )
             if verdict["decision"] == "retry":
-                decisions.append(f"retry_after_explicit_failure:attempt_{attempts}")
+                decisions.append(f"retry_after_verified_absence:attempt_{attempts}")
                 continue
-            decisions.extend(verdict["reasons"])
-            return ChunkExecutionRecord(chunk_id, "blocked", attempts, decisions, None)
+            return _settle(
+                chunk_id,
+                attempts,
+                decisions,
+                verdict,
+                observed,
+                compensate,
+                observe,
+                execute,
+                chunk,
+                key,
+                expected_fp,
+                expected_ids,
+                max_attempts,
+            )
         # IA-01: the receipt state is a producer claim. Verification evidence
         # comes only from the independent observer; a blind observer blocks.
         observed = _safe_observe(observe, chunk_id)
-        verdict = reconcile(expected_fp, expected_ids, observed,
-                            last_outcome="committed", attempts_used=attempts,
-                            max_attempts=max_attempts)
+        verdict = reconcile(
+            expected_fp,
+            expected_ids,
+            observed,
+            last_outcome="committed",
+            attempts_used=attempts,
+            max_attempts=max_attempts,
+        )
         if verdict["decision"] == "committed":
             decisions.append(f"committed_verified_by_observation:attempt_{attempts}")
             fp = fingerprint_state(observed) if observed is not None else None
@@ -217,11 +306,21 @@ def _safe_observe(observe: Callable[[str], Any], chunk_id: str) -> Mapping[str, 
     return observed if observed is None or isinstance(observed, Mapping) else None
 
 
-def _settle(chunk_id: str, attempts: int, decisions: list[str], verdict: dict[str, Any],
-            observed: Mapping[str, Any] | None, compensate: Callable[[str], Any],
-            observe: Callable[[str], Any], execute: Callable[..., Any],
-            chunk: Mapping[str, Any], key: str,
-            expected_fp: str, expected_ids: list[str], max_attempts: int) -> ChunkExecutionRecord:
+def _settle(
+    chunk_id: str,
+    attempts: int,
+    decisions: list[str],
+    verdict: dict[str, Any],
+    observed: Mapping[str, Any] | None,
+    compensate: Callable[[str], Any],
+    observe: Callable[[str], Any],
+    execute: Callable[..., Any],
+    chunk: Mapping[str, Any],
+    key: str,
+    expected_fp: str,
+    expected_ids: list[str],
+    max_attempts: int,
+) -> ChunkExecutionRecord:
     decision = verdict["decision"]
     if decision == "adopted":
         decisions.append("adopted_without_replay")
@@ -257,19 +356,37 @@ def _settle(chunk_id: str, attempts: int, decisions: list[str], verdict: dict[st
             fp = fingerprint_state(recovered)
             return ChunkExecutionRecord(chunk_id, "blocked", attempts, decisions, fp)
         decisions.append("compensated_partial_state")
-        return _retry_after_compensation(chunk_id, attempts, decisions, execute, observe,
-                                         compensate, chunk, key, expected_fp,
-                                         expected_ids, max_attempts)
+        return _retry_after_compensation(
+            chunk_id,
+            attempts,
+            decisions,
+            execute,
+            observe,
+            compensate,
+            chunk,
+            key,
+            expected_fp,
+            expected_ids,
+            max_attempts,
+        )
     decisions.extend(verdict["reasons"])
     fp = fingerprint_state(observed) if observed is not None else None
     return ChunkExecutionRecord(chunk_id, "blocked", attempts, decisions, fp)
 
 
-def _retry_after_compensation(chunk_id: str, attempts: int, decisions: list[str],
-                              execute: Callable[..., Any], observe: Callable[[str], Any],
-                              compensate: Callable[[str], Any], chunk: Mapping[str, Any],
-                              key: str, expected_fp: str, expected_ids: list[str],
-                              max_attempts: int) -> ChunkExecutionRecord:
+def _retry_after_compensation(
+    chunk_id: str,
+    attempts: int,
+    decisions: list[str],
+    execute: Callable[..., Any],
+    observe: Callable[[str], Any],
+    compensate: Callable[[str], Any],
+    chunk: Mapping[str, Any],
+    key: str,
+    expected_fp: str,
+    expected_ids: list[str],
+    max_attempts: int,
+) -> ChunkExecutionRecord:
     if attempts >= max_attempts:
         decisions.append("attempt_budget_exhausted")
         return ChunkExecutionRecord(chunk_id, "blocked", attempts, decisions, None)
@@ -278,9 +395,14 @@ def _retry_after_compensation(chunk_id: str, attempts: int, decisions: list[str]
         receipt = execute(chunk, key)
     except Exception:
         observed = _safe_observe(observe, chunk_id)
-        verdict = reconcile(expected_fp, expected_ids, observed,
-                            last_outcome="uncertain", attempts_used=attempts,
-                            max_attempts=max_attempts)
+        verdict = reconcile(
+            expected_fp,
+            expected_ids,
+            observed,
+            last_outcome="uncertain",
+            attempts_used=attempts,
+            max_attempts=max_attempts,
+        )
         if verdict["decision"] == "adopted":
             decisions.append("adopted_without_replay")
             fp = fingerprint_state(observed) if observed is not None else None
@@ -293,9 +415,14 @@ def _retry_after_compensation(chunk_id: str, attempts: int, decisions: list[str]
         return ChunkExecutionRecord(chunk_id, "blocked", attempts, decisions, None)
     # IA-01 applies after compensation as well: verify via observer.
     observed = _safe_observe(observe, chunk_id)
-    verdict = reconcile(expected_fp, expected_ids, observed,
-                        last_outcome="committed", attempts_used=attempts,
-                        max_attempts=max_attempts)
+    verdict = reconcile(
+        expected_fp,
+        expected_ids,
+        observed,
+        last_outcome="committed",
+        attempts_used=attempts,
+        max_attempts=max_attempts,
+    )
     if verdict["decision"] == "committed":
         decisions.append(f"committed_verified_by_observation:attempt_{attempts}")
         fp = fingerprint_state(observed) if observed is not None else None

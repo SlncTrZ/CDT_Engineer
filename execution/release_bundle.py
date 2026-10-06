@@ -1,11 +1,14 @@
 """Final release-bundle machine gate for CDT_Engineer.
-Wing: code | Topic: release-bundle | Updated: 2026-09-19
+Wing: code | Topic: release-bundle | Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh)
 """
+
 from __future__ import annotations
 
 import re
 from collections.abc import Mapping, Sequence
 from typing import Any
+
+from execution.plan_revise import plan_fingerprint
 
 _SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
 _REQUIRED_VERSION_BINDINGS = (
@@ -54,6 +57,9 @@ def assess_release_bundle(
     current_source_hashes: Mapping[str, str],
     current_artifact_hashes: Mapping[str, str],
     current_runtime_identity: Mapping[str, str],
+    evidence_records: Mapping[str, Mapping[str, Any]] | None = None,
+    current_engineer_identity: Mapping[str, str] | None = None,
+    current_design_basis_revision: str | None = None,
 ) -> dict[str, Any]:
     """Fail closed unless final release evidence is exact, current and independently verified.
 
@@ -67,10 +73,66 @@ def assess_release_bundle(
     current_runtime = _mapping(current_runtime_identity, "current_runtime_identity")
 
     run_id = _text(bundle.get("run_id"), "run_id")
-    design_basis_revision = _text(
-        bundle.get("design_basis_revision"), "design_basis_revision"
-    )
+    design_basis_revision = _text(bundle.get("design_basis_revision"), "design_basis_revision")
     reasons: list[str] = []
+    if current_design_basis_revision != design_basis_revision:
+        reasons.append("current_design_basis_revision_missing_or_stale")
+    engineer_identity = _mapping(current_engineer_identity or {}, "current_engineer_identity")
+    records = _mapping(evidence_records or {}, "evidence_records")
+    scope = bundle.get("verification_scope", "native_application")
+    if scope not in {"native_application", "offline_contract_test"}:
+        raise ValueError("unsupported verification_scope")
+    producer_id = bundle.get("producer_id")
+    if not isinstance(producer_id, str) or not producer_id.strip():
+        reasons.append("producer_identity_missing")
+
+    def resolve_record(digest, kind, *, artifact_id=None, case_id=None, recovery_class=None):
+        if digest is None:
+            reasons.append(
+                f"evidence_reference_missing:{kind}:{artifact_id or case_id or 'checker'}"
+            )
+            return None
+        digest = _sha(digest, f"{kind}.evidence_sha256")
+        raw = records.get(digest)
+        if raw is None:
+            reasons.append(f"evidence_record_missing:{kind}:{digest}")
+            return None
+        record = _mapping(raw, f"evidence_records.{digest}")
+        if plan_fingerprint(record) != digest:
+            reasons.append(f"evidence_record_hash_mismatch:{kind}:{digest}")
+        for key, expected in (
+            ("kind", kind),
+            ("run_id", run_id),
+            ("design_basis_revision", design_basis_revision),
+            ("version_bindings", dict(bundle.get("version_bindings", {}))),
+            ("verification_scope", scope),
+            ("result", "pass"),
+            ("source_hashes", dict(current_sources)),
+            ("runtime_identity", dict(current_runtime)),
+        ):
+            if record.get(key) != expected:
+                reasons.append(f"evidence_record_binding_mismatch:{kind}:{key}")
+        method = record.get("method")
+        measurements = record.get("measurements")
+        if (
+            not isinstance(method, str)
+            or not method.strip()
+            or not isinstance(measurements, Mapping)
+            or not measurements
+        ):
+            reasons.append(f"evidence_measurement_missing:{kind}")
+        bindings = record.get("artifact_bindings")
+        if not isinstance(bindings, Mapping) or not bindings:
+            reasons.append(f"evidence_artifact_bindings_missing:{kind}")
+        else:
+            required_ids = [artifact_id] if artifact_id is not None else list(current_artifacts)
+            for aid in required_ids:
+                if aid not in bindings or bindings[aid] != current_artifacts.get(aid):
+                    reasons.append(f"evidence_artifact_binding_mismatch:{kind}:{aid}")
+        for key, expected in (("case_id", case_id), ("recovery_class", recovery_class)):
+            if expected is not None and record.get(key) != expected:
+                reasons.append(f"evidence_record_binding_mismatch:{kind}:{key}")
+        return record
 
     sources = _sequence(bundle.get("source_hashes"), "source_hashes")
     if not sources:
@@ -100,6 +162,10 @@ def assess_release_bundle(
         value = versions.get(key)
         if not isinstance(value, str) or not value.strip():
             reasons.append(f"version_binding_missing:{key}")
+        if key not in engineer_identity:
+            reasons.append(f"current_engineer_binding_missing:{key}")
+        elif engineer_identity[key] != value:
+            reasons.append(f"engineer_binding_mismatch:{key}")
     wheel_hash = versions.get("engineer_wheel_sha256")
     if isinstance(wheel_hash, str) and wheel_hash:
         _sha(wheel_hash, "version_bindings.engineer_wheel_sha256")
@@ -151,6 +217,8 @@ def assess_release_bundle(
             raise ValueError(f"{artifact_id}.sealed must be bool")
         if not sealed:
             reasons.append(f"artifact_not_sealed:{artifact_id}")
+        resolve_record(artifact.get("reopen_evidence_sha256"), "reopen", artifact_id=artifact_id)
+        resolve_record(artifact.get("seal_evidence_sha256"), "seal", artifact_id=artifact_id)
 
     checker = _mapping(bundle.get("checker_evidence"), "checker_evidence")
     if checker.get("verdict") != "PASS_FOR_DECLARED_SCOPE":
@@ -164,6 +232,13 @@ def assess_release_bundle(
     checker_evidence_sha256 = _sha(
         checker.get("evidence_sha256"), "checker_evidence.evidence_sha256"
     )
+    checker_record = resolve_record(checker_evidence_sha256, "checker")
+    if checker_record is not None:
+        checker_id = checker_record.get("reviewer_id")
+        if not isinstance(checker_id, str) or not checker_id.strip() or checker_id == producer_id:
+            reasons.append("checker_identity_not_independent")
+        if checker_record.get("reviewer_role") != checker.get("reviewer_role"):
+            reasons.append("checker_role_binding_mismatch")
     checker_bindings = _mapping(
         checker.get("artifact_bindings"), "checker_evidence.artifact_bindings"
     )
@@ -199,11 +274,10 @@ def assess_release_bundle(
         if case_id in seen_cases:
             raise ValueError(f"duplicate recovery case_id: {case_id}")
         seen_cases.add(case_id)
-        recovery_class = _text(
-            evidence.get("recovery_class"), f"{case_id}.recovery_class"
-        )
+        recovery_class = _text(evidence.get("recovery_class"), f"{case_id}.recovery_class")
         result = _text(evidence.get("result"), f"{case_id}.result")
-        _sha(evidence.get("evidence_sha256"), f"{case_id}.evidence_sha256")
+        digest = _sha(evidence.get("evidence_sha256"), f"{case_id}.evidence_sha256")
+        resolve_record(digest, "recovery", case_id=case_id, recovery_class=recovery_class)
         evidence_by_class.setdefault(recovery_class, []).append(evidence)
         if recovery_class in required_classes and result != "pass":
             reasons.append(f"recovery_case_not_pass:{recovery_class}")
@@ -219,6 +293,7 @@ def assess_release_bundle(
         "result": "blocked" if reasons else "pass",
         "run_id": run_id,
         "design_basis_revision": design_basis_revision,
+        "verification_scope": scope,
         "source_ids": source_ids,
         "artifact_ids": artifact_ids,
         "checker_evidence_sha256": checker_evidence_sha256,

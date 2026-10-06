@@ -1,9 +1,11 @@
 """Tests for forced-uncertainty chunk recovery (ENG-R05).
-Wing: code | Topic: chunk-recovery | Updated: 2026-09-18 02:00
+Wing: code | Topic: chunk-recovery | Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh)
 """
+
 from __future__ import annotations
 
 import unittest
+
 from execution.chunk_recovery import (
     execute_chunk_with_recovery,
     fingerprint_state,
@@ -76,8 +78,12 @@ class _ScriptedExecutor:
 
 def _chunk(chunk_id="plan:wall_shell:01"):
     params = {"wall_w1": {"length": 5000.0}, "wall_w2": {"length": 4000.0}}
-    return {"chunk_id": chunk_id, "semantic_type": "wall_shell",
-            "feature_ids": ["wall_w1", "wall_w2"], "semantic_params": params}
+    return {
+        "chunk_id": chunk_id,
+        "semantic_type": "wall_shell",
+        "feature_ids": ["wall_w1", "wall_w2"],
+        "semantic_params": params,
+    }
 
 
 class TestChunkRecovery(unittest.TestCase):
@@ -122,8 +128,9 @@ class TestChunkRecovery(unittest.TestCase):
 
     def test_attempts_exhausted_blocks(self):
         ex = _ScriptedExecutor({"plan:wall_shell:01": ["fail", "fail", "fail", "fail"]})
-        record = execute_chunk_with_recovery(_chunk(), ex.execute, ex.observe, ex.compensate,
-                                             max_attempts=3)
+        record = execute_chunk_with_recovery(
+            _chunk(), ex.execute, ex.observe, ex.compensate, max_attempts=3
+        )
         self.assertEqual(record.final, "blocked")
         self.assertEqual(record.attempts, 3)
         self.assertIn("attempt_budget_exhausted", record.decisions)
@@ -133,8 +140,14 @@ class TestChunkRecovery(unittest.TestCase):
         # A count-only check would PASS; fingerprint comparison must BLOCK.
         expected_fp = fingerprint_state(dict(_chunk()["semantic_params"]))
         observed = {"impostor_0": {"params": "wrong"}, "impostor_1": {"params": "wrong"}}
-        decision = reconcile(expected_fp, ["wall_w1", "wall_w2"], observed,
-                             last_outcome="committed", attempts_used=1, max_attempts=3)
+        decision = reconcile(
+            expected_fp,
+            ["wall_w1", "wall_w2"],
+            observed,
+            last_outcome="committed",
+            attempts_used=1,
+            max_attempts=3,
+        )
         self.assertEqual(decision["decision"], "blocked")
         self.assertTrue(any("fingerprint_mismatch" in r for r in decision["reasons"]))
         self.assertEqual(len(observed), 2)  # counts match: proof count-only is insufficient
@@ -158,7 +171,6 @@ class TestChunkRecovery(unittest.TestCase):
         # observation shows empty: the receipt must not become a commit.
         ex = _ScriptedExecutor({"plan:wall_shell:01": ["success"]})
         calls = []
-        inner = ex.observe
         ex.observe = lambda cid: calls.append(cid) or {}
         record = execute_chunk_with_recovery(_chunk(), ex.execute, ex.observe, ex.compensate)
         self.assertEqual(record.final, "blocked")
@@ -167,12 +179,15 @@ class TestChunkRecovery(unittest.TestCase):
 
     def test_ia01_committed_receipt_with_blind_observer_blocks(self):
         ex = _ScriptedExecutor({"plan:wall_shell:01": ["success"]})
+
         def _blind(_cid):
             raise RuntimeError("observer down")
+
         record = execute_chunk_with_recovery(_chunk(), ex.execute, _blind, ex.compensate)
         self.assertEqual(record.final, "blocked")
-        self.assertTrue(any("committed_receipt_without_observable_state" in d
-                            for d in record.decisions))
+        self.assertTrue(
+            any("committed_receipt_without_observable_state" in d for d in record.decisions)
+        )
 
     def test_ia02_compensation_noop_blocks_without_second_execute(self):
         ex = _ScriptedExecutor({"plan:wall_shell:01": ["partial", "success"]})
@@ -207,9 +222,15 @@ class TestChunkRecovery(unittest.TestCase):
             with self.subTest(observation=value):
                 ex = _ScriptedExecutor({"plan:wall_shell:01": ["partial", "success"]})
                 reads = {"n": 0}
-                def observe(cid):
-                    reads["n"] += 1
-                    return dict(ex.state_store[cid]) if reads["n"] == 1 else value
+
+                def observe(cid, read_counter=reads, executor=ex, observed_value=value):
+                    read_counter["n"] += 1
+                    return (
+                        dict(executor.state_store[cid])
+                        if read_counter["n"] == 1
+                        else observed_value
+                    )
+
                 ex.compensate = lambda cid: False
                 record = execute_chunk_with_recovery(_chunk(), ex.execute, observe, ex.compensate)
                 self.assertEqual(record.final, "blocked")
@@ -218,8 +239,10 @@ class TestChunkRecovery(unittest.TestCase):
 
     def test_ia02_compensation_exception_blocks(self):
         ex = _ScriptedExecutor({"plan:wall_shell:01": ["partial", "success"]})
+
         def _boom(_cid):
             raise RuntimeError("compensator down")
+
         ex.compensate = _boom
         record = execute_chunk_with_recovery(_chunk(), ex.execute, ex.observe, ex.compensate)
         self.assertEqual(record.final, "blocked")
@@ -229,19 +252,25 @@ class TestChunkRecovery(unittest.TestCase):
     def test_reconcile_pure_function_matrix(self):
         fp = fingerprint_state({"a": {"x": 1}})
         # Uncertain + full match -> adopt, no replay.
-        d = reconcile(fp, ["a"], {"a": {"x": 1}}, last_outcome="uncertain",
-                      attempts_used=1, max_attempts=3)
+        d = reconcile(
+            fp, ["a"], {"a": {"x": 1}}, last_outcome="uncertain", attempts_used=1, max_attempts=3
+        )
         self.assertEqual(d["decision"], "adopted")
         # Uncertain + partial -> compensate, never blind replay.
-        d = reconcile(fp, ["a", "b"], {"a": {"x": 1}}, last_outcome="uncertain",
-                      attempts_used=1, max_attempts=3)
+        d = reconcile(
+            fp,
+            ["a", "b"],
+            {"a": {"x": 1}},
+            last_outcome="uncertain",
+            attempts_used=1,
+            max_attempts=3,
+        )
         self.assertEqual(d["decision"], "compensate")
         # Uncertain + no observation -> verify first.
-        d = reconcile(fp, ["a"], None, last_outcome="uncertain",
-                      attempts_used=1, max_attempts=3)
+        d = reconcile(fp, ["a"], None, last_outcome="uncertain", attempts_used=1, max_attempts=3)
         self.assertEqual(d["decision"], "verify_first")
-        # Failed pre-mutation with budget -> retry.
-        d = reconcile(fp, ["a"], None, last_outcome="failed", attempts_used=1, max_attempts=3)
+        # Failed receipt needs observed absence before retry.
+        d = reconcile(fp, ["a"], {}, last_outcome="failed", attempts_used=1, max_attempts=3)
         self.assertEqual(d["decision"], "retry")
 
 

@@ -1,7 +1,7 @@
 # CDT_Engineer MCP Tool Guide
 
 > Documentation class: PUBLIC_INTEGRATION
-> Provider contract: `cdt-engineer-v1-alpha5` · Updated: 2026-10-05 17:58 (Asia/Ho_Chi_Minh)
+> Provider contract: `cdt-engineer-v1-alpha6` · Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh)
 
 ## Purpose
 
@@ -83,6 +83,28 @@ This tool is intentionally pair-specific. It does not establish a universal cros
 
 The tool validates caller-supplied current observations; it does not discover or mutate executor/runtime state itself.
 
+Alpha6 adds the optional `evidence_records` argument, a content-addressed mapping
+from lowercase SHA-256 to the complete immutable record. Omitting records keeps
+release blocked; legacy boolean/hash-only bundles do not gain a weaker PASS.
+The independently supplied `current_engineer_identity` contains the current domain,
+workflow, Engineer source/provider/contract and wheel bindings; the bundle must
+match all six. `current_design_basis_revision` must match the frozen basis. Omitting
+these current-context arguments or changing a binding blocks rather than trusts
+the bundle's own claim of freshness.
+Each required Checker, artifact reopen, artifact seal and recovery reference must
+resolve, its canonical UTF-8 JSON hash must match, and its kind/run/Design Basis/
+version/source/runtime/artifact bindings must match current observations. Records
+include `result`, non-empty `method` and `measurements`. Checker records additionally
+bind `reviewer_id` and `reviewer_role`; the reviewer ID must differ from the bundle's
+`producer_id`. Recovery records bind the exact `case_id` and `recovery_class`.
+
+The bundle and records explicitly declare `verification_scope` as
+`native_application` or `offline_contract_test`. These scopes cannot be mixed.
+An offline gate PASS is returned with its offline scope and is never application
+acceptance. Record hash verification proves content and binding integrity, not the
+truth of measurements or cryptographic reviewer authentication; the caller must
+collect trusted independent observations. Synthetic fixtures belong only to tests.
+
 These tools do not execute CAD or mutate project artifacts. They evaluate evidence supplied by the Agent after independent executor read-back and after known source/model/artifact changes.
 
 ## Boundary with Generic CAD Executors
@@ -120,10 +142,35 @@ unverified source requirements refuse before CAD execution. Fixtures require a h
 explicit rectangular envelope; calibration outputs canonical millimetres.
 Compiled chunks carry source/inventory SHA-256 bindings for downstream verification.
 
+Review also blocks plan-view column/opening and fixture/fixture overlaps before
+compilation. Opening coordinates are mapped from the host wall's local frame;
+rotated rectangular fixtures and circular columns use a narrow geometry check.
+Touching boundaries alone are not an overlap. Non-center wall baselines with
+unresolved opening clash frames refuse rather than assume a physical side. This
+is bounded 2D coordination, not a 3D clash or building-code certificate.
+
+Chunks additionally bind `plan_sha256`, `planning_policy_sha256` and `chunk_sha256`.
+`payload_bytes` is the complete canonical JSON UTF-8 size. Defaults are 256 semantic
+features and 65,536 bytes per chunk; configurable safety bounds are 1..4096 features
+and 1024..1,048,576 bytes. A single feature exceeding the byte budget refuses the
+whole compilation without partial chunks. Architectural groups are partitioned by
+feature-center spatial cells (default 10 metres expressed in plan units), preserving
+whole semantic features and carrying conservative `spatial_bounds`. Callers may set
+positive `spatial_cell_size`. Features crossing cells remain whole; cell assignment
+does not prove disjoint mutation scopes or authorize concurrent execution.
+
+`assess_provenance_release(..., expected_chunks=compiled.chunks)` checks exact
+bindings, complete/unique chunk receipt coverage and verified predecessor ordering.
+Omitting `expected_chunks` retains only the narrower provenance assessment; it is
+not an execution-plan coverage certificate. The recovery helper treats failed and
+malformed receipts as potentially dirty: independent observation must prove a
+commit or absence, or compensation must be verified before retry. The default
+idempotency key includes the expected semantic state fingerprint.
+
 These helpers are not additional advertised MCP tools. The public completeness/QA tools
 still consume independent final artifact evidence; planning approval is not artifact PASS.
 
-## Explicit execution lifecycle — alpha5 pilot
+## Explicit execution lifecycle — alpha6 pilot
 
 The provider exposes 23 tools: 18 existing engineering assessments plus:
 

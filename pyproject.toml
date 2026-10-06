@@ -1,13 +1,13 @@
 [project]
 name = "cdt-engineer-provider"
-version = "0.1.0a5"
+version = "0.1.0a6"
 description = "CDT_Engineer Engineering OS MCP provider for AI agents"
 readme = "README.md"
 authors = [{ name = "Trương Công Định (SlncTrZ)" }]
 keywords = ["engineering", "mcp", "cad", "ai-agents", "qa"]
 requires-python = ">=3.11"
 dependencies = [
-  "fastmcp>=3.4.5,<4",
+  "fastmcp==3.4.8",
   "jsonschema>=4.10,<5",
   "PyYAML>=6.0,<7",
 ]

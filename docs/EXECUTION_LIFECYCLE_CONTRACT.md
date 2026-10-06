@@ -1,7 +1,7 @@
 # Execution Lifecycle Contract
 
 > Documentation class: PUBLIC_CONTRACT
-> Contract: 0.1.0 · Status: bounded alpha5 implementation; broader shutdown/restart contract remains a target.
+> Contract: 0.1.0 · Status: bounded alpha6 implementation; broader shutdown/restart contract remains a target.
 
 ## Scope and ownership
 
@@ -17,9 +17,9 @@ This contract extends Step-0 execution-environment discovery with explicit runti
 
 The lifecycle entrypoint and controller must remain reachable when a requested engine is stopped. Engine registration and controller authority are owner-managed prerequisites; starting an application does not grant authority or register an unknown provider.
 
-## Implemented alpha5 surface
+## Implemented alpha6 surface
 
-CDT_Engineer 0.1.0a5 exposes 23 tools: 18 engineering tools and the five lifecycle tools below. Exact callable schemas are defined in [MCP Tool Guide](TOOL_GUIDE.md). The configured external controller supports only the approved AutoCAD engine; an unconfigured controller returns a typed blocker.
+CDT_Engineer 0.1.0a6 exposes 23 tools: 18 engineering tools and the five lifecycle tools below. Exact callable schemas are defined in [MCP Tool Guide](TOOL_GUIDE.md). The configured external controller supports only the approved AutoCAD engine; an unconfigured controller returns a typed blocker.
 
 execution_ensure(engine, operation_id) requests only application_read_only readiness. It delegates fixed host operations to an external controller, persists sanitized operations, converges concurrent ensures, validates the provider contract and activates the approved read surface through the existing gateway control plane. It accepts no caller-selected host, path, task, executable or required write scope.
 
@@ -35,7 +35,7 @@ execution_stop(engine, operation_id, scope) is callable but fails closed with NA
 | `execution_stop` | Drain and stop an explicitly selected scope |
 | `execution_operation_status` | Observe a long lifecycle operation without keeping one MCP request open |
 
-The broader target contract below is not the alpha5 callable schema. A future ensure request identifies `engine`, configured host, `operation_id`, required capability scope and explicit attach/launch policy. No caller-supplied executable, shell command, task name, arbitrary environment, SSH destination or credential is accepted.
+The broader target contract below is not the alpha6 callable schema. A future ensure request identifies `engine`, configured host, `operation_id`, required capability scope and explicit attach/launch policy. No caller-supplied executable, shell command, task name, arbitrary environment, SSH destination or credential is accepted.
 
 A stop request identifies `engine`, `operation_id`, scope (`provider`, `application`, or `both`) and expected supervisor generation. Save/discard behavior must be explicitly authorized; default behavior refuses to close documents with unsaved changes.
 

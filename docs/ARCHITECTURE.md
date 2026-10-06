@@ -1,7 +1,7 @@
 # CDT_Engineer — Engineering OS Architecture
 
 > Documentation class: PUBLIC_ARCHITECTURE
-> Version: 1.1.0 · Updated: 2026-10-05 18:24 (Asia/Ho_Chi_Minh)
+> Version: 1.1.0 · Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh)
 > Scope: stable public product architecture for the Engineering Operating System / Virtual Engineering Office
 
 ## 1. Product identity
@@ -261,6 +261,17 @@ Do not create a speculative shared Domain SDK. Runtime/code extraction requires 
 
 ## 18. Explicit execution lifecycle extension
 
-The [Execution Lifecycle Contract](EXECUTION_LIFECYCLE_CONTRACT.md) defines the bounded alpha5 lifecycle entrypoint and the broader target contract. The 23-tool provider exposes list/status/ensure/operation-status/stop through a configured external controller; host launch, credentials and process ownership belong to that controller/host supervisor. AutoCAD ensure supports application-level read readiness. Stop returns a typed refusal until ownership-safe drain/shutdown is certified.
+The [Execution Lifecycle Contract](EXECUTION_LIFECYCLE_CONTRACT.md) defines the bounded alpha6 lifecycle entrypoint and the broader target contract. The 23-tool provider exposes list/status/ensure/operation-status/stop through a configured external controller; host launch, credentials and process ownership belong to that controller/host supervisor. AutoCAD ensure supports application-level read readiness. Stop returns a typed refusal until ownership-safe drain/shutdown is certified.
 
 This preserves the existing no-native-proxy boundary: native CAD calls stay explicit in Generic Engine providers. Runtime readiness precedes authorized gateway sync; post-activation readiness and client catalog refresh are separate checks. Lifecycle tooling must remain reachable while a requested engine is stopped. No native runtime import, arbitrary SSH/shell execution tool, or self-granted gateway administration is introduced by this architecture.
+
+## 19. Repository quality and application acceptance
+
+Repository architecture, implemented logic, deployability and maintenance are
+assessed from code, offline contracts/tests and package validation. Integrated
+execution with a CAD engine/application is a separate 0–100 assessment. Neither
+score is averaged into or used as a prerequisite for the other. Architecture
+gates must enforce truthful evidence scope: offline PASS does not promote native
+acceptance, and unavailable native runs do not invalidate a verified repository
+architecture. Professional release still requires its independently declared
+application/domain evidence regardless of repository quality.

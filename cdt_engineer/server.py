@@ -1,6 +1,7 @@
 """FastMCP entrypoint for the CDT_Engineer Engineering OS provider.
-Wing: code | Topic: mcp-provider | Updated: 2026-10-05 17:58 (Asia/Ho_Chi_Minh)
+Wing: code | Topic: mcp-provider | Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh)
 """
+
 from __future__ import annotations
 
 import argparse
@@ -30,7 +31,6 @@ from professional_practice.human_deliverables import assess_human_deliverables
 
 from . import __version__
 from .config import Settings
-from .lifecycle_client import request as lifecycle_request
 from .contract_identity import (
     CONTRACT_VERSION,
     EXECUTION_MODEL,
@@ -40,6 +40,7 @@ from .contract_identity import (
     contract_hash,
     contract_material,
 )
+from .lifecycle_client import request as lifecycle_request
 
 _LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 _HTTP_TRANSPORTS = {"http", "sse", "streamable-http"}
@@ -58,12 +59,11 @@ _ENGINE_MAP_FILES = {
 }
 
 _TOOL_DESCRIPTIONS = {
-    'execution_list': 'List configured execution engines and lifecycle assurance limits.',
-    'execution_status': 'Observe host/application/provider readiness without CAD mutation.',
-    'execution_ensure': 'Ask the authorized controller to ensure AutoCAD and sync its read-only gateway route; returns a durable operation ID.',
-    'execution_stop': 'Request controlled stop; pilot refuses until ownership-safe shutdown is certified.',
-    'execution_operation_status': 'Observe a durable lifecycle operation without replaying an uncertain request.',
-
+    "execution_list": "List configured execution engines and lifecycle assurance limits.",
+    "execution_status": "Observe host/application/provider readiness without CAD mutation.",
+    "execution_ensure": "Ask the authorized controller to ensure AutoCAD and sync its read-only gateway route; returns a durable operation ID.",
+    "execution_stop": "Request controlled stop; pilot refuses until ownership-safe shutdown is certified.",
+    "execution_operation_status": "Observe a durable lifecycle operation without replaying an uncertain request.",
     "help": (
         "Return the current CDT_Engineer provider contract, operating boundary, tool guidance, and "
         "capability summary without mutating engineering or CAD state."
@@ -203,7 +203,11 @@ def _capabilities() -> dict[str, dict[str, Any]]:
         key: {"supported": True, "mode": "deterministic", "reason": description}
         for key, description in supported.items()
     }
-    result["engineering.execution_lifecycle"] = {"supported": True, "mode": "external_controller", "reason": "Explicit lifecycle delegation; pilot is AutoCAD read-only and refuses uncertified stop."}
+    result["engineering.execution_lifecycle"] = {
+        "supported": True,
+        "mode": "external_controller",
+        "reason": "Explicit lifecycle delegation; pilot is AutoCAD read-only and refuses uncertified stop.",
+    }
     result["native.cad_mutation"] = {
         "supported": False,
         "mode": "external_executor_only",
@@ -339,7 +343,10 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
                 "orchestration_owner": "client_agent",
                 "gateway_owner": "SlncTrZ-MCP",
             },
-            "execution_lifecycle": {"controller_configured": bool(settings.execution_controller), "native_stop_certified": False},
+            "execution_lifecycle": {
+                "controller_configured": bool(settings.execution_controller),
+                "native_stop_certified": False,
+            },
             "source_packages": {
                 "profiles": sorted(_PROFILE_FILES),
                 "engine_maps": sorted(_ENGINE_MAP_FILES),
@@ -356,7 +363,6 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
             "capabilities": _capabilities(),
         }
 
-
     @provider_tool(tags={"execution", "read"})
     async def execution_list() -> dict[str, Any]:
         return await lifecycle_request(settings.execution_controller, "list")
@@ -367,17 +373,29 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
 
     @provider_tool(tags={"execution", "write"})
     async def execution_ensure(engine: str, operation_id: str) -> dict[str, Any]:
-        return await lifecycle_request(settings.execution_controller, "ensure", engine=engine, operation_id=operation_id)
+        return await lifecycle_request(
+            settings.execution_controller, "ensure", engine=engine, operation_id=operation_id
+        )
 
     @provider_tool(tags={"execution", "write"})
-    async def execution_stop(engine: str, operation_id: str, scope: str = "provider") -> dict[str, Any]:
+    async def execution_stop(
+        engine: str, operation_id: str, scope: str = "provider"
+    ) -> dict[str, Any]:
         if scope not in {"provider", "application", "both"}:
             raise ValueError("invalid_stop_scope")
-        return await lifecycle_request(settings.execution_controller, "stop", engine=engine, operation_id=operation_id, scope=scope)
+        return await lifecycle_request(
+            settings.execution_controller,
+            "stop",
+            engine=engine,
+            operation_id=operation_id,
+            scope=scope,
+        )
 
     @provider_tool(tags={"execution", "read"})
     async def execution_operation_status(operation_id: str) -> dict[str, Any]:
-        return await lifecycle_request(settings.execution_controller, "operation_status", operation_id=operation_id)
+        return await lifecycle_request(
+            settings.execution_controller, "operation_status", operation_id=operation_id
+        )
 
     @provider_tool(tags={"source", "read"})
     async def profile_get(domain_id: str) -> dict[str, Any]:
@@ -548,12 +566,18 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
         current_source_hashes: dict[str, str],
         current_artifact_hashes: dict[str, str],
         current_runtime_identity: dict[str, str],
+        evidence_records: dict[str, dict[str, Any]] | None = None,
+        current_engineer_identity: dict[str, str] | None = None,
+        current_design_basis_revision: str | None = None,
     ) -> dict[str, Any]:
         return assess_release_bundle(
             bundle,
             current_source_hashes=current_source_hashes,
             current_artifact_hashes=current_artifact_hashes,
             current_runtime_identity=current_runtime_identity,
+            evidence_records=evidence_records,
+            current_engineer_identity=current_engineer_identity,
+            current_design_basis_revision=current_design_basis_revision,
         )
 
     app._cdt_settings = settings  # type: ignore[attr-defined]

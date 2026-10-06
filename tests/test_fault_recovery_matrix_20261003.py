@@ -1,5 +1,5 @@
 """Comprehensive Injected Fault & Recovery Matrix (ENG-C09).
-Wing: code | Topic: fault-recovery-matrix | Updated: 2026-10-03
+Wing: code | Topic: fault-recovery-matrix | Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh)
 
 Proves the four-quadrant failure & recovery lifecycle:
 1. Early failure: malformed chunk rejected before mutation; no state change.
@@ -8,11 +8,14 @@ Proves the four-quadrant failure & recovery lifecycle:
 4. Late failure: post-execution seal/hash drift blocks final release_bundle_check.
 5. Clean bundle verification: release_bundle_check PASS when all 4 recovery classes have evidence.
 """
+
 from __future__ import annotations
 
 import hashlib
 import unittest
 from typing import Any
+
+from release_evidence_fixture import bind_test_evidence
 
 from execution.chunk_recovery import (
     execute_chunk_with_recovery,
@@ -183,16 +186,40 @@ class FaultRecoveryMatrixTests(unittest.TestCase):
             },
             "required_recovery_classes": ["early", "middle", "late", "uncertain"],
             "recovery_negative_evidence": [
-                {"case_id": "c_early", "recovery_class": "early", "result": "pass", "evidence_sha256": _sha("ev_early")},
-                {"case_id": "c_mid", "recovery_class": "middle", "result": "pass", "evidence_sha256": _sha("ev_middle")},
-                {"case_id": "c_late", "recovery_class": "late", "result": "pass", "evidence_sha256": _sha("ev_late")},
-                {"case_id": "c_unc", "recovery_class": "uncertain", "result": "pass", "evidence_sha256": _sha("ev_unc")},
+                {
+                    "case_id": "c_early",
+                    "recovery_class": "early",
+                    "result": "pass",
+                    "evidence_sha256": _sha("ev_early"),
+                },
+                {
+                    "case_id": "c_mid",
+                    "recovery_class": "middle",
+                    "result": "pass",
+                    "evidence_sha256": _sha("ev_middle"),
+                },
+                {
+                    "case_id": "c_late",
+                    "recovery_class": "late",
+                    "result": "pass",
+                    "evidence_sha256": _sha("ev_late"),
+                },
+                {
+                    "case_id": "c_unc",
+                    "recovery_class": "uncertain",
+                    "result": "pass",
+                    "evidence_sha256": _sha("ev_unc"),
+                },
             ],
         }
 
         # Stale artifact on disk
+        evidence_records = bind_test_evidence(bundle)
         res = assess_release_bundle(
             bundle,
+            evidence_records=evidence_records,
+            current_engineer_identity=bundle["version_bindings"],
+            current_design_basis_revision=bundle["design_basis_revision"],
             current_source_hashes={"src-1": valid_src},
             current_artifact_hashes={"drawing": tampered_art},
             current_runtime_identity={
@@ -245,15 +272,39 @@ class FaultRecoveryMatrixTests(unittest.TestCase):
             },
             "required_recovery_classes": ["early", "middle", "late", "uncertain"],
             "recovery_negative_evidence": [
-                {"case_id": "c1", "recovery_class": "early", "result": "pass", "evidence_sha256": _sha("rec1")},
-                {"case_id": "c2", "recovery_class": "middle", "result": "pass", "evidence_sha256": _sha("rec2")},
-                {"case_id": "c3", "recovery_class": "uncertain", "result": "pass", "evidence_sha256": _sha("rec3")},
-                {"case_id": "c4", "recovery_class": "late", "result": "pass", "evidence_sha256": _sha("rec4")},
+                {
+                    "case_id": "c1",
+                    "recovery_class": "early",
+                    "result": "pass",
+                    "evidence_sha256": _sha("rec1"),
+                },
+                {
+                    "case_id": "c2",
+                    "recovery_class": "middle",
+                    "result": "pass",
+                    "evidence_sha256": _sha("rec2"),
+                },
+                {
+                    "case_id": "c3",
+                    "recovery_class": "uncertain",
+                    "result": "pass",
+                    "evidence_sha256": _sha("rec3"),
+                },
+                {
+                    "case_id": "c4",
+                    "recovery_class": "late",
+                    "result": "pass",
+                    "evidence_sha256": _sha("rec4"),
+                },
             ],
         }
 
+        evidence_records = bind_test_evidence(bundle)
         res = assess_release_bundle(
             bundle,
+            evidence_records=evidence_records,
+            current_engineer_identity=bundle["version_bindings"],
+            current_design_basis_revision=bundle["design_basis_revision"],
             current_source_hashes={"src-1": src_h},
             current_artifact_hashes={"drawing": art_h},
             current_runtime_identity={

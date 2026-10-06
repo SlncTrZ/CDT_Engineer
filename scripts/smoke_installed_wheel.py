@@ -1,6 +1,7 @@
 """Build the current working tree and verify its wheel in an isolated venv.
-Wing: code | Topic: wheel-smoke | Updated: 2026-10-01
+Wing: code | Topic: wheel-smoke | Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh)
 """
+
 from __future__ import annotations
 
 import argparse
@@ -8,20 +9,20 @@ import hashlib
 import json
 import os
 import subprocess
-import sys
 import tempfile
 import venv
 import zipfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
-_SMOKE_CHILD = r'''
+_SMOKE_CHILD = r"""
 import asyncio, copy, importlib.metadata, json, math, pathlib, sys
 from fastmcp import Client
 from cdt_engineer.server import create_mcp
 from cdt_engineer.config import Settings
+from cdt_engineer.contract_identity import PUBLIC_TOOL_COUNT
 from execution.planspec import validate_plan_spec
 from execution.plan_review import review_plan_spec
 from execution.plan_compiler import compile_plan_spec
@@ -100,6 +101,9 @@ async def main():
         "valid_spec": validate_plan_spec(spec).valid,
         "review_approved": review_plan_spec(spec).approved,
         "compiled": compiled.ok and bool(compiled.chunks),
+        "chunk_fingerprint_binding": all(len(c.get("plan_sha256", "")) == 64 and
+                                         len(c.get("chunk_sha256", "")) == 64 for c in compiled.chunks),
+        "chunk_payload_bounded": all(c.get("payload_bytes", 65537) <= 65536 for c in compiled.chunks),
         "chunk_source_binding": all(c.get("source_sha256") == "1" * 64 and
                                    len(c.get("source_inventory_sha256", "")) == 64
                                    for c in compiled.chunks),
@@ -121,13 +125,14 @@ async def main():
         pixel_features=[{"feature_id": "p", "kind": "point", "pixels": [100, 0]}])
     checks["calibration_overflow_refused"] = overflow.verdict == "INVALID_SOURCE"
     import cdt_engineer, execution.planspec, fastmcp
+    checks["package_version_matches_metadata"] = cdt_engineer.__version__ == importlib.metadata.version("cdt-engineer-provider")
     origins = {m.__name__: str(pathlib.Path(m.__file__).resolve())
                for m in (cdt_engineer, execution.planspec, fastmcp)}
     prefix = pathlib.Path(sys.prefix).resolve()
     checks["venv_isolated"] = sys.prefix != sys.base_prefix
     checks["imports_from_venv"] = all(pathlib.Path(p).is_relative_to(prefix)
                                      for p in origins.values())
-    print(json.dumps({"tools": tools, "tool_count": len(tools), "checks": checks,
+    print(json.dumps({"tools": tools, "tool_count": len(tools), "expected_tool_count": PUBLIC_TOOL_COUNT, "checks": checks,
                       "origins": origins, "python": sys.version.split()[0],
                       "fastmcp_version": importlib.metadata.version("fastmcp")},
                      allow_nan=False))
@@ -135,7 +140,7 @@ async def main():
         raise SystemExit(1)
 
 asyncio.run(main())
-'''
+"""
 
 
 def _environment() -> dict[str, str]:
@@ -148,8 +153,9 @@ def _environment() -> dict[str, str]:
 
 
 def _run(cmd: list[str], *, cwd: Path, timeout: int = 180) -> str:
-    proc = subprocess.run(cmd, cwd=cwd, env=_environment(), text=True,
-                          capture_output=True, timeout=timeout)
+    proc = subprocess.run(
+        cmd, cwd=cwd, env=_environment(), text=True, capture_output=True, timeout=timeout
+    )
     if proc.returncode:
         # Preserve generic stage failure without leaking index URLs/credentials.
         raise RuntimeError(f"verification command failed (exit {proc.returncode})")
@@ -157,8 +163,12 @@ def _run(cmd: list[str], *, cwd: Path, timeout: int = 180) -> str:
 
 
 def _source_fingerprint() -> str:
-    proc = subprocess.run(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
-                          cwd=ROOT, capture_output=True, check=True)
+    proc = subprocess.run(
+        ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+        cwd=ROOT,
+        capture_output=True,
+        check=True,
+    )
     digest = hashlib.sha256()
     for name in sorted(set(proc.stdout.split(b"\0")) - {b""}):
         path = ROOT / os.fsdecode(name)
@@ -180,10 +190,14 @@ def main() -> None:
     # the durable wheel/report remain in the requested evidence directory.
     runtime_work = Path(tempfile.mkdtemp(prefix="cdt-wheel-runtime-"))
     fingerprint = _source_fingerprint()
-    report = {"result": "FAIL", "timestamp_utc": datetime.now(timezone.utc).isoformat(),
-              "source_fingerprint_sha256": fingerprint, "work_directory": str(work),
-              "runtime_work_directory": str(runtime_work),
-              "native_acceptance": "NOT_RUN"}
+    report = {
+        "result": "FAIL",
+        "timestamp_utc": datetime.now(UTC).isoformat(),
+        "source_fingerprint_sha256": fingerprint,
+        "work_directory": str(work),
+        "runtime_work_directory": str(runtime_work),
+        "native_acceptance": "NOT_RUN",
+    }
     stage = "create_build_environment"
     try:
         builder = runtime_work / "builder"
@@ -191,45 +205,103 @@ def main() -> None:
         venv.EnvBuilder(with_pip=True).create(builder)
         build_python = builder / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
         stage = "install_build_dependency"
-        _run([str(build_python), "-m", "pip", "install", "--disable-pip-version-check",
-              "--retries", "1", "--timeout", "15", "hatchling"], cwd=work)
+        _run(
+            [
+                str(build_python),
+                "-m",
+                "pip",
+                "install",
+                "--disable-pip-version-check",
+                "--retries",
+                "1",
+                "--timeout",
+                "15",
+                "-c",
+                str(ROOT / "requirements.constraints.txt"),
+                "hatchling",
+            ],
+            cwd=work,
+        )
         dist = work / "dist"
         dist.mkdir()
         stage = "build_wheel"
-        _run([str(build_python), "-m", "pip", "wheel", str(ROOT), "--no-deps",
-              "--no-build-isolation", "-w", str(dist)], cwd=work)
-        wheel, = dist.glob("*.whl")
+        _run(
+            [
+                str(build_python),
+                "-m",
+                "pip",
+                "wheel",
+                str(ROOT),
+                "--no-deps",
+                "--no-build-isolation",
+                "-w",
+                str(dist),
+            ],
+            cwd=work,
+        )
+        (wheel,) = dist.glob("*.whl")
         report["wheel"] = str(wheel)
         report["wheel_sha256"] = hashlib.sha256(wheel.read_bytes()).hexdigest()
         with zipfile.ZipFile(wheel) as zf:
-            report["schema_packaged"] = "cdt_engineer/data/schemas/plan-spec.schema.json" in zf.namelist()
+            report["schema_packaged"] = (
+                "cdt_engineer/data/schemas/plan-spec.schema.json" in zf.namelist()
+            )
         stage = "create_installed_environment"
         venv.EnvBuilder(with_pip=True).create(installed)
         installed_python = installed / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
         stage = "install_wheel_and_declared_dependencies"
-        _run([str(installed_python), "-m", "pip", "install", "--disable-pip-version-check",
-              "--retries", "1", "--timeout", "15", str(wheel) + "[dev]"], cwd=work)
+        _run(
+            [
+                str(installed_python),
+                "-m",
+                "pip",
+                "install",
+                "--disable-pip-version-check",
+                "--retries",
+                "1",
+                "--timeout",
+                "15",
+                "-c",
+                str(ROOT / "requirements.constraints.txt"),
+                str(wheel) + "[dev]",
+            ],
+            cwd=work,
+        )
         stage = "pip_check"
         _run([str(installed_python), "-m", "pip", "check"], cwd=work)
         report["pip_check"] = "PASS"
-        report["dependencies"] = json.loads(_run(
-            [str(installed_python), "-m", "pip", "list", "--format=json"], cwd=work))
+        report["dependencies"] = json.loads(
+            _run([str(installed_python), "-m", "pip", "list", "--format=json"], cwd=work)
+        )
         stage = "installed_wheel_behavior"
         child = runtime_work / "smoke_child.py"
         child.write_text(_SMOKE_CHILD, encoding="utf-8")
-        payload = json.loads(_run([str(installed_python), "-I", str(child)], cwd=work).strip().splitlines()[-1])
+        payload = json.loads(
+            _run([str(installed_python), "-I", str(child)], cwd=work).strip().splitlines()[-1]
+        )
         report["installed_wheel"] = payload
-        required = {"observation_assess", "impact_assess",
-                    "architecture_structural_interface_assess", "release_bundle_check"}
-        if not (report["schema_packaged"] and payload["tool_count"] == 18 and
-                required.issubset(payload["tools"]) and all(payload["checks"].values())):
+        required = {
+            "observation_assess",
+            "impact_assess",
+            "architecture_structural_interface_assess",
+            "release_bundle_check",
+        }
+        if not (
+            report["schema_packaged"]
+            and payload["tool_count"] == payload["expected_tool_count"]
+            and required.issubset(payload["tools"])
+            and all(payload["checks"].values())
+        ):
             raise RuntimeError("installed wheel acceptance failed")
         stage = "source_foundation_in_clean_dependency_environment"
         # This is source-suite validation using newly resolved dependencies,
         # separately from the isolated installed-wheel behavior above.
-        foundation = json.loads(_run(
-            [str(installed_python), "-B", str(ROOT / "scripts" / "validate_foundation.py")],
-            cwd=ROOT))
+        foundation = json.loads(
+            _run(
+                [str(installed_python), "-B", str(ROOT / "scripts" / "validate_foundation.py")],
+                cwd=ROOT,
+            )
+        )
         report["source_foundation_clean_env"] = foundation
         report["source_fingerprint_unchanged"] = fingerprint == _source_fingerprint()
         if not report["source_fingerprint_unchanged"]:
@@ -239,14 +311,23 @@ def main() -> None:
         report["failed_stage"] = stage
         report["error_type"] = type(exc).__name__
     evidence = work / "verification.json"
-    evidence.write_text(json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n",
-                        encoding="utf-8")
-    print(json.dumps({"result": report["result"], "report": str(evidence),
-                      "wheel_sha256": report.get("wheel_sha256"),
-                      "failed_stage": report.get("failed_stage"),
-                      "foundation": report.get("source_foundation_clean_env"),
-                      "installed_checks": report.get("installed_wheel", {}).get("checks")},
-                     ensure_ascii=False, indent=2))
+    evidence.write_text(
+        json.dumps(report, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8"
+    )
+    print(
+        json.dumps(
+            {
+                "result": report["result"],
+                "report": str(evidence),
+                "wheel_sha256": report.get("wheel_sha256"),
+                "failed_stage": report.get("failed_stage"),
+                "foundation": report.get("source_foundation_clean_env"),
+                "installed_checks": report.get("installed_wheel", {}).get("checks"),
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
     if report["result"] != "PASS":
         raise SystemExit(1)
 

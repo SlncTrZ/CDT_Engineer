@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_CONTRACT
 
-Version: 0.1.0 · Updated: 2026-10-05 18:24 (Asia/Ho_Chi_Minh) · Status: Engineering OS Step-0 baseline.
+Version: 0.1.0 · Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh) · Status: Engineering OS Step-0 baseline.
 
 ## Purpose
 
@@ -96,6 +96,6 @@ Historical runs pin the inventory observation used for execution so later QA can
 
 ## Runtime lifecycle extension
 
-The [Execution Lifecycle Contract](EXECUTION_LIFECYCLE_CONTRACT.md) specifies the bounded alpha5 ensure/status/operation-status interface and the broader target shutdown contract after Step-0 discovery. Stop currently returns NATIVE_STOP_NOT_CERTIFIED. This extension does not change the inventory JSON schema.
+The [Execution Lifecycle Contract](EXECUTION_LIFECYCLE_CONTRACT.md) specifies the bounded alpha6 ensure/status/operation-status interface and the broader target shutdown contract after Step-0 discovery. Stop currently returns NATIVE_STOP_NOT_CERTIFIED. This extension does not change the inventory JSON schema.
 
 An installed but stopped engine may be brought online through an explicitly authorized controller and host supervisor. Native readiness must precede gateway sync; gateway activation and client discovery must then be verified. A runtime start does not waive version compatibility, document guards or QA.

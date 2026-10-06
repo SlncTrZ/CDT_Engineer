@@ -37,7 +37,7 @@ CDT_Engineer được expose như một first-class MCP provider theo SlncTrZ Pr
 
 Provider CDT_Engineer expose engineering semantics/checks/evidence và lifecycle requests qua external controller; nó **không proxy native CAD calls** và không tự gọi CDT-* engines phía sau. SlncTrZ-MCP giữ vai trò gateway/authority/routing; model là orchestration layer; các CDT-* engine giữ native execution mechanics.
 
-Alpha5 có 23 tools: 18 engineering tools và 5 lifecycle tools. Controller đã cấu hình hỗ trợ AutoCAD application-level read readiness; stop trả NATIVE_STOP_NOT_CERTIFIED. Xem [MCP Tool Guide](docs/TOOL_GUIDE.md) và [Execution Lifecycle Contract](docs/EXECUTION_LIFECYCLE_CONTRACT.md) cho schema và giới hạn hiện hành.
+Alpha6 có 23 tools: 18 engineering tools và 5 lifecycle tools. Controller đã cấu hình hỗ trợ AutoCAD application-level read readiness; stop trả NATIVE_STOP_NOT_CERTIFIED. Xem [MCP Tool Guide](docs/TOOL_GUIDE.md) và [Execution Lifecycle Contract](docs/EXECUTION_LIFECYCLE_CONTRACT.md) cho schema và giới hạn hiện hành.
 
 ## Tài liệu chuẩn
 
@@ -102,8 +102,8 @@ Stable architecture, contracts, policies, domain/skill packages, catalogs, softw
 
 ## Execution lifecycle qua gateway
 
-[Execution Lifecycle Contract](docs/EXECUTION_LIFECYCLE_CONTRACT.md) định nghĩa interface alpha5 và target shutdown để Agents yêu cầu ensure/status/stop một engine qua CDT_Engineer. Controller được cấp quyền riêng thực hiện host operations; supervisor cạnh ứng dụng quản lý process/session/native readiness.
+[Execution Lifecycle Contract](docs/EXECUTION_LIFECYCLE_CONTRACT.md) định nghĩa interface alpha6 và target shutdown để Agents yêu cầu ensure/status/stop một engine qua CDT_Engineer. Controller được cấp quyền riêng thực hiện host operations; supervisor cạnh ứng dụng quản lý process/session/native readiness.
 
-Luồng mục tiêu: ensure → native readiness → contract/tool-set validation → sync provider đã đăng ký → xác nhận activation → client refresh tools/list. Gateway đã hỗ trợ hot activation; không cần restart gateway. Alpha5 surface có 23 tools; AutoCAD ensure/status đã triển khai, stop còn fail-closed.
+Luồng mục tiêu: ensure → native readiness → contract/tool-set validation → sync provider đã đăng ký → xác nhận activation → client refresh tools/list. Gateway đã hỗ trợ hot activation; không cần restart gateway. Alpha6 surface có 23 tools; AutoCAD ensure/status đã triển khai, stop còn fail-closed.
 
 Boundary hiện hành ở phần MCP provider surface vẫn đúng cho native CAD calls: lifecycle delegation không biến CDT_Engineer thành CAD proxy và không đưa COM/Ruby/bpy vào repo.
