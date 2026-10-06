@@ -1,5 +1,5 @@
 """Feature-level provenance receipts and release QA (ENG-R11).
-Wing: code | Topic: provenance-release | Updated: 2026-10-06 16:10 (Asia/Ho_Chi_Minh)
+Wing: code | Topic: provenance-release | Updated: 2026-10-06 16:23 (Asia/Ho_Chi_Minh)
 """
 
 from __future__ import annotations
@@ -195,7 +195,24 @@ def assess_provenance_release(
             if chunk is None:
                 blockers.append(f"unexpected_chunk_receipt:{cid}")
                 continue
-            for key in ("plan_sha256", "planning_policy_sha256", "chunk_sha256", "feature_ids"):
+            # Bind the evidence state and execution identity as well as the
+            # carried digest. An unchanged chunk_sha256 string does not prove
+            # that a receipt preserved the compiled provenance or source.
+            binding_keys = [
+                "plan_sha256",
+                "planning_policy_sha256",
+                "chunk_sha256",
+                "feature_ids",
+                "provenance",
+                "batch_session_id",
+                "semantic_type",
+            ]
+            binding_keys.extend(
+                key
+                for key in ("source_sha256", "source_inventory_sha256")
+                if key in chunk or key in receipt
+            )
+            for key in binding_keys:
                 if receipt.get(key) != chunk.get(key) or key not in chunk:
                     blockers.append(f"chunk_binding_mismatch:{cid}:{key}")
             for dependency in chunk.get("depends_on", []):

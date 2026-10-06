@@ -368,3 +368,47 @@ def test_empty_optional_phase_preserves_upstream_dependency(monkeypatch):
     wall = [c for c in compiled.chunks if c["semantic_type"] == "wall_shell"][-1]
     opening = next(c for c in compiled.chunks if c["semantic_type"] == "openings")
     assert opening["depends_on"] == [wall["chunk_id"]]
+
+
+@pytest.mark.parametrize(
+    "changed_field,new_value",
+    [
+        ("provenance", {"wall_w2": "specified"}),
+        ("source_sha256", "f" * 64),
+        ("source_inventory_sha256", "e" * 64),
+        ("batch_session_id", "another-execution"),
+        ("semantic_type", "different-feature-family"),
+    ],
+)
+def test_receipt_cannot_rewrite_compiled_evidence_or_execution_identity(changed_field, new_value):
+    spec = _valid_arch_spec("receipt_evidence_boundary")
+    spec["provenance_ledger"]["wall_w2"] = {
+        "status": "inferred",
+        "source_id": None,
+        "assumption_id": None,
+        "confidence": 0.4,
+    }
+    freeze_test_source(spec)
+    compiled = compile_plan_spec(spec, {"release_target": "concept"})
+    assert compiled.ok, compiled.errors
+    receipts = [
+        build_chunk_receipt(
+            chunk,
+            engine_receipt_id=f"offline-{i}",
+            created_or_modified_ids=[f"offline-entity-{i}"],
+            transaction_mode="native_atomic",
+        )
+        for i, chunk in enumerate(compiled.chunks)
+    ]
+    baseline = assess_provenance_release(receipts, "concept", expected_chunks=compiled.chunks)
+    assert baseline["result"] == "pass", baseline
+    receipt = next(r for r in receipts if "wall_w2" in r["feature_ids"])
+    if changed_field == "provenance":
+        receipt["provenance"].update(new_value)
+        target = "design_review"
+    else:
+        receipt[changed_field] = new_value
+        target = "concept"
+    assessed = assess_provenance_release(receipts, target, expected_chunks=compiled.chunks)
+    assert assessed["result"] == "blocked", assessed
+    assert any(changed_field in reason for reason in assessed["reason_codes"])
