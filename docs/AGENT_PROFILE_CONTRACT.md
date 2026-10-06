@@ -99,6 +99,7 @@ Building Architecture and Mechanical Reconstruction are the first two executable
 - [`domains/mechanical-reconstruction/agent-profile.json`](../domains/mechanical-reconstruction/agent-profile.json)
 - [`domains/building-architecture/agent-profile.json`](../domains/building-architecture/agent-profile.json)
 - [`domains/building-structural/agent-profile.json`](../domains/building-structural/agent-profile.json)
+- [`domains/laser-2d3d-assembly/agent-profile.json`](../domains/laser-2d3d-assembly/agent-profile.json)
 
 These are operational baselines/pilots, not production PASS evidence for the mapped engines or discipline release classes.
 

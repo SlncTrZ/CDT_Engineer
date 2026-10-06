@@ -64,6 +64,7 @@ Public domain packages hiện có:
 - [Mechanical Reconstruction](domains/mechanical-reconstruction/benchmark-pack.md)
 - [Building Architecture](domains/building-architecture/benchmark-pack.md)
 - [Building Structural](domains/building-structural/benchmark-pack.md)
+- [Laser 2D-3D Assembly](domains/laser-2d3d-assembly/benchmark-pack.md) (draft pilot; native SolidWorks/Blender acceptance blocked)
 
 Mỗi domain công khai scope/lifecycle của chính nó qua schema, rule pack, template pack, benchmark pack và review rubric. Việc một package tồn tại trong repo **không tự động có nghĩa native production acceptance đã đạt**.
 
