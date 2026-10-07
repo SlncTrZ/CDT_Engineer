@@ -129,7 +129,11 @@ def assess_release_bundle(
             for aid in required_ids:
                 if aid not in bindings or bindings[aid] != current_artifacts.get(aid):
                     reasons.append(f"evidence_artifact_binding_mismatch:{kind}:{aid}")
-        for key, expected in (("case_id", case_id), ("recovery_class", recovery_class)):
+        for key, expected in (
+            ("artifact_id", artifact_id),
+            ("case_id", case_id),
+            ("recovery_class", recovery_class),
+        ):
             if expected is not None and record.get(key) != expected:
                 reasons.append(f"evidence_record_binding_mismatch:{kind}:{key}")
         return record

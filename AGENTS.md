@@ -125,3 +125,7 @@ Preserve existing private contents unless the task explicitly reorganizes them. 
 - Stage only task-owned public changes; never force-add `_private/`.
 - No push/deploy without explicit user instruction.
 - Record meaningful session evidence through available CyberBrain tools.
+
+## Tiêu chuẩn audit
+
+Chỉ báo lỗi khi có đường tái hiện cụ thể dẫn tới crash, deadlock/hang, data loss, corruption, feature không hoạt động, hoặc behavior sai contract chức năng.

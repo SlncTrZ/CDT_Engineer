@@ -185,3 +185,37 @@ def test_duplicate_source_artifact_or_recovery_case_ids_are_invalid_input():
     bundle["recovery_negative_evidence"].append(dict(bundle["recovery_negative_evidence"][0]))
     with pytest.raises(ValueError, match="duplicate recovery case_id"):
         _assess(bundle)
+
+
+def test_reopen_or_seal_evidence_bound_to_different_artifact_blocks_release():
+    bundle = _bundle()
+    bundle["artifacts"].append(
+        {
+            "artifact_id": "model",
+            "sha256": "f" * 64,
+            "reopened": True,
+            "sealed": True,
+        }
+    )
+    bundle["checker_evidence"]["artifact_bindings"]["model"] = "f" * 64
+    artifacts = {"drawing": "d" * 64, "model": "f" * 64}
+
+    records = bind_test_evidence(bundle)
+    # B reuses A's reopen evidence
+    bundle["artifacts"][1]["reopen_evidence_sha256"] = bundle["artifacts"][0][
+        "reopen_evidence_sha256"
+    ]
+
+    result = assess_release_bundle(
+        bundle,
+        current_source_hashes=_sources(),
+        current_artifact_hashes=artifacts,
+        current_runtime_identity=_runtime(),
+        evidence_records=records,
+        current_engineer_identity=bundle["version_bindings"],
+        current_design_basis_revision=bundle["design_basis_revision"],
+    )
+
+    assert result["result"] == "blocked"
+    assert "evidence_record_binding_mismatch:reopen:artifact_id" in result["reason_codes"]
+
