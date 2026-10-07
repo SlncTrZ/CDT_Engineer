@@ -1,7 +1,7 @@
 # CDT_Engineer MCP Tool Guide
 
 > Documentation class: PUBLIC_INTEGRATION
-> Provider contract: `cdt-engineer-v1-alpha6` · Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh)
+> Provider contract: `cdt-engineer-v1-alpha7` · Updated: 2026-10-07 13:45 (Asia/Ho_Chi_Minh)
 
 ## Purpose
 
@@ -43,6 +43,10 @@ A successful CAD mutation is execution evidence, not an engineering PASS.
 - `system_status` — provider runtime identity and available public source packages.
 - `system_capabilities` — deterministic Engineering OS capabilities and explicit native-execution refusal.
 
+### Execution environment assessment
+
+- `execution_environment_assess(inventory, requirements, runtime_observation, assessment_at, max_age_seconds=300)` — evaluate caller-collected Step-0 snapshots with exact identity/version/capability and freshness gates. It returns planning facts for `profile_assess`; it never performs discovery or remediation. See [Execution Environment Contract](EXECUTION_ENVIRONMENT_CONTRACT.md) and [assessment context schema](schemas/execution-environment-assessment.schema.json) for strict fields, bounds and unknown-state rules.
+
 ### Public source packages
 
 - `profile_get(domain_id)` — retrieve a canonical public Agent Profile.
@@ -83,7 +87,7 @@ This tool is intentionally pair-specific. It does not establish a universal cros
 
 The tool validates caller-supplied current observations; it does not discover or mutate executor/runtime state itself.
 
-Alpha6 adds the optional `evidence_records` argument, a content-addressed mapping
+The optional `evidence_records` argument accepts a content-addressed mapping
 from lowercase SHA-256 to the complete immutable record. Omitting records keeps
 release blocked; legacy boolean/hash-only bundles do not gain a weaker PASS.
 The independently supplied `current_engineer_identity` contains the current domain,
@@ -122,7 +126,7 @@ The same Step-0 preflight applies to the other Generic CAD Executors: discover l
 - Provider runtime failures return `provider_unavailable`.
 - Network HTTP transport requires bearer authentication.
 - Non-loopback HTTP binding additionally requires explicit `CDT_ENGINEER_ALLOW_REMOTE_HTTP=true`.
-- Engineering assessments do not grant gateway authority. Lifecycle ensure delegates to a separately owner-authorized controller that may register/enable/sync only its configured read-only AutoCAD route; it cannot grant arbitrary paths, commands or providers.
+- Engineering assessments do not grant gateway/native authority. Host selection, power, prerequisites and gateway/provider deployment belong to the client Agent and independently authorized owner/external tooling.
 - No mutation is blindly retried after an executor reports timeout or unknown completion; reconcile the executor state first.
 - Producer receipts are not independent observation. Use read-back evidence with explicit identity/revision/method and invalidate affected downstream evidence after dependency changes.
 
@@ -170,18 +174,23 @@ idempotency key includes the expected semantic state fingerprint.
 These helpers are not additional advertised MCP tools. The public completeness/QA tools
 still consume independent final artifact evidence; planning approval is not artifact PASS.
 
-## Explicit execution lifecycle — alpha6 pilot
+## Alpha7 boundary and compatibility
 
-The provider exposes 23 tools: 18 existing engineering assessments plus:
+The provider exposes 19 tools: the 18 existing engineering tools and
+`execution_environment_assess`. All are read-only assessments or source reads.
+Application/native execution remains explicit in Generic CAD executor providers.
 
-- execution_list() — configured engines and assurance boundaries.
-- execution_status(engine="autocad") — current host/session/application/provider observations.
-- execution_ensure(engine, operation_id) — asynchronous ensure through the external controller; observe the returned operation ID.
-- execution_operation_status(operation_id) — durable result/status; a lost worker is UNKNOWN and requires reconciliation.
-- execution_stop(engine, operation_id, scope="provider") — currently refuses with NATIVE_STOP_NOT_CERTIFIED; no task or CAD process is terminated.
+Alpha6 names `execution_list`, `execution_status`, `execution_ensure`,
+`execution_stop` and `execution_operation_status` are removed without aliases.
+The controller configuration/client/executable are no longer product components.
+See [Lifecycle Ownership](EXECUTION_LIFECYCLE_CONTRACT.md) for client migration.
 
-CDT_ENGINEER_EXECUTION_CONTROLLER selects a trusted deployment-owned executable. Agents cannot supply its path or arbitrary shell/SSH commands. With no configured controller, lifecycle tools fail closed. Credentials are never returned. Native CAD execution still belongs to independent engines; lifecycle delegation is not a hidden CAD mutation proxy.
+Environment assessment returns `verification_scope=caller_supplied_observations`
+and `native_execution_authorized=false`. Provider ready does not imply native
+application/bridge readiness. Missing, stale, conflicting or unavailable inputs must
+not become native planning PASS. Snapshot hashes bind input identity and freshness
+policy; they do not authenticate the observation source.
 
-The accepted initial ensure scope is application-level read-only AutoCAD availability. Native bridge/document readiness and predecessor guards remain separate before mutation. The controller preserves existing Task Scheduler/MP-2 launch behavior and invokes owner-authorized gateway hot sync; clients refresh tools/list after activation. The read-only relay refuses all tools outside help/status/capabilities/native_integrity_status/document_info.
-
-The existing interactive launcher has no certified ownership-safe remote shutdown contract. Native stop remains blocked rather than risking user documents; this is an explicit pilot limitation, not a successful shutdown claim. See [Execution Lifecycle Contract](EXECUTION_LIFECYCLE_CONTRACT.md).
+Consumers recollect observations after external remediation and verify the refreshed
+provider contract/hash/catalog before using alpha7. Source/package upgrades do not
+deploy providers, synchronize the gateway or certify native application acceptance.

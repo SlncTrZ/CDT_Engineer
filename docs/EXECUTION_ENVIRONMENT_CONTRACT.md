@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_CONTRACT
 
-Version: 0.1.0 · Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh) · Status: Engineering OS Step-0 baseline.
+Version: 0.2.0 · Updated: 2026-10-07 13:45 (Asia/Ho_Chi_Minh) · Status: Engineering OS Step-0 baseline.
 
 ## Purpose
 
@@ -46,12 +46,12 @@ For native execution, `unknown` is fail-closed.
 
 ## Provider states
 
-- `ready`: runtime provider version, contract version and at least one discovered capability are observed.
-- `not_ready`: provider exists but cannot currently execute its declared role.
+- `ready`: the provider is reachable and its version, contract version and at least one discovered capability are observed. This does not assert native application/bridge readiness.
+- `not_ready`: the provider exists but its public service is not ready.
 - `not_configured`: no usable provider configuration exists for the target software.
 - `unknown`: provider state could not be established.
 
-A machine may therefore validly report `solidworks installed` + `cdt-solidworks not_ready`. In that state the Agent may give appropriately versioned human guidance, but it must not claim native automation readiness.
+A machine may validly report `solidworks installed` + `cdt-solidworks ready` + `native bridge unavailable`. Provider readiness and native dependency availability are independent. Missing native readiness blocks execution even while the provider remains callable.
 
 ## Version compatibility
 
@@ -84,7 +84,7 @@ A cached inventory is context, not runtime proof.
 
 ## Safety and user interaction
 
-If required software is not installed, the Agent reports the typed blocker and asks the user to install/authorize installation rather than pretending execution is possible. CDT_Engineer must not self-install licensed engineering software unless a separately authorized installation workflow exists.
+If required software is not installed, the Agent reports the typed blocker and handles installation/prerequisite remediation through independently authorized external skills or operator action. Vendor installation and host provisioning are outside CDT_Engineer.
 
 If software is installed but execution integration is unavailable, distinguish human guidance from native automation. If version or environment is unknown, ask for or perform permitted discovery instead of guessing.
 
@@ -94,8 +94,62 @@ Software Operating Guides consume Step-0 inventory and define application-specif
 
 Historical runs pin the inventory observation used for execution so later QA can distinguish environment drift from engineering logic changes.
 
-## Runtime lifecycle extension
+## Read-only assessment surface
 
-The [Execution Lifecycle Contract](EXECUTION_LIFECYCLE_CONTRACT.md) specifies the bounded alpha6 ensure/status/operation-status interface and the broader target shutdown contract after Step-0 discovery. Stop currently returns NATIVE_STOP_NOT_CERTIFIED. This extension does not change the inventory JSON schema.
+`execution_environment_assess(inventory, requirements, runtime_observation,
+assessment_at, max_age_seconds=300)` evaluates caller-collected observations.
+It never chooses a host, probes the OS/network, invokes a controller or performs
+environmental/native remediation. Only the public schemas are read from the source
+or installed package. The existing inventory schema `0.1.0` is unchanged.
 
-An installed but stopped engine may be brought online through an explicitly authorized controller and host supervisor. Native readiness must precede gateway sync; gateway activation and client discovery must then be verified. A runtime start does not waive version compatibility, document guards or QA.
+The separate [assessment context schema](schemas/execution-environment-assessment.schema.json)
+defines these inputs:
+
+| Input | Required meaning |
+| --- | --- |
+| `inventory` | Existing inventory schema; installation/provider facts for the Agent-selected execution host |
+| `requirements` | Exact `host_id`, `software_id`, `provider_id`, `application_version`, `provider_version`, `contract_version`, non-empty `required_capabilities`, and `expected_runtime_identity` |
+| `runtime_observation` | Snapshot or null; host/software/provider and application/provider/contract versions, `observed_at`, `discovery_method`, `application_state`, `bridge_state`, `runtime_identity`, `observed_capabilities` |
+| `assessment_at` | Explicit timezone-aware assessment time supplied by the caller; no hidden wall-clock input |
+| `max_age_seconds` | Integer 1..3600; default 300; stale snapshots block and future observations remain unknown |
+
+`application_state` is `running`, `stopped` or `unknown`.
+`bridge_state` is `ready`, `unavailable` or `unknown`.
+Runtime identity contains `runtime_generation`, `session_id`,
+`application_instance_id` (process creation identity, not bare PID) and
+`bridge_version`. Expected identity must be supplied from the caller's current
+execution context independently of the snapshot. A null expected or observed
+identity cannot yield PASS. No credentials or executable actions belong in the payload.
+
+Exact identity/version mismatch, stale evidence, declared unavailable prerequisites
+and missing required capabilities block. Missing observations remain unknown rather
+than proving software/provider absence. Duplicate application/provider identities
+refuse; the assessment must not select whichever duplicate looks ready.
+Payloads are bounded to 1 MiB, 64 applications/providers each and 256 capabilities
+per provider/runtime/requirement set. Malformed input produces a sanitized
+`validation_error` without echoing its values.
+
+Output includes `result`, `compatibility`, `reason_codes`, separate
+`provider_state`, `application_installation_state` and `native_state`,
+runtime identity, observation ages and canonical `snapshot_sha256`.
+This Fingerprinting binds the supplied inputs/time/policy, not their truth or authenticity.
+
+Feed returned `capabilities` and `capabilities_by_software` into the existing
+`profile_assess` inputs. The local fact
+`execution_environment.compatible_or_typed_blocker` carries the actual assessment
+result; discovering a blocker does not count as environment PASS. Per-software facts
+are projected only for requested capabilities, and all remain blocked/unknown when
+their environment gate is blocked/unknown.
+
+PASS is scoped to `caller_supplied_observations`. The Agent must collect trusted
+observations and choose exact requirements from the software guide/contract.
+Assessment does not authenticate that collection, approve native writes, validate
+document/writer guards, select another backend, or replace independent QA.
+`native_execution_authorized` is always false.
+
+## Environmental ownership and compatibility
+
+The [Lifecycle Ownership Contract](EXECUTION_LIFECYCLE_CONTRACT.md) retires the five
+alpha6 lifecycle tools in alpha7. Agent/external skills own environmental remediation;
+Generic Engines retain their separately declared native runtime/recovery behavior.
+After remediation or generation drift, recollect observations before reassessing.

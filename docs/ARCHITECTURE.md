@@ -1,7 +1,7 @@
 # CDT_Engineer — Engineering OS Architecture
 
 > Documentation class: PUBLIC_ARCHITECTURE
-> Version: 1.1.0 · Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh)
+> Version: 1.2.0 · Updated: 2026-10-07 13:45 (Asia/Ho_Chi_Minh)
 > Scope: stable public product architecture for the Engineering Operating System / Virtual Engineering Office
 
 ## 1. Product identity
@@ -259,11 +259,15 @@ Do not create a speculative shared Domain SDK. Runtime/code extraction requires 
 - Final artifacts require independent QA, identity binding and stale-evidence detection.
 - Public architecture describes current product invariants; roadmap/audit/history never override it.
 
-## 18. Explicit execution lifecycle extension
+## 18. Execution environment observation and ownership
 
-The [Execution Lifecycle Contract](EXECUTION_LIFECYCLE_CONTRACT.md) defines the bounded alpha6 lifecycle entrypoint and the broader target contract. The 23-tool provider exposes list/status/ensure/operation-status/stop through a configured external controller; host launch, credentials and process ownership belong to that controller/host supervisor. AutoCAD ensure supports application-level read readiness. Stop returns a typed refusal until ownership-safe drain/shutdown is certified.
+The [Execution Environment Contract](EXECUTION_ENVIRONMENT_CONTRACT.md) defines read-only assessment of Agent-collected inventory/runtime snapshots. Alpha7 exposes 19 engineering tools, including `execution_environment_assess`; it has no infrastructure lifecycle client or controller.
 
-This preserves the existing no-native-proxy boundary: native CAD calls stay explicit in Generic Engine providers. Runtime readiness precedes authorized gateway sync; post-activation readiness and client catalog refresh are separate checks. Lifecycle tooling must remain reachable while a requested engine is stopped. No native runtime import, arbitrary SSH/shell execution tool, or self-granted gateway administration is introduced by this architecture.
+The client Agent owns host selection, prerequisite discovery and environmental remediation. CDT_Engineer consumes truthful provider/native capability observations and returns planning facts. Generic Engine providers and their native runtime boundaries retain application execution, attachment, identity, verification and recovery semantics.
+
+Provider reachability is separate from native readiness. An available provider with an unavailable bridge must yield a typed planning blocker; absent observations remain unknown. Snapshot PASS never grants native mutation authority, supplies missing document/writer guards, or authenticates caller measurements.
+
+The [Lifecycle Ownership Contract](EXECUTION_LIFECYCLE_CONTRACT.md) defines alpha6-to-alpha7 compatibility. Source/package upgrade does not itself deploy a provider or change the gateway's accepted catalog. No replacement host controller, native proxy or gateway administration path is introduced.
 
 ## 19. Repository quality and application acceptance
 

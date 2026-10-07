@@ -1,5 +1,5 @@
 """MCP provider contract for CDT_Engineer Engineering OS.
-Wing: code | Topic: mcp-provider | Updated: 2026-09-17
+Wing: code | Topic: mcp-provider | Updated: 2026-10-07 13:45 (Asia/Ho_Chi_Minh)
 """
 from __future__ import annotations
 
@@ -12,11 +12,7 @@ from cdt_engineer.server import _TOOL_DESCRIPTIONS, _validate_http_launch, creat
 
 
 EXPECTED_TOOLS = {
-    "execution_list",
-    "execution_status",
-    "execution_ensure",
-    "execution_stop",
-    "execution_operation_status",
+    "execution_environment_assess",
 
     "help",
     "system_status",
@@ -47,7 +43,7 @@ async def test_provider_surface_is_bounded_and_semantic():
 
     names = {tool.name for tool in tools}
     assert names == EXPECTED_TOOLS == set(_TOOL_DESCRIPTIONS)
-    assert len(names) == PUBLIC_TOOL_COUNT == 23
+    assert len(names) == PUBLIC_TOOL_COUNT == 19
     assert not any(
         token in name
         for name in names
@@ -74,6 +70,7 @@ async def test_help_status_and_capabilities_describe_engineering_os_boundary():
     assert status["provider"] == "cdt-engineer"
     assert status["runtime"]["ready"] is True
     assert status["execution_boundary"]["native_cad_execution"] is False
+    assert status["execution_environment"]["external_native_readiness"] == "not_observed"
 
     caps = caps_result.structured_content or {}
     assert caps["provider"] == "cdt-engineer"
@@ -83,6 +80,8 @@ async def test_help_status_and_capabilities_describe_engineering_os_boundary():
     assert caps["capabilities"]["engineering.architecture_structural_interface_assess"]["supported"] is True
     assert caps["capabilities"]["engineering.release_bundle_check"]["supported"] is True
     assert caps["capabilities"]["native.cad_mutation"]["supported"] is False
+    assert caps["capabilities"]["engineering.execution_lifecycle"]["supported"] is False
+    assert caps["capabilities"]["engineering.execution_environment_assess"]["supported"] is True
 
 
 @pytest.mark.asyncio

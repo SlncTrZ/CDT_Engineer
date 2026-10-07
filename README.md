@@ -35,9 +35,9 @@ Mỗi CDT executor công bố **một host application/version được chứng 
 
 CDT_Engineer được expose như một first-class MCP provider theo SlncTrZ Provider Standard. Provider dùng bare tool names; SlncTrZ-MCP canonicalize thành `cdt-engineer.*`. Model/Agent nhìn thấy `cdt-engineer.*` song song với `cdt-autocad.*`, `cdt-sketchup.*`, `cdt-solidworks.*` và tự orchestration vòng **think → execute → observe → verify**.
 
-Provider CDT_Engineer expose engineering semantics/checks/evidence và lifecycle requests qua external controller; nó **không proxy native CAD calls** và không tự gọi CDT-* engines phía sau. SlncTrZ-MCP giữ vai trò gateway/authority/routing; model là orchestration layer; các CDT-* engine giữ native execution mechanics.
+Provider CDT_Engineer expose engineering semantics/checks/evidence và đánh giá snapshot môi trường chỉ đọc; Agent thu thập observations và xử lý prerequisites bên ngoài CDT. Provider **không proxy native CAD calls** và không tự gọi CDT-* engines phía sau. SlncTrZ-MCP giữ vai trò gateway/authority/routing; model là orchestration layer; các CDT-* engine giữ native execution mechanics.
 
-Alpha6 có 23 tools: 18 engineering tools và 5 lifecycle tools. Controller đã cấu hình hỗ trợ AutoCAD application-level read readiness; stop trả NATIVE_STOP_NOT_CERTIFIED. Xem [MCP Tool Guide](docs/TOOL_GUIDE.md) và [Execution Lifecycle Contract](docs/EXECUTION_LIFECYCLE_CONTRACT.md) cho schema và giới hạn hiện hành.
+Alpha7 (`0.1.0a7` / `cdt-engineer-v1-alpha7`) có 19 tools: giữ 18 engineering tools và thêm `execution_environment_assess`. Năm lifecycle tools alpha6 đã retire; schema inventory `0.1.0` vẫn giữ nguyên. Xem [MCP Tool Guide](docs/TOOL_GUIDE.md), [Execution Environment Contract](docs/EXECUTION_ENVIRONMENT_CONTRACT.md) và [Lifecycle Ownership](docs/EXECUTION_LIFECYCLE_CONTRACT.md) cho inputs và compatibility.
 
 ## Tài liệu chuẩn
 
@@ -100,10 +100,10 @@ Source engine maps/guides là contract baselines; runtime proof vẫn phải đ�
 
 Stable architecture, contracts, policies, domain/skill packages, catalogs, software guides và sanitized benchmark definitions là public product documentation. Roadmaps, ADR history, audits, closure reports, handoffs, provider backlogs, private fixtures, raw runtime evidence và reference snapshots là development material và không định nghĩa public product semantics. Xem [Documentation Policy](docs/DOCUMENTATION_POLICY.md).
 
-## Execution lifecycle qua gateway
+## Step-0 observation và lifecycle ownership
 
-[Execution Lifecycle Contract](docs/EXECUTION_LIFECYCLE_CONTRACT.md) định nghĩa interface alpha6 và target shutdown để Agents yêu cầu ensure/status/stop một engine qua CDT_Engineer. Controller được cấp quyền riêng thực hiện host operations; supervisor cạnh ứng dụng quản lý process/session/native readiness.
+Agent chọn execution host, thu thập inventory/runtime observations và xử lý môi trường bằng external skills hoặc thao tác của người dùng. CDT_Engineer đánh giá snapshot theo exact identity/version/capability/freshness, rồi trả capability facts cho `profile_assess`. Provider ready và native bridge ready là hai trạng thái riêng.
 
-Luồng mục tiêu: ensure → native readiness → contract/tool-set validation → sync provider đã đăng ký → xác nhận activation → client refresh tools/list. Gateway đã hỗ trợ hot activation; không cần restart gateway. Alpha6 surface có 23 tools; AutoCAD ensure/status đã triển khai, stop còn fail-closed.
+`execution_environment_assess` không SSH, wake host, start/stop ứng dụng, register/sync gateway hay gọi native engine. PASS chỉ là kết quả assessment trên dữ liệu do caller cung cấp; không cấp quyền native mutation hoặc thay independent QA.
 
-Boundary hiện hành ở phần MCP provider surface vẫn đúng cho native CAD calls: lifecycle delegation không biến CDT_Engineer thành CAD proxy và không đưa COM/Ruby/bpy vào repo.
+Client alpha6 phải chuyển discovery sang public status/capability của executor, bỏ năm tool `execution_*` cũ và xác minh lại contract hash/catalog trước khi dùng alpha7. Việc nâng source/package không tự cập nhật provider đang deploy.

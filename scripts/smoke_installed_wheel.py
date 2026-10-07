@@ -1,5 +1,5 @@
 """Build the current working tree and verify its wheel in an isolated venv.
-Wing: code | Topic: wheel-smoke | Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh)
+Wing: code | Topic: wheel-smoke | Updated: 2026-10-07 13:49 (Asia/Ho_Chi_Minh)
 """
 
 from __future__ import annotations
@@ -93,11 +93,57 @@ def fixture():
 
 async def main():
     app = create_mcp(Settings(auth_token="", allow_remote_http=False))
+    observed = "2026-10-07T06:35:00Z"
+    identity = {"runtime_generation": "g1", "session_id": "s1",
+                "application_instance_id": "process-creation-1", "bridge_version": "b1"}
+    requirements = {
+        "host_id": "fixture-host", "software_id": "fixture-cad", "provider_id": "fixture-provider",
+        "application_version": "1", "provider_version": "1", "contract_version": "fixture-v1",
+        "required_capabilities": ["model.query"], "expected_runtime_identity": identity,
+    }
+    inventory = {
+        "schema_version": "0.1.0", "host_id": "fixture-host", "observed_at": observed,
+        "os": {"family": "windows", "version": "11", "architecture": "x86_64"},
+        "applications": [{
+            "software_id": "fixture-cad", "status": "installed",
+            "install_path": "C:/fixture", "executable_path": "C:/fixture/app.exe",
+            "version": "1", "build": None, "edition": None,
+            "discovery_method": "synthetic-packaging-fixture", "observed_at": observed,
+        }],
+        "providers": [{
+            "provider_id": "fixture-provider", "software_id": "fixture-cad", "status": "ready",
+            "provider_version": "1", "contract_version": "fixture-v1",
+            "discovered_capabilities": ["model.query"], "observed_at": observed,
+        }],
+    }
+    runtime = {key: requirements[key] for key in (
+        "host_id", "software_id", "provider_id", "application_version",
+        "provider_version", "contract_version")}
+    runtime.update(
+        observed_at=observed, discovery_method="synthetic-packaging-fixture",
+        application_state="running", bridge_state="ready",
+        runtime_identity=copy.deepcopy(identity), observed_capabilities=["model.query"])
+    arguments = dict(inventory=inventory, requirements=requirements, runtime_observation=runtime,
+                     assessment_at="2026-10-07T06:36:00Z")
     async with Client(app) as client:
-        tools = sorted(t.name for t in await client.list_tools())
+        discovered = list(await client.list_tools())
+        tools = sorted(t.name for t in discovered)
+        ready = (await client.call_tool("execution_environment_assess", arguments)).structured_content
+        arguments["runtime_observation"]["bridge_state"] = "unavailable"
+        unavailable = (await client.call_tool(
+            "execution_environment_assess", arguments)).structured_content
+        arguments["runtime_observation"] = "private-input-marker"
+        invalid = await client.call_tool(
+            "execution_environment_assess", arguments, raise_on_error=False)
     spec = fixture()
     compiled = compile_plan_spec(spec)
     checks = {
+        "environment_framework_validation_refused": invalid.is_error,
+        "environment_framework_input_not_echoed": "private-input-marker" not in str(invalid),
+        "environment_assessment_ready": ready["result"] == "pass" and not ready["native_execution_authorized"],
+        "environment_bridge_unavailable": unavailable["provider_state"] == "ready" and unavailable["result"] == "blocked",
+        "environment_assessment_read_only": next(t for t in discovered if t.name == "execution_environment_assess").annotations.readOnlyHint is True,
+        "legacy_lifecycle_absent": not any(t.startswith("execution_") and t != "execution_environment_assess" for t in tools),
         "valid_spec": validate_plan_spec(spec).valid,
         "review_approved": review_plan_spec(spec).approved,
         "compiled": compiled.ok and bool(compiled.chunks),
@@ -243,9 +289,12 @@ def main() -> None:
         report["wheel"] = str(wheel)
         report["wheel_sha256"] = hashlib.sha256(wheel.read_bytes()).hexdigest()
         with zipfile.ZipFile(wheel) as zf:
-            report["schema_packaged"] = (
-                "cdt_engineer/data/schemas/plan-spec.schema.json" in zf.namelist()
+            report["schema_packaged"] = all(
+                "cdt_engineer/data/schemas/" + name in zf.namelist()
+                for name in ("plan-spec.schema.json", "execution-environment.schema.json",
+                             "execution-environment-assessment.schema.json")
             )
+            report["legacy_client_absent"] = "cdt_engineer/lifecycle_client.py" not in zf.namelist()
         stage = "create_installed_environment"
         venv.EnvBuilder(with_pip=True).create(installed)
         installed_python = installed / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
@@ -281,6 +330,7 @@ def main() -> None:
         )
         report["installed_wheel"] = payload
         required = {
+            "execution_environment_assess",
             "observation_assess",
             "impact_assess",
             "architecture_structural_interface_assess",
@@ -288,6 +338,7 @@ def main() -> None:
         }
         if not (
             report["schema_packaged"]
+            and report["legacy_client_absent"]
             and payload["tool_count"] == payload["expected_tool_count"]
             and required.issubset(payload["tools"])
             and all(payload["checks"].values())

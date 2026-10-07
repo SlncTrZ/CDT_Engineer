@@ -1,5 +1,5 @@
 """FastMCP entrypoint for the CDT_Engineer Engineering OS provider.
-Wing: code | Topic: mcp-provider | Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh)
+Wing: code | Topic: mcp-provider | Updated: 2026-10-07 13:48 (Asia/Ho_Chi_Minh)
 """
 
 from __future__ import annotations
@@ -21,6 +21,7 @@ from execution.artifact_evidence import artifact_manifest as build_artifact_mani
 from execution.artifact_evidence import evidence_is_stale
 from execution.catalog_resolver import resolve_catalog_assets
 from execution.completeness_checker import assess_inventory, assess_layer_ledger
+from execution.environment_assessment import assess_execution_environment
 from execution.impact_graph import assess_evidence_freshness, compute_impact
 from execution.observation import assess_observation
 from execution.qa_checker import checker_verdict
@@ -40,7 +41,6 @@ from .contract_identity import (
     contract_hash,
     contract_material,
 )
-from .lifecycle_client import request as lifecycle_request
 
 _LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 _HTTP_TRANSPORTS = {"http", "sse", "streamable-http"}
@@ -59,11 +59,10 @@ _ENGINE_MAP_FILES = {
 }
 
 _TOOL_DESCRIPTIONS = {
-    "execution_list": "List configured execution engines and lifecycle assurance limits.",
-    "execution_status": "Observe host/application/provider readiness without CAD mutation.",
-    "execution_ensure": "Ask the authorized controller to ensure AutoCAD and sync its read-only gateway route; returns a durable operation ID.",
-    "execution_stop": "Request controlled stop; pilot refuses until ownership-safe shutdown is certified.",
-    "execution_operation_status": "Observe a durable lifecycle operation without replaying an uncertain request.",
+    "execution_environment_assess": (
+        "Assess caller-collected environment/runtime snapshots against explicit identity, version, "
+        "capability and freshness requirements; never discover, repair or start infrastructure."
+    ),
     "help": (
         "Return the current CDT_Engineer provider contract, operating boundary, tool guidance, and "
         "capability summary without mutating engineering or CAD state."
@@ -203,10 +202,15 @@ def _capabilities() -> dict[str, dict[str, Any]]:
         key: {"supported": True, "mode": "deterministic", "reason": description}
         for key, description in supported.items()
     }
-    result["engineering.execution_lifecycle"] = {
+    result["engineering.execution_environment_assess"] = {
         "supported": True,
-        "mode": "external_controller",
-        "reason": "Explicit lifecycle delegation; pilot is AutoCAD read-only and refuses uncertified stop.",
+        "mode": "deterministic_snapshot_assessment",
+        "reason": "Read-only Step-0 classification; observations and remediation belong to the client Agent.",
+    }
+    result["engineering.execution_lifecycle"] = {
+        "supported": False,
+        "mode": "external_agent_only",
+        "reason": "Infrastructure lifecycle is outside the Engineering OS product boundary.",
     }
     result["native.cad_mutation"] = {
         "supported": False,
@@ -269,6 +273,9 @@ class ProviderErrorMiddleware(Middleware):
             if classified is None:
                 raise
             kind, extra, message = classified
+            if context.message.name == "execution_environment_assess" and kind == "validation_error":
+                # Framework argument validation can include original input values.
+                message = "invalid_execution_environment:input"
             return ToolResult(
                 content=message,
                 structured_content={
@@ -343,9 +350,11 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
                 "orchestration_owner": "client_agent",
                 "gateway_owner": "SlncTrZ-MCP",
             },
-            "execution_lifecycle": {
-                "controller_configured": bool(settings.execution_controller),
-                "native_stop_certified": False,
+            "execution_environment": {
+                "assessment_only": True,
+                "observation_owner": "client_agent",
+                "remediation_owner": "client_agent",
+                "external_native_readiness": "not_observed",
             },
             "source_packages": {
                 "profiles": sorted(_PROFILE_FILES),
@@ -363,38 +372,16 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
             "capabilities": _capabilities(),
         }
 
-    @provider_tool(tags={"execution", "read"})
-    async def execution_list() -> dict[str, Any]:
-        return await lifecycle_request(settings.execution_controller, "list")
-
-    @provider_tool(tags={"execution", "read"})
-    async def execution_status(engine: str = "autocad") -> dict[str, Any]:
-        return await lifecycle_request(settings.execution_controller, "status", engine=engine)
-
-    @provider_tool(tags={"execution", "write"})
-    async def execution_ensure(engine: str, operation_id: str) -> dict[str, Any]:
-        return await lifecycle_request(
-            settings.execution_controller, "ensure", engine=engine, operation_id=operation_id
-        )
-
-    @provider_tool(tags={"execution", "write"})
-    async def execution_stop(
-        engine: str, operation_id: str, scope: str = "provider"
+    @provider_tool(tags={"environment", "assessment", "read"})
+    async def execution_environment_assess(
+        inventory: dict[str, Any],
+        requirements: dict[str, Any],
+        runtime_observation: dict[str, Any] | None,
+        assessment_at: str,
+        max_age_seconds: int = 300,
     ) -> dict[str, Any]:
-        if scope not in {"provider", "application", "both"}:
-            raise ValueError("invalid_stop_scope")
-        return await lifecycle_request(
-            settings.execution_controller,
-            "stop",
-            engine=engine,
-            operation_id=operation_id,
-            scope=scope,
-        )
-
-    @provider_tool(tags={"execution", "read"})
-    async def execution_operation_status(operation_id: str) -> dict[str, Any]:
-        return await lifecycle_request(
-            settings.execution_controller, "operation_status", operation_id=operation_id
+        return assess_execution_environment(
+            inventory, requirements, runtime_observation, assessment_at, max_age_seconds
         )
 
     @provider_tool(tags={"source", "read"})
