@@ -1,0 +1,119 @@
+map_version: 0.3.0
+software_id: solidworks
+purpose: Current public-contract semantic capability map for Mechanical reconstruction against the CDT-SolidWorks provider.
+source_snapshot:
+  repository: CDT-SolidWorks
+  head: 9537cc313020ffb26eb21cfd9ab6810a2671a5dc
+  provider_state: implemented_public_mcp_runtime
+  provider_version: 0.1.0
+  contract_version: 0.1.0
+  public_tool_count: 149
+  public_capability_count: 125
+  measured_application: SOLIDWORKS 2024 SP0.1
+  measured_application_revision: 32.0.1
+  working_tree_dirty_at_inspection: false
+  runtime_proof: false
+  native_acceptance: accepted
+  native_acceptance_date: '2026-09-19'
+  engineer_closed_loop_acceptance: accepted
+  engineer_revision: aba46838a9ab898d34388948d1a16d6addded95b
+  engineer_acceptance_date: '2026-09-19'
+runtime_preflight:
+  required: true
+  discover:
+  - SOLIDWORKS installation path/version/build/edition
+  - provider version/contract and exact capability surface
+  - system_status and system_capabilities observed runtime state
+  - application_probe result and provider-owned/attached session state when native execution is required
+  - required public tool availability for the selected workflow
+  - path-policy roots and output destinations
+  blocker_codes:
+  - software_not_installed
+  - provider_not_ready
+  - configuration_required
+  - version_mismatch
+  - capability_missing
+  - runtime_unknown
+capability_mappings:
+- semantic: solid.feature.create
+  support: expected
+  expected_public_tools:
+  - part_create_rect_extrude
+  - part_add_rect_extrude
+  - part_profile_extrude
+  - part_cut_extrude
+  - part_simple_hole
+  - part_revolve
+  - part_fillet
+  - part_chamfer
+  verification: bounded semantic feature creation through the public provider; verify feature identity/parameters, rebuild state and expected body state after each chunk
+- semantic: solid.boolean
+  support: expected
+  expected_public_tools:
+  - body_combine
+  - part_combine_all_bodies
+  verification: public native Boolean/combine routes with post-operation body inspection; do not infer authoritative face semantics from a Boolean receipt alone
+- semantic: model.query
+  support: expected
+  expected_public_tools:
+  - document_info
+  - document_list_features
+  - document_list_bodies
+  - part_feature_get
+  - part_feature_parameters_get
+  - body_inspect
+  verification: independent read-back of persisted document, feature and body state rather than reuse of producer receipts
+- semantic: checkpoint.create
+  support: expected
+  expected_public_tools:
+  - document_save
+  - document_reopen
+  - document_reconcile
+  - part_cut_reconcile
+  - part_simple_hole_reconcile
+  - part_revolve_reconcile
+  verification: persisted save/reopen boundary plus explicit uncertain-mutation reconciliation; this is not a claim of native transaction rollback or whole-chunk atomicity
+- semantic: model_3d.measure
+  support: expected
+  expected_public_tools:
+  - evaluation_measure
+  - evaluation_bounding_box
+  - evaluation_geometry_sanity
+  verification: deterministic native measurement/sanity from the current persisted artifact; domain tolerances and semantic interpretation remain CDT_Engineer responsibilities
+- semantic: topology.inspect
+  support: expected
+  expected_public_tools:
+  - topology_query
+  - topology_resolve
+  - topology_inspect
+  verification: provider-native bounded topology query plus authenticated reference resolution and analytic inspection; use independent QA role/context for acceptance evidence
+- semantic: artifact.native_save
+  support: expected
+  expected_public_tools:
+  - document_save
+  - document_save_as
+  verification: rooted native SLDPRT/SLDASM/SLDDRW persistence; verify exact path, reopen and downstream measurements
+- semantic: artifact.reopen
+  support: expected
+  expected_public_tools:
+  - document_open
+  - document_reopen
+  - document_info
+  verification: reopen the exact persisted artifact and re-run required feature/body/measurement/topology checks
+- semantic: artifact.exchange_export
+  support: expected
+  expected_public_tools:
+  - export_document
+  - import_document
+  verification: use only formats reported by the current provider/runtime; round-trip acceptance requires reopen/import plus independent units/dimensions/topology comparison
+- semantic: artifact.seal
+  support: blocked
+  expected_public_tools: []
+  verification: CDT-SolidWorks does not expose a public content-addressed artifact_seal/artifact_verify primitive at this snapshot
+known_blockers:
+- code: source_snapshot_not_runtime_proof
+  effect: accepted source/runtime history never substitutes for Step-0 discovery of the current target host/provider/capability state
+- code: artifact_seal_missing
+  effect: CDT_Engineer final artifact-seal hard gates cannot be satisfied by the SolidWorks provider alone; exact external hashing may be evidence but does not become provider-native artifact.seal
+- code: exact_transaction_mode_unproven
+  effect: save/reopen plus reconcile are accepted recovery primitives, but no whole-chunk native transaction rollback or checkpointed_atomic guarantee is claimed

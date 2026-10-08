@@ -1,0 +1,546 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Mechanical Part Reconstruction job",
+  "description": "Domain schema v0.2.0. Structural validation permits explicit unresolved evidence; engineering release gates still block unresolved critical inputs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "job_id",
+    "domain_id",
+    "source_manifest",
+    "units",
+    "coordinate_frame",
+    "scope",
+    "assumptions",
+    "standards",
+    "output_requirements",
+    "feature_plan"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "0.2.0"
+    },
+    "job_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "domain_id": {
+      "const": "mechanical-reconstruction"
+    },
+    "source_manifest": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_id",
+          "locator",
+          "sha256",
+          "status",
+          "role"
+        ],
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "locator": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "status": {
+            "enum": [
+              "available",
+              "missing",
+              "unverified"
+            ]
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "status": {
+                  "const": "available"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "description": "Available inputs require verified hash before execution; missing dependencies block full-source claims."
+    },
+    "units": {
+      "enum": [
+        "mm",
+        "cm",
+        "m",
+        "in",
+        "ft"
+      ],
+      "description": "Canonical domain measurement unit; must equal coordinate_frame.target_units, checked by domain rules."
+    },
+    "coordinate_frame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_frame",
+        "target_frame",
+        "transform",
+        "status",
+        "source_units",
+        "target_units"
+      ],
+      "properties": {
+        "source_frame": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_frame": {
+          "type": "string",
+          "minLength": 1
+        },
+        "transform": {
+          "type": "array",
+          "minItems": 16,
+          "maxItems": 16,
+          "items": {
+            "type": "number"
+          }
+        },
+        "status": {
+          "enum": [
+            "proposed",
+            "verified"
+          ]
+        },
+        "source_units": {
+          "enum": [
+            "mm",
+            "cm",
+            "m",
+            "in",
+            "ft"
+          ]
+        },
+        "target_units": {
+          "enum": [
+            "mm",
+            "cm",
+            "m",
+            "in",
+            "ft"
+          ]
+        }
+      },
+      "description": "Row-major 4x4 affine source-to-target transform applied to column vectors; translation in target units. Includes unit scale. Domain rules validate determinant, homogeneous row, handedness and residuals."
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "included",
+        "excluded"
+      ],
+      "properties": {
+        "included": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "excluded": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "statement",
+          "status",
+          "evidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "statement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "observed",
+              "specified",
+              "derived",
+              "inferred",
+              "unknown",
+              "approved_assumption"
+            ]
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "standards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "standard_id",
+          "record_version",
+          "source",
+          "edition",
+          "applicability",
+          "status"
+        ],
+        "properties": {
+          "standard_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "record_version": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "edition": {
+            "type": "string",
+            "minLength": 1
+          },
+          "applicability": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "proposed",
+              "verified",
+              "excluded"
+            ]
+          }
+        }
+      }
+    },
+    "output_requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "format",
+          "purpose",
+          "required"
+        ],
+        "properties": {
+          "format": {
+            "type": "string",
+            "minLength": 1
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 1
+          },
+          "required": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "feature_plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "projection_convention",
+        "dimensions",
+        "features"
+      ],
+      "properties": {
+        "projection_convention": {
+          "enum": [
+            "first_angle",
+            "third_angle",
+            "unknown"
+          ]
+        },
+        "dimensions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "value",
+              "tolerance",
+              "source_ref"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "value": {
+                "type": "number"
+              },
+              "tolerance": {
+                "$ref": "#/$defs/dimension_tolerance"
+              },
+              "source_ref": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "features": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "kind",
+              "depends_on",
+              "dimension_ids",
+              "evidence_status"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "type": "string",
+                "minLength": 1
+              },
+              "depends_on": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "dimension_ids": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "evidence_status": {
+                "enum": [
+                  "observed",
+                  "specified",
+                  "derived",
+                  "inferred",
+                  "unknown",
+                  "approved_assumption"
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "dimension_tolerance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value",
+        "unit",
+        "source_ref",
+        "approved_by"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "unresolved",
+            "specified",
+            "derived",
+            "approved",
+            "not_applicable"
+          ]
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "unit": {
+          "enum": [
+            "mm",
+            "cm",
+            "m",
+            "in",
+            "ft"
+          ]
+        },
+        "source_ref": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "approved_by": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "unresolved"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "null"
+              },
+              "source_ref": {
+                "type": "null"
+              },
+              "approved_by": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "not_applicable"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "null"
+              },
+              "approved_by": {
+                "type": "null"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "specified",
+                  "derived"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "number",
+                "minimum": 0
+              },
+              "source_ref": {
+                "type": "string",
+                "minLength": 1
+              },
+              "approved_by": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "approved"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "number",
+                "minimum": 0
+              },
+              "source_ref": {
+                "type": "string",
+                "minLength": 1
+              },
+              "approved_by": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      ],
+      "description": "Dimension tolerance with explicit provenance/approval state. Unresolved is structurally valid but blocks fabrication-ready acceptance for critical dimensions under MECH-02/06."
+    }
+  }
+}

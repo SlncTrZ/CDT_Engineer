@@ -1,0 +1,268 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://slnctrz.github.io/CDT_Engineer/schemas/execution-environment-assessment.schema.json",
+  "title": "Read-only execution environment assessment context",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "requirements",
+    "runtime_observation",
+    "assessment_at",
+    "max_age_seconds"
+  ],
+  "properties": {
+    "requirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host_id",
+        "software_id",
+        "provider_id",
+        "application_version",
+        "provider_version",
+        "contract_version",
+        "required_capabilities",
+        "expected_runtime_identity"
+      ],
+      "properties": {
+        "host_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "\\S"
+        },
+        "software_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "\\S"
+        },
+        "provider_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "\\S"
+        },
+        "application_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "\\S"
+        },
+        "provider_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "\\S"
+        },
+        "contract_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "\\S"
+        },
+        "required_capabilities": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "\\S"
+          },
+          "minItems": 1
+        },
+        "expected_runtime_identity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/runtimeIdentity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "runtime_observation": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/runtimeObservation"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "assessment_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "max_age_seconds": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3600
+    }
+  },
+  "$defs": {
+    "runtimeIdentity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "runtime_generation",
+        "session_id",
+        "application_instance_id",
+        "bridge_version"
+      ],
+      "properties": {
+        "runtime_generation": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "\\S"
+        },
+        "session_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "\\S"
+        },
+        "application_instance_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "\\S"
+        },
+        "bridge_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "runtimeObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host_id",
+        "software_id",
+        "provider_id",
+        "application_version",
+        "provider_version",
+        "contract_version",
+        "observed_at",
+        "discovery_method",
+        "application_state",
+        "bridge_state",
+        "runtime_identity",
+        "observed_capabilities"
+      ],
+      "properties": {
+        "host_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "\\S"
+        },
+        "software_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "\\S"
+        },
+        "provider_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "\\S"
+        },
+        "application_version": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "provider_version": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "contract_version": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256,
+              "pattern": "\\S"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "discovery_method": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "\\S"
+        },
+        "application_state": {
+          "enum": [
+            "running",
+            "stopped",
+            "unknown"
+          ]
+        },
+        "bridge_state": {
+          "enum": [
+            "ready",
+            "unavailable",
+            "unknown"
+          ]
+        },
+        "runtime_identity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/runtimeIdentity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "observed_capabilities": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "\\S"
+          }
+        }
+      }
+    }
+  }
+}
