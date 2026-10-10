@@ -14,7 +14,11 @@ import yaml
 from fastmcp import FastMCP
 from fastmcp.server.auth import StaticTokenVerifier
 from fastmcp.server.middleware import Middleware, MiddlewareContext
-from fastmcp.tools.tool import ToolResult
+try:
+    from fastmcp.tools.tool import ToolResult
+except Exception:
+    from fastmcp.tools.base import ToolResult  # type: ignore
+
 
 from domains.building_structural.interfaces import evaluate_architecture_structural_interfaces
 from execution.artifact_evidence import artifact_manifest as build_artifact_manifest
@@ -162,7 +166,10 @@ def _load_profile(domain_id: str) -> dict[str, Any]:
     relative = _PROFILE_FILES.get(domain_id)
     if relative is None:
         raise ValueError(f"unknown domain_id: {domain_id}")
-    payload = json.loads(_read_runtime_text(relative))
+    try:
+        payload = json.loads(_read_runtime_text(relative))
+    except Exception as exc:
+        raise ValueError(f"failed to load profile {domain_id}: {exc}") from exc
     if not isinstance(payload, dict):
         raise ValueError(f"profile must be a JSON object: {domain_id}")
     return payload
@@ -312,6 +319,7 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
             "then feed measured execution evidence back into CDT_Engineer checks."
         ),
     )
+    app._mcp_server.version = __version__
     app.add_middleware(ProviderErrorMiddleware())
 
     def provider_tool(*, tags: set[str]):
