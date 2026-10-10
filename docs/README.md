@@ -9,6 +9,7 @@ This index separates stable public product architecture/contracts from contribut
 - [Product README](../README.md) — what CDT_Engineer is and its product boundaries.
 - [Canonical Architecture](ARCHITECTURE.md) — stable Engineering OS architecture and invariants.
 - [Documentation Policy](DOCUMENTATION_POLICY.md) — what is public product authority vs private development material.
+- [CDT Group Stable Versioning and Release Policy](CDT_GROUP_VERSIONING_POLICY.md) — canonical `v.0.x.x` tag, maintenance and deployment gates.
 - [AGENTS.md](../AGENTS.md) — operating rules for agents working in this repository.
 
 ## Public normative architecture and contracts

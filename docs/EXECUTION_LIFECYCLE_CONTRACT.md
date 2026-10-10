@@ -24,7 +24,7 @@ in their independently assigned repositories.
 
 ## Alpha7 compatibility
 
-Provider `0.1.0a7`, contract `cdt-engineer-v1-alpha7`, exposes 19 tools:
+Provider `0.1.0`, contract `cdt-engineer-v1-alpha7`, exposes 19 tools:
 18 existing engineering tools with unchanged callable schemas plus
 `execution_environment_assess`.
 
