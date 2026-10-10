@@ -1,0 +1,67 @@
+map_version: 0.1.0
+software_id: blender
+purpose: Bounded source-qualified Blender L2 motion-graphics mapping for Engineer agent use.
+source_snapshot:
+  repository: CDT-Blender
+  provider_version: 0.1.3+cdt.1
+  contract_version: cdt-blender-contract-v10
+  public_tool_count_expected: 121
+  blender_native_baseline: Blender 4.5.3 LTS / Windows 11 / isolated headless
+  source_native_qualified: true
+  provider_addon_dispatch_native_qualified: true
+  installed_gateway_e2e_qualified: false
+  other_blender_versions_qualified: false
+runtime_preflight:
+  required: true
+  observe:
+    - Blender installation/version/build and active document dirty state
+    - Current addon status/generation and matching installed provider contract_version
+    - Fresh system_status/system_capabilities runtime context and advertised L2 tool names
+    - Assets allow-roots, font rights and external RAQM availability where shaped text needed
+  blocking_codes:
+    - software_not_installed
+    - provider_not_ready
+    - configuration_required
+    - version_mismatch
+    - capability_missing
+    - outside_allow_roots
+    - complex_script_shaping_unavailable
+capability_mappings:
+  - semantic: infographic.vector.svg_import
+    source_status: native_source_qualified
+    public_tools: [import_svg_curves]
+    verification: imported CURVE inventory, exact names, measured bounds and whitelist evidence
+  - semantic: infographic.grease.strokes
+    source_status: native_source_qualified
+    public_tools: [create_grease_strokes]
+    verification: GPv3 frame/stroke/point inventory and rendered reveal
+  - semantic: infographic.grease.filled_tween
+    source_status: native_source_qualified
+    public_tools: [create_filled_grease_tween]
+    verification: equal topology, fill/cyclic, first/mid/end frame drawings
+  - semantic: infographic.geometry.motif
+    source_status: native_source_qualified
+    public_tools: [create_particle_preset]
+    verification: curated LINE/RING node group and instance count
+  - semantic: infographic.geometry.wave_grid
+    source_status: native_source_qualified
+    public_tools: [create_animated_particle_grid]
+    verification: node graph, instance count and keyed noise displacement / frame differences
+  - semantic: infographic.typography.native_nfc
+    source_status: native_source_qualified
+    public_tools: [create_unicode_text]
+    verification: NFC text, font readback, multiline visual legibility
+  - semantic: infographic.typography.complex_raster
+    source_status: native_source_qualified
+    public_tools: [create_shaped_text_plane]
+    prerequisites: [external_raqm_harfbuzz_fribidi, licensed_local_font, pre_shaped_png]
+    verification: shaped bitmap quality/language/direction, packed image-plane, visual proof
+known_blockers:
+  - code: current_installed_addon_not_requalified
+    effect: source qualification is not permission to assume the current user provider has new tools
+  - code: complex_text_not_editable_vector
+    effect: Arabic/Indic/RTL uses rasterized pre-shaped images, not native editable text
+  - code: no_atomic_blender_transactions
+    effect: use op_id, reconciliation and bounded checkpoints
+  - code: version_matrix_incomplete
+    effect: Blender 5.x and other OS/native UI scenarios remain unverified

@@ -14,6 +14,7 @@ This index separates stable public product architecture/contracts from contribut
 ## Public normative architecture and contracts
 
 - [Contract Model](CONTRACTS.md)
+- [Blender Motion-Graphics L2 Extension Contract](BLENDER_MOTION_GRAPHICS_EXTENSION_CONTRACT.md)
 - [Execution Environment Contract](EXECUTION_ENVIRONMENT_CONTRACT.md)
 - [Execution Lifecycle Ownership](EXECUTION_LIFECYCLE_CONTRACT.md) — alpha7 boundary and retirement of the five alpha6 controller tools.
 - [Design Basis Contract](DESIGN_BASIS_CONTRACT.md)
@@ -35,7 +36,7 @@ This index separates stable public product architecture/contracts from contribut
 
 Domain packages under `domains/` contain the public five-pack minimum plus optional Agent Profiles and Engineering Skills. Current public packages include Site Reconstruction, Mechanical Reconstruction, Building Architecture, Building Structural and Laser 2D-3D Assembly (draft pilot). Their benchmark/rubric lifecycle labels define the scope actually claimed; presence in the repository does not itself mean native production acceptance.
 
-Software packages under `software/` contain public Operating Guides and semantic engine maps for AutoCAD, SketchUp and SolidWorks. Source mappings are not runtime proof.
+Software packages under `software/` contain public Operating Guides and semantic engine maps for AutoCAD, SketchUp, SolidWorks and Blender (motion-graphics L2 source-qualified scope only). Source mappings are not runtime proof.
 
 Catalog packages under `catalogs/` contain reusable Engineering Asset Catalog metadata and schemas. A semantic catalog entry is not proof that a native asset is currently installed or resolved.
 
