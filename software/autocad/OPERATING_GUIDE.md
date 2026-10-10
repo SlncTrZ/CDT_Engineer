@@ -1,10 +1,12 @@
 # AutoCAD Operating Guide
 
 > Documentation class: PUBLIC_SOFTWARE_GUIDE
-Version: 0.5.0 · Source contract: `0.4.0rc3 / autocad-generic-v1-rc3 / 87 tools` · Runtime proof required per run.
+Guide version: 0.5.0 · Current released source target: CDT-AutoCAD `0.4.2 / autocad-generic-v1 / 87 tools` · Runtime proof required per run.
+
+The companion `engine-map.yaml` retains the historical `0.4.0rc3 / autocad-generic-v1-rc3` source snapshot, which is evidence of its original mapping and **not** proof of a current production deployment. Query actual provider, bridge, build and tool identity before relying on a particular capability.
 
 ## Step-0
-Call `system_status` and `system_capabilities`; when strong-integrity native mutation is required also call `native_integrity_status`. Confirm AutoCAD build, provider/contract identity, backend, allowed roots and the exact runtime-supported capability path. For a new empty drawing without provider lineage, RC3 adds `native_document_identity_initialize`: call it exactly once, then read back the provider-owned `document_pid` and predecessor fingerprint before planning native writes. Existing/non-empty drawings must not be implicitly adopted. Strong-integrity writes require caller-supplied `document_pid` + `expected_parent_fp` and refuse wrong/stale planning state before mutation. The pinned source contract is integration evidence, not proof that the current runtime is ready.
+Call `system_status` and `system_capabilities`; when strong-integrity native mutation is required also call `native_integrity_status`. Confirm AutoCAD build, provider/contract identity, backend, allowed roots and the exact runtime-supported capability path. For a new empty drawing without provider lineage, the historical RC3 implementation introduced `native_document_identity_initialize`: call it exactly once, then read back the provider-owned `document_pid` and predecessor fingerprint before planning native writes. Existing/non-empty drawings must not be implicitly adopted. Strong-integrity writes require caller-supplied `document_pid` + `expected_parent_fp` and refuse wrong/stale planning state before mutation. The pinned source contract is integration evidence, not proof that the current runtime is ready.
 
 ## Compatibility
 Use `compatible` only from observed runtime facts. Unobserved source expectations are `guidance_only/unknown`; absent software is `installation_required`; provider/path setup gaps are `configuration_required`; incompatible builds are `version_mismatch`.

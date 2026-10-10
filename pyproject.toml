@@ -1,6 +1,6 @@
 [project]
 name = "cdt-engineer-provider"
-version = "0.1.0"
+version = "0.1.1"
 description = "CDT_Engineer Engineering OS MCP provider for AI agents"
 readme = "README.md"
 authors = [{ name = "Trương Công Định (SlncTrZ)" }]
