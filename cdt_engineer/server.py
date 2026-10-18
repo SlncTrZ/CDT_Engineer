@@ -274,6 +274,10 @@ class ProviderErrorMiddleware(Middleware):
     """Convert expected engineering/provider failures into stable MCP errors."""
 
     async def on_call_tool(self, context: MiddlewareContext, call_next):
+        if context.message.arguments and "reason" in context.message.arguments:
+            context.message.arguments = {
+                k: v for k, v in context.message.arguments.items() if k != "reason"
+            }
         try:
             return await call_next(context)
         except Exception as exc:

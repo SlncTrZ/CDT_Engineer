@@ -55,9 +55,9 @@ async def test_provider_surface_is_bounded_and_semantic():
 async def test_help_status_and_capabilities_describe_engineering_os_boundary():
     app = create_mcp(Settings(auth_token="", allow_remote_http=False))
     async with Client(app) as client:
-        help_result = await client.call_tool("help", {})
-        status_result = await client.call_tool("system_status", {})
-        caps_result = await client.call_tool("system_capabilities", {})
+        help_result = await client.call_tool("help", {"reason": "test audit tracking"})
+        status_result = await client.call_tool("system_status", {"reason": "test status"})
+        caps_result = await client.call_tool("system_capabilities", {"reason": "test capabilities"})
 
     help_payload = help_result.structured_content or {}
     assert help_payload["provider_name"] == "cdt-engineer"
