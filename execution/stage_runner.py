@@ -5,6 +5,8 @@ from __future__ import annotations
 
 from typing import Mapping
 
+from execution.dual_quality_gate import assess_dual_quality_gate
+from execution.incremental_construction import assess_incremental_receipts
 from execution.release_scope import RELEASE_CLASSES, assess_dependencies
 from professional_practice.human_deliverables import assess_human_deliverables
 
@@ -148,7 +150,7 @@ def _candidate_stage_capability_facts(
         reasons.insert(0,f'software_candidate_not_released:{best["software"]}')
     return [{'result':best['result'],'reason_codes':list(dict.fromkeys(reasons))}]
 
-def run_profile(profile: Mapping, *, capabilities: Mapping[str,Mapping] | None = None, stage_checks: Mapping[str,Mapping], capabilities_by_software: Mapping[str,Mapping] | None = None, dependency_states: Mapping[str,Mapping] | None = None, stage_applicability: Mapping[str,Mapping] | None = None, human_deliverable_evidence: Mapping[str,Mapping] | None = None, package_revision: str | None = None, source_revision: str | None = None) -> dict:
+def run_profile(profile: Mapping, *, capabilities: Mapping[str,Mapping] | None = None, stage_checks: Mapping[str,Mapping], capabilities_by_software: Mapping[str,Mapping] | None = None, dependency_states: Mapping[str,Mapping] | None = None, stage_applicability: Mapping[str,Mapping] | None = None, human_deliverable_evidence: Mapping[str,Mapping] | None = None, package_revision: str | None = None, source_revision: str | None = None, dual_quality_evidence: Mapping[str,Any] | None = None, incremental_receipts: Sequence[Mapping[str,Any]] | None = None) -> dict:
     """Assess stages and release dependencies without invoking native engines."""
     capabilities=capabilities or {}
     capabilities_by_software=capabilities_by_software or {}
@@ -180,6 +182,49 @@ def run_profile(profile: Mapping, *, capabilities: Mapping[str,Mapping] | None =
                 package_revision=package_revision,
                 source_revision=source_revision,
             )
+
+    dual_config=profile.get('dual_quality_gate')
+    dual_result=None
+    dual_stage_id=None
+    if dual_config is not None:
+        if not isinstance(dual_config,Mapping):
+            raise ValueError('dual_quality_gate must be a mapping')
+        dual_stage_id=dual_config.get('stage_id')
+        if not isinstance(dual_stage_id,str) or not dual_stage_id:
+            raise ValueError('dual_quality_gate.stage_id must be non-empty')
+        ev=dual_quality_evidence or {}
+        artifact_sha=ev.get('artifact_sha256')
+        if not isinstance(artifact_sha,str):
+            dual_result={'result':'blocked','reason_codes':['dual_quality_artifact_sha256_missing']}
+        else:
+            views=dual_config.get('required_visual_views',('overall','detail'))
+            if isinstance(views,list):
+                views=tuple(views)
+            dual_result=assess_dual_quality_gate(
+                artifact_sha256=artifact_sha,
+                technical_gate=ev.get('technical_gate'),
+                visual_gate=ev.get('visual_gate'),
+                visual_artifact=bool(dual_config.get('visual_artifact',True)),
+                required_visual_views=views,
+            )
+
+    incremental_config=profile.get('incremental_construction')
+    incremental_result=None
+    incremental_stage_id=None
+    if incremental_config is not None:
+        if not isinstance(incremental_config,Mapping):
+            raise ValueError('incremental_construction must be a mapping')
+        incremental_stage_id=incremental_config.get('stage_id')
+        if not isinstance(incremental_stage_id,str) or not incremental_stage_id:
+            raise ValueError('incremental_construction.stage_id must be non-empty')
+        expected_stages=incremental_config.get('expected_stages')
+        if not isinstance(expected_stages,list) or not expected_stages:
+            raise ValueError('incremental_construction.expected_stages must be a non-empty list')
+        incremental_result=assess_incremental_receipts(
+            expected_stages,
+            incremental_receipts or [],
+            visible_progress_required=bool(incremental_config.get('visible_progress_required',True)),
+        )
     seen=set(); releases={}; output=[]; recommended_targets=[]
     for stage in stages:
         sid=stage.get('stage_id')
@@ -259,6 +304,16 @@ def run_profile(profile: Mapping, *, capabilities: Mapping[str,Mapping] | None =
                 'result':deliverable_result['result'],
                 'reason_codes':list(deliverable_result.get('reason_codes',[])),
             })
+        if dual_result is not None and sid==dual_stage_id:
+            assessment_inputs.append({
+                'result':dual_result['result'],
+                'reason_codes':list(dual_result.get('reason_codes',[])),
+            })
+        if incremental_result is not None and sid==incremental_stage_id:
+            assessment_inputs.append({
+                'result':incremental_result['result'],
+                'reason_codes':list(incremental_result.get('reason_codes',[])),
+            })
         assessment_result,assessment_reasons=_combine(assessment_inputs)
         blocked_deps=[dep for dep in deps if releases.get(dep) not in {'pass','not_applicable'}]
         release_reasons=[]
@@ -302,4 +357,6 @@ def run_profile(profile: Mapping, *, capabilities: Mapping[str,Mapping] | None =
         'recommended_release_target':recommended,
         'stages':output,
         'human_deliverables':deliverable_result,
+        'dual_quality_gate':dual_result,
+        'incremental_construction':incremental_result,
     }

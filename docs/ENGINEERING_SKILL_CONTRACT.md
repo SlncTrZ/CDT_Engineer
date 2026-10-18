@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_CONTRACT
 
-Version: 0.2.0 · Updated: 2026-09-12 · Status: public contract baseline.
+Version: 1.0.0 · Updated: 2026-10-17 · Status: dual-quality contract integration (local source).
 
 ## Purpose
 
@@ -130,3 +130,9 @@ Production requires implemented deterministic checks where applicable, benchmark
 ## Acceptance invariant
 
 A skill is trustworthy only when another competent Agent/Checker can reconstruct why it made each engineering decision from frozen inputs, rules, versions, calculations, evidence and approvals.
+
+## Craftsmanship, detail and visual acceptance
+
+For a skill that creates or changes an authored visual artifact, declare **two separately testable acceptance outcomes**: `technical_gate` (dimensions, units, relationships, topology, editability, completeness and domain hard rules) and `visual_gate` (source fidelity, completeness of meaningful detail, proportions, drafting legibility, real geometry vs graphic illusion, appropriate material/finish, scene/annotation clarity and user-design intent). Both outcomes bind the same artifact hash and independent review evidence. See [Dual Technical & Visual Quality Gate Policy](DUAL_QUALITY_GATE_POLICY.md).
+
+Freeze a **detail and finish inventory** by purpose; model actual 3D thickness where physically required and leave planar drawings planar where that is professionally correct. For a concept, declare inferred dimensions/materials and block ungrounded fabrication/construction claims. Demand an overall view, essential elevations/front views, and detail views as applicable; compare with supplied references and rework visible defects. Extra geometric primitives and attractive rendering never substitute for verified domain semantics. `not_applicable` for nonvisual outputs requires reviewed reasons; no silent visual-gate omission.

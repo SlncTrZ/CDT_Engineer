@@ -6,7 +6,7 @@ CDT_Engineer tổ chức công việc kỹ thuật cho Agent: Design Basis, doma
 tiêu chuẩn, workflow, kiểm tra độc lập và bằng chứng bàn giao.
 Native CAD/DCC execution do các CDT-* providers đảm nhiệm.
 
-Provider `0.1.1` · Contract `cdt-engineer-v1-alpha7` · 19 MCP tools.
+Provider `0.2.0` · Contract `cdt-engineer-v1-alpha7` · 19 MCP tools.
 
 ## Bắt đầu
 

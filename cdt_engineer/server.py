@@ -14,6 +14,7 @@ import yaml
 from fastmcp import FastMCP
 from fastmcp.server.auth import StaticTokenVerifier
 from fastmcp.server.middleware import Middleware, MiddlewareContext
+
 try:
     from fastmcp.tools.tool import ToolResult
 except Exception:
@@ -280,7 +281,10 @@ class ProviderErrorMiddleware(Middleware):
             if classified is None:
                 raise
             kind, extra, message = classified
-            if context.message.name == "execution_environment_assess" and kind == "validation_error":
+            if (
+                context.message.name == "execution_environment_assess"
+                and kind == "validation_error"
+            ):
                 # Framework argument validation can include original input values.
                 message = "invalid_execution_environment:input"
             return ToolResult(
@@ -411,6 +415,8 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
         human_deliverable_evidence: dict[str, Any] | None = None,
         package_revision: str | None = None,
         source_revision: str | None = None,
+        dual_quality_evidence: dict[str, Any] | None = None,
+        incremental_receipts: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any]:
         return run_profile(
             profile,
@@ -422,6 +428,8 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
             human_deliverable_evidence=human_deliverable_evidence,
             package_revision=package_revision,
             source_revision=source_revision,
+            dual_quality_evidence=dual_quality_evidence,
+            incremental_receipts=incremental_receipts,
         )
 
     @provider_tool(tags={"release", "read"})

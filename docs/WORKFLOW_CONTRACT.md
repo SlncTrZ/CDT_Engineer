@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_CONTRACT
 
-Version: 0.2.0 · Updated: 2026-09-12 · Status: public contract baseline.
+Version: 1.0.0 · Updated: 2026-10-17 · Status: dual-quality contract integration (local source).
 
 ## Purpose
 
@@ -144,3 +144,15 @@ The workflow records the decision and new evidence.
 ## Workflow versioning
 
 Breaking changes to stage meaning, required evidence or release behavior require a major workflow version. Additive stages/capabilities may be minor when old job semantics remain reproducible. Historical runs pin exact workflow/domain/skill/software-map versions.
+
+## Mandatory dual quality gates for authored visual artifacts
+
+For **every** drawing, model, layout, CAD assembly, schematic, render or other authored graphical output, the canonical flow includes a **technical gate** and a **visual/presentation gate** for the **same final artifact identity**, following [Dual Technical & Visual Quality Gate Policy](DUAL_QUALITY_GATE_POLICY.md).
+
+At intake freeze the intended design language, degree of geometric detail, visual legibility/finish and required technical checks. After base geometry execute reviewable detail/finish chunks and conduct actual-software multi-view inspection, then independent technical measurement and appearance/clarity review. Rework failures before final save/reopen/seal. Neither gate may be inferred from the other, and a successful native save or high aesthetic score alone cannot release downstream handoff. For scope without a visual artifact, require a reviewed, revision-bound N/A decision.
+
+The executable aggregator is `execution.dual_quality_gate.assess_dual_quality_gate`; it fails closed on `fail`, `unknown`, stale revision, missing reviewer or missing evidence. Existing professional human-deliverable and standards gates remain additional and are not replaced. The helper aggregates **supplied Checker evidence**, not images, native CAD facts or aesthetic judgment. Historical job results are not retroactively upgraded. The active Agent profile must wire these dual requirements to its actual delivery/review stage; the standalone helper's existence is not proof of automatic runtime enforcement.
+
+## No one-shot native model generation in interactive work
+
+For interactive drawing and modeling, **progress must be actual construction in the application**, not a prebuilt model becoming visible in a single command or a replay that merely reveals a completed model. Split into independently identifiable and measured semantic stages, showing each accepted feature after its own commit. This applies to concept work as well as production: a smaller release class may reduce *professional authority/evidence*, not waive the required visible construction method when the user requested it. Build the carcass first, then one furniture subassembly/detail/chunk at a time; equivalent natural feature groups apply to other software. Each chunk must produce a verified receipt, safe recovery/checkpoint boundary and optional actual viewport redraw before dependents start. Do not mutate the entire scene in one Ruby/COM/bpy/other batch and call later staged screenshots compliance. A precomputed plan or source file is permitted, but its execution must be chunked and native-visible. Headless operation may omit viewport pacing only when the user has not required visible streaming and its truthful chunk semantics are otherwise preserved.

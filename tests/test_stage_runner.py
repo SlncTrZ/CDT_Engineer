@@ -188,9 +188,97 @@ class ConflictRegressionTests(unittest.TestCase):
   self.assertNotEqual('pass',r['result'])
 
 
- def test_source_unproven_is_typed_blocker(self):
-  from execution.stage_runner import capability_facts_from_engine_maps
-  maps=[{'software_id':'cad','source_snapshot':{'runtime_proof':False},'capability_mappings':[{'semantic':'topology.inspect','support':'unproven'}]}]
-  facts=capability_facts_from_engine_maps(maps)
-  self.assertEqual('blocked',facts['topology.inspect']['result'])
-  self.assertIn('source_map_unproven:cad:topology.inspect',facts['topology.inspect']['reason_codes'])
+  def test_source_unproven_is_typed_blocker(self):
+   from execution.stage_runner import capability_facts_from_engine_maps
+   maps=[{'software_id':'cad','source_snapshot':{'runtime_proof':False},'capability_mappings':[{'semantic':'topology.inspect','support':'unproven'}]}]
+   facts=capability_facts_from_engine_maps(maps)
+   self.assertEqual('blocked',facts['topology.inspect']['result'])
+   self.assertIn('source_map_unproven:cad:topology.inspect',facts['topology.inspect']['reason_codes'])
+
+
+class DualQualityAndIncrementalRunnerTests(unittest.TestCase):
+  def test_dual_quality_gate_blocks_stage_when_failed(self):
+   profile = {
+       'profile_id': 'dq_test',
+       'release_target': 'ready_for_professional_review',
+       'dual_quality_gate': {'stage_id': 'review', 'visual_artifact': True},
+       'stages': [{'stage_id': 'review', 'depends_on': [], 'checkpoint': 'rev'}],
+   }
+   dual_evidence = {
+       'artifact_sha256': 'a' * 64,
+       'technical_gate': {
+           'status': 'pass',
+           'artifact_sha256': 'a' * 64,
+           'evidence_refs': ['spec-1'],
+           'reviewer': 'Lead Eng',
+           'reviewer_role': 'PE',
+           'independent': True,
+       },
+       'visual_gate': {
+           'status': 'fail',
+           'artifact_sha256': 'a' * 64,
+           'evidence_refs': ['shot-1'],
+           'reviewer': 'Art Dir',
+           'reviewer_role': 'QA',
+           'independent': True,
+       },
+   }
+   r = run_profile(profile, stage_checks={'review': {'result': 'pass'}}, dual_quality_evidence=dual_evidence)
+   self.assertEqual('blocked', r['stages'][0]['assessment_result'])
+   self.assertIn('visual_gate:fail', r['stages'][0]['assessment_reason_codes'])
+
+  def test_dual_quality_gate_passes_when_both_pass(self):
+   profile = {
+       'profile_id': 'dq_test',
+       'release_target': 'ready_for_professional_review',
+       'dual_quality_gate': {'stage_id': 'review', 'visual_artifact': True, 'required_visual_views': ['overall']},
+       'stages': [{'stage_id': 'review', 'depends_on': [], 'checkpoint': 'rev'}],
+   }
+   dual_evidence = {
+       'artifact_sha256': 'a' * 64,
+       'technical_gate': {
+           'status': 'pass',
+           'artifact_sha256': 'a' * 64,
+           'evidence_refs': ['spec-1'],
+           'reviewer': 'Lead Eng',
+           'reviewer_role': 'PE',
+           'independent': True,
+       },
+       'visual_gate': {
+           'status': 'pass',
+           'artifact_sha256': 'a' * 64,
+           'evidence_refs': ['shot-1'],
+           'reviewer': 'Art Dir',
+           'reviewer_role': 'QA',
+           'independent': True,
+           'view_types': ['overall'],
+       },
+   }
+   r = run_profile(profile, stage_checks={'review': {'result': 'pass'}}, dual_quality_evidence=dual_evidence)
+   self.assertEqual('pass', r['stages'][0]['assessment_result'])
+   self.assertEqual('pass', r['result'])
+
+  def test_incremental_construction_blocks_stage_when_mismatched(self):
+   profile = {
+       'profile_id': 'inc_test',
+       'release_target': 'ready_for_professional_review',
+       'incremental_construction': {
+           'stage_id': 'build',
+           'expected_stages': ['carcass', 'door'],
+           'visible_progress_required': False,
+       },
+       'stages': [{'stage_id': 'build', 'depends_on': [], 'checkpoint': 'bld'}],
+   }
+   receipts = [
+       {
+           'stage_no': 1,
+           'stage_id': 'carcass',
+           'root_cursor': 1,
+           'status': 'verified_committed',
+           'entities_added': 5,
+           'native_artifact_sha256': '1' * 64,
+       }
+   ]
+   r = run_profile(profile, stage_checks={'build': {'result': 'pass'}}, incremental_receipts=receipts)
+   self.assertEqual('blocked', r['stages'][0]['assessment_result'])
+   self.assertIn('stage_count_mismatch', r['stages'][0]['assessment_reason_codes'])

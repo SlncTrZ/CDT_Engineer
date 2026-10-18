@@ -219,3 +219,45 @@ def test_reopen_or_seal_evidence_bound_to_different_artifact_blocks_release():
     assert result["result"] == "blocked"
     assert "evidence_record_binding_mismatch:reopen:artifact_id" in result["reason_codes"]
 
+
+def test_dual_quality_gate_in_bundle():
+    bundle = _bundle()
+    bundle["dual_quality_gate"] = {
+        "artifact_id": "drawing",
+        "visual_artifact": True,
+        "required_visual_views": ["overall"],
+        "technical_gate": {
+            "status": "pass",
+            "artifact_sha256": "d" * 64,
+            "evidence_refs": ["tech-ref"],
+            "reviewer": "Reviewer 1",
+            "reviewer_role": "QA",
+            "independent": True,
+        },
+        "visual_gate": {
+            "status": "fail",
+            "artifact_sha256": "d" * 64,
+            "evidence_refs": ["vis-ref"],
+            "reviewer": "Reviewer 2",
+            "reviewer_role": "Lead",
+            "independent": True,
+        },
+    }
+    result = _assess(bundle)
+    assert result["result"] == "blocked"
+    assert "dual_quality_gate_failed" in result["reason_codes"]
+    assert "dual_quality_gate:visual_gate:fail" in result["reason_codes"]
+
+    # Now make visual gate pass
+    bundle["dual_quality_gate"]["visual_gate"] = {
+        "status": "pass",
+        "artifact_sha256": "d" * 64,
+        "evidence_refs": ["vis-ref"],
+        "reviewer": "Reviewer 2",
+        "reviewer_role": "Lead",
+        "independent": True,
+        "view_types": ["overall"],
+    }
+    result_pass = _assess(bundle)
+    assert result_pass["result"] == "pass"
+

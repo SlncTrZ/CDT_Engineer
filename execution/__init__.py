@@ -6,6 +6,8 @@ from execution.chunk_recovery import (
     fingerprint_state,
     reconcile,
 )
+from execution.dual_quality_gate import assess_dual_quality_gate
+from execution.incremental_construction import assess_incremental_receipts
 from execution.plan_compiler import PlanCompileResult, compile_plan_spec
 from execution.plan_review import PlanReviewResult, review_plan_spec
 from execution.plan_revise import PlanReviseResult, revise_plan_spec
@@ -26,6 +28,8 @@ __all__ = [
     "PlanReviewResult",
     "PlanReviseResult",
     "PlanSpecValidationResult",
+    "assess_dual_quality_gate",
+    "assess_incremental_receipts",
     "assess_provenance_release",
     "build_chunk_receipt",
     "calibrate_plan_source",

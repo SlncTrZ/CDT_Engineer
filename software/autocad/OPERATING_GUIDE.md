@@ -1,7 +1,7 @@
 # AutoCAD Operating Guide
 
 > Documentation class: PUBLIC_SOFTWARE_GUIDE
-Guide version: 0.5.0 · Current released source target: CDT-AutoCAD `0.4.2 / autocad-generic-v1 / 87 tools` · Runtime proof required per run.
+Guide version: 0.6.0 · Current released source target: CDT-AutoCAD `0.4.2 / autocad-generic-v1 / 87 tools` · Runtime proof required per run.
 
 The companion `engine-map.yaml` retains the historical `0.4.0rc3 / autocad-generic-v1-rc3` source snapshot, which is evidence of its original mapping and **not** proof of a current production deployment. Query actual provider, bridge, build and tool identity before relying on a particular capability.
 
@@ -54,3 +54,7 @@ Use `document_save`/`document_save_as` for persisted checkpoints. RC3 requires `
 
 ## Benchmarks
 Positive: live Step-0, Feature-based Chunk commit/recovery, XREF/dependency inspection, bounded read-back, artifact seal, and SAT export where required. Negative: unresolved XREF, stale parent fingerprint, timeout uncertainty, rollback failure, unsupported topology, seal drift or unsupported exchange format.
+
+## Dual quality gate — technical precision and graphic readability
+
+Apply [dual quality policy](../../docs/DUAL_QUALITY_GATE_POLICY.md). `technical_gate`: check dimensional values and units, source geometry/datum, 2D-versus-3D intent, true solids where required, layer structure, joins, constraints, annotations, view scale and independently reopened DWG/PDF. `visual_gate`: actual AutoCAD model/layout screenshots of overall sheet **and** crowded technical details; inspect line weights, annotation spacing, hatch clarity, text readability, sectional detail, plotting hierarchy, white space and unclipped views. A technically correct but unreadable plotting package is blocked, as is a visually elegant plan with invented or wrong geometry. Do not decorate mechanical/civil drafting to imitate rendering; purpose and user legibility determine appearance. Independent review and source/artifact revision must match before declaring a finished deliverable.

@@ -248,3 +248,7 @@ partial state and verifies absence, or blocks when observation/recovery is missi
 Partial-state cleanup is attempted even when the retry budget is exhausted; no
 additional execution is admitted beyond that budget. Malformed receipt completion
 is uncertain. State fingerprints reject nonfinite/non-JSON properties.
+
+## 15. Presentation cadence vs execution correctness
+
+For owner-visible interactive construction, target a **0.5-second UI yield** between *verified and checkpointed* semantic feature chunks by default, when the native runtime supports it. This is presentation pacing, **not** a promise of 0.5-second total feature execution or permission to cut corners. Native mutation, read-after-write, save/checkpoint, screenshot evidence and safe recovery always complete **before** that yield. Application redraw or a long heavy feature can make the effective interval longer. Never sleep inside a native transaction just to imitate visible progress, and do not stream tens of thousands of stone pieces separately when one bounded HATCH/paving region is the appropriate semantic chunk. Respect user-specified timing overrides, performance safeguards and app thread responsiveness. Capture actual per-chunk geometry evidence; reveal of prebuilt objects does not qualify.

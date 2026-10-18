@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_POLICY
 
-Version: 0.2.0 · Updated: 2026-10-06 16:03 (Asia/Ho_Chi_Minh) · Status: public policy baseline.
+Version: 1.0.0 · Updated: 2026-10-17 · Status: dual-quality policy integration (local source).
 
 ## Purpose
 
@@ -150,3 +150,11 @@ The gate verifies record integrity and consistency; measurement truth and review
 authentication remain the trusted collector's responsibility. The C02 producer
 drafting smoke therefore reports BLOCKED when independent Checker, reopen, seal
 and injected-recovery evidence have not actually been collected.
+
+## Two independent release barriers: technical and visual
+
+Apply [Dual Technical & Visual Quality Gate Policy](DUAL_QUALITY_GATE_POLICY.md) to every authored graphical deliverable. The independent Checker records `technical_gate` and `visual_gate` against the **same exact final artifact SHA-256**. A saved SKP, valid STEP, clean DWG or successful render does not prove visual/presentation quality; an attractive view does not prove technical correctness. Both must PASS to claim a *finished* artifact at its declared scope. A severe visual defect or unreadable/unfinished sheet is a **blocking gate defect**, not merely a low rubric score.
+
+Visual checks are **purpose-dependent**: CAD drawing hierarchy/line weights/scales/dimensions; mechanical orthographic and feature readability; site/architecture proportion, joinery, physical thickness and finish; Blender materials, lighting, camera, output clarity; schematics labels, symbols and connections. Verify with native multi-angle/close-up captures **and** reviewer observations tied to the artifact hash; screenshots do not prove topology, tolerance or physical thickness. Mark source-inferred aspects provisional and preserve unknowns.
+
+The deterministic `execution.dual_quality_gate.assess_dual_quality_gate` helper enforces gate/evidence/reviewer/revision parity; it does not inspect pixels, make aesthetic judgments or replace the domain Checker. Negative acceptance cases include `technical_pass + visual_fail`, `visual_pass + technical_fail`, stale visual screenshot, absent independent review and missing view. Historical accepted releases are not silently invalidated by a newly authored doc rule; enforce the policy in each newly scoped workflow/profile and bind evidence per job.

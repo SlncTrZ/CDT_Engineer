@@ -8,6 +8,7 @@ import re
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from execution.dual_quality_gate import assess_dual_quality_gate
 from execution.plan_revise import plan_fingerprint
 
 _SHA256_RE = re.compile(r"^[a-f0-9]{64}$")
@@ -292,6 +293,30 @@ def assess_release_bundle(
             reasons.append(f"recovery_evidence_missing:{recovery_class}")
         elif not any(row.get("result") == "pass" for row in candidates):
             reasons.append(f"recovery_evidence_no_pass:{recovery_class}")
+
+    dual_gate = bundle.get("dual_quality_gate")
+    if dual_gate is not None:
+        if not isinstance(dual_gate, Mapping):
+            raise ValueError("bundle.dual_quality_gate must be a mapping")
+        artifact_id = dual_gate.get("artifact_id")
+        target_sha = artifact_hashes.get(artifact_id) if artifact_id else None
+        if not target_sha:
+            reasons.append(f"dual_quality_gate_artifact_missing:{artifact_id}")
+        else:
+            views = dual_gate.get("required_visual_views", ("overall", "detail"))
+            if isinstance(views, list):
+                views = tuple(views)
+            dq_result = assess_dual_quality_gate(
+                artifact_sha256=target_sha,
+                technical_gate=dual_gate.get("technical_gate"),
+                visual_gate=dual_gate.get("visual_gate"),
+                visual_artifact=bool(dual_gate.get("visual_artifact", True)),
+                required_visual_views=views,
+            )
+            if dq_result["result"] != "pass":
+                reasons.append("dual_quality_gate_failed")
+                for r in dq_result.get("reason_codes", []):
+                    reasons.append(f"dual_quality_gate:{r}")
 
     return {
         "result": "blocked" if reasons else "pass",

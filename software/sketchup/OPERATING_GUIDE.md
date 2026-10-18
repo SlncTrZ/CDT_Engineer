@@ -1,7 +1,7 @@
 # SketchUp Operating Guide
 
 > Documentation class: PUBLIC_SOFTWARE_GUIDE
-Version: 0.5.0 · Source contract: provider `0.1.0`, contract `0.28`, 67 tools · Measured SketchUp 2024 `24.0.594` / Ruby `3.2.2` · Accepted source revision `d9aecb07ecfae9e5ffb969f2314fafe2040c162b`.
+Version: 0.6.0 · Source contract: provider `0.1.0`, contract `0.28`, 67 tools · Measured SketchUp 2024 `24.0.594` / Ruby `3.2.2` · Accepted source revision `d9aecb07ecfae9e5ffb969f2314fafe2040c162b`.
 
 ## Step-0
 Call `system_status` and `system_capabilities`; require a reachable bridge, active model, observed SketchUp/Ruby runtime, matching provider contract/capability fingerprint and the exact required capability descriptors. The source revision and native-acceptance history below establish what has been measured; they are **not current-run runtime proof**. Block if the live runtime cannot reproduce the required capability state.
@@ -85,3 +85,11 @@ Native acceptance proves seal/verify, stale-after-mutation, changed-byte reseal 
 Contract 0.28 was accepted natively on SketchUp 2024 through the public MCP route. Positive evidence covers nested edit, strong asset identity + Engineer resolver E2E, tetra/frustum/four-section loft/ellipsoid/rounded/open-molding mesh realization, exact clearance/touching/penetration/rotated-disjoint queries, recovery reconciliation, artifact seal and save/reopen. Negative evidence covers wrong hash/version, missing/oversized/changed asset bytes, used-definition identity mismatch, malformed/over-budget mesh, forced rollback, non-manifold spatial input, stale artifact evidence and shared-definition geometry drift.
 
 A production Building benchmark must still provide real native mappings for every required catalog asset. If one is unresolved, block that dependency rather than substituting the acceptance fixture or a visually similar primitive.
+
+## Dual quality gate — real editable geometry and polished appearance
+
+Apply [dual quality policy](../../docs/DUAL_QUALITY_GATE_POLICY.md). `technical_gate`: real solid thickness for physical parts, clean faces, manifold/volume where applicable, correct axes/scale/material assignment, groups/components and repeated-definition identities, non-overlapping context, saved/reopened native SKP and measured dimensions. `visual_gate`: compare reference images and declared assumptions using an overall perspective, a true front/elevation view and close-ups of joints/hardware/finishes; evaluate silhouette, proportions, depth, extrusion readability, materials, edges, color contrast and unwanted coplanar/black outline clutter. A count of 50,000 components is not beauty or fidelity evidence.
+
+### Observable incremental construction and visible pacing
+
+In interactive drawing and modeling workflows, progress must be actual construction in the application, not a prebuilt model becoming visible in a single command or a replay that merely reveals a completed model. Split into independently identifiable and measured semantic stages, showing each accepted feature after its own commit: carcass → support/plinth → fascia → solid elements → finishes → doors/components → hardware/accents. Each chunk must produce a verified receipt, safe recovery/checkpoint boundary and viewport redraw before dependents start. For interactive concept demos, a presentation pacing yield (e.g. ~0.5 seconds) between completed feature transactions gives the application time to redraw and breathe while preserving correctness checks and determinism.

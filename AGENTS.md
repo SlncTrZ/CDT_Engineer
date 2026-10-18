@@ -75,6 +75,8 @@ Do not build a shared Domain SDK before Rule-of-Two evidence from at least two i
 
 For mutation-heavy interactive engineering work, the default execution invariant is **Feature-based Chunk Streaming**.
 
+**Interactive drawing must build genuine model parts in native software sequentially.** A single one-shot full-model build followed by staged screenshots, hide/unhide, or fake playback is noncompliant—even in a concept prototype. Verify and checkpoint each semantic part before advancing, and visibly redraw/yield after verified commits when interactive progress is required. See `docs/WORKFLOW_CONTRACT.md` and `docs/DUAL_QUALITY_GATE_POLICY.md`.
+
 Do not use either unsafe extreme:
 
 - one opaque whole-project mutation;
@@ -129,3 +131,7 @@ Preserve existing private contents unless the task explicitly reorganizes them. 
 ## Tiêu chuẩn audit
 
 Chỉ báo lỗi khi có đường tái hiện cụ thể dẫn tới crash, deadlock/hang, data loss, corruption, feature không hoạt động, hoặc behavior sai contract chức năng.
+
+## Universal two-gate craftsmanship requirement
+
+Whenever creating/editing drawings, 3D models, CAD features or human-viewable engineering artifacts, follow [Dual Technical & Visual Quality Gate Policy](docs/DUAL_QUALITY_GATE_POLICY.md): freeze detailed source/use requirements, build proper geometry, add purposeful functional detail, inspect native multi-view appearance, independently verify technical state and professional visual readability/finish, rework defects, then save/reopen and hand off. Both `technical_gate` and `visual_gate` must pass against the identical final artifact revision before a finished-quality claim. Concept assumptions stay explicit; never bypass public native engine capability/security contracts.

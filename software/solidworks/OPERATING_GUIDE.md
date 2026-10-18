@@ -1,7 +1,7 @@
 # SolidWorks Operating Guide
 
 > Documentation class: PUBLIC_SOFTWARE_GUIDE
-Version: 0.4.0 · Source contract: provider 0.1.0, contract 0.1.0, 149 public tools / 125 capability descriptors · Measured SOLIDWORKS 2024 SP0.1 revision 32.0.1 · Accepted source revision 9537cc313020ffb26eb21cfd9ab6810a2671a5dc · CDT_Engineer closed-loop revision aba46838a9ab898d34388948d1a16d6addded95b.
+Version: 0.5.0 · Source contract: provider 0.1.0, contract 0.1.0, 149 public tools / 125 capability descriptors · Measured SOLIDWORKS 2024 SP0.1 revision 32.0.1 · Accepted source revision 9537cc313020ffb26eb21cfd9ab6810a2671a5dc · CDT_Engineer closed-loop revision aba46838a9ab898d34388948d1a16d6addded95b.
 
 ## Step-0
 
@@ -88,3 +88,7 @@ The provider does not currently expose content-addressed artifact sealing. An ex
 CDT-SolidWorks source revision 9537cc3 has measured SOLIDWORKS 2024 SP0.1 native evidence for the public provider, including authenticated topology-reference measurement interoperability required by CDT_Engineer. Provider-level acceptance establishes the engine routes; it does not by itself establish a professional release.
 
 Mechanical SW-07 closed-loop acceptance is accepted for CDT_Engineer revision aba4683 against provider revision 9537cc3 on the controlled 80×50×12 mm bracket with one Ø10 mm through-hole. The run used authenticated public MCP only, separate provider-owned Producer and Checker sessions, independent bbox/body/feature/topology read-back, swref1-based Ø10 measurement, STEP export/import round-trip, exact artifact hashes and clean shutdown. This acceptance is intentionally scope-bounded; final professional release remains separately gated by artifact_seal_missing, exact_transaction_mode_unproven and the domain review rubric.
+
+## Dual quality gate — manufacture-ready and professionally presented
+
+Apply [dual quality policy](../../docs/DUAL_QUALITY_GATE_POLICY.md). `technical_gate`: verify dimensioned parametric features, true solid bodies, mating/assembly interfaces, material/process constraints, holes/fillets/chamfers, clearances/tolerances, feature tree and save/reopen/exchange readback against specifications. `visual_gate`: inspect isometric, orthographic, exploded/section and critical detail views as appropriate; verify drawing readability, line weights, dimension placement, BOM/legend organization, realistic yet non-deceptive product appearance and visual consistency of assemblies. Do not replace a small fillet/chamfer, true hole or joint with 2D cosmetic edges. No amount of rendering polish waives manufacturing or compliance blockers. Scope the finished-product aesthetic against the target product function and exact artifact/source identity.

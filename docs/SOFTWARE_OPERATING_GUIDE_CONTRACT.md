@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_CONTRACT
 
-Version: 0.1.0 · Updated: 2026-09-12 · Status: Engineering OS execution baseline.
+Version: 1.0.0 · Updated: 2026-10-17 · Status: dual-quality contract integration (local source).
 
 ## Purpose
 
@@ -121,3 +121,9 @@ A software operating guide consumes the [Execution Environment Contract](EXECUTI
 - read-after-write verification catches incorrect state;
 - presentation mode and headless/non-presentation mode produce equivalent engineering outputs for the benchmark;
 - required native artifact lifecycle/reopen behavior is proven where claimed.
+
+## Mandatory software-specific dual quality workflow
+
+Each Operating Guide MUST describe a workflow-specific `technical_gate` and `visual_gate` for graphical deliverables under the [Dual Technical & Visual Quality Gate Policy](DUAL_QUALITY_GATE_POLICY.md). The technical gate includes application-native units/topology/editability/feature identity/save-reopen plus discipline-specific accuracy. The visual gate covers native application screenshots or equivalent render at useful overall and detail scales, intended proportions, clear drafting, material and finish quality, and readable presentation. Guides must say explicitly when a category is not relevant (e.g. illumination for an electrical schematic), rather than blindly impose architecture rendering standards.
+
+The Agent performs `base geometry → purposeful detailing → native multi-view inspection → technical measurement → independent visual review → rework → saved/reopened QA`. Do not set a fixed number of line segments/features as a proxy for detailed professional work. Do not treat headless smoke, syntax-only validation, a pretty preview or a provider's tool PASS as either complete gate. If a required native view/quality path is unsupported, state the limitation and block the stronger claim or request documented scope reduction. Engine public contracts, safe chunk recovery and explicit provenance remain authoritative.

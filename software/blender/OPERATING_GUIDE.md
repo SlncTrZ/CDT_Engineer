@@ -1,7 +1,7 @@
 # Blender — Motion-Graphics Operating Guide
 
 > Documentation class: PUBLIC_SOFTWARE_GUIDE
-> Version: 0.1.0 · Target provider contract: `cdt-blender-contract-v10` · Measured Blender: 4.5.3 LTS / Windows 11.
+> Version: 0.2.0 · Target provider contract: `cdt-blender-contract-v10` · Measured Blender: 4.5.3 LTS / Windows 11.
 
 ## Step-0 and compatibility
 
@@ -48,3 +48,7 @@ Arabic/Indic: prepare a transparent glyph image using an independently qualified
 A tool success is not a completed infographic. Verify first/mid/last frame differences and content, fill/cyclic strokes, current GN wave state, source typography and target language shape. Include the native Blender build, source revision, extension contract, exact scene/output hashes and screenshot/visual review. Old addon, unknown mode, escaped paths, unsupported SVG elements, mismatched GP point topology, GN over-budget, missing RAQM/font and unsupported Blender major releases must block stronger release claims.
 
 Source-qualified headless tests are **not** current gateway-to-installed-addon E2E. Existing modeling/sculpt and CDT_Engineer professional interpretation retain their separate acceptance gates.
+
+## Dual quality gate — scene integrity and art-direction finish
+
+Apply [dual quality policy](../../docs/DUAL_QUALITY_GATE_POLICY.md). `technical_gate`: inspect mesh normals/topology, UVs, object hierarchy, modifiers, materials/asset provenance, output formats, camera settings, frame/state consistency, scene re-open and editability as requested. `visual_gate`: native viewport/representative render from front/three-quarter/detail angles or first/middle/last animation frames; verify modeling detail, composition, color hierarchy, lighting, shadows, text legibility, realism/stylization consistency, and material/texture seams. The quality gate is different for an engineering orthographic illustration versus an advertising product render. A render may be beautiful but have invalid mesh or missing editable geometry, and a technically correct scene can look unfinished; both must block a final-quality claim. Apply only capabilities proven by the observed Blender runtime, not unqualified headless assumptions.

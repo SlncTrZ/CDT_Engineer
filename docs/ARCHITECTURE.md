@@ -279,3 +279,7 @@ gates must enforce truthful evidence scope: offline PASS does not promote native
 acceptance, and unavailable native runs do not invalidate a verified repository
 architecture. Professional release still requires its independently declared
 application/domain evidence regardless of repository quality.
+
+## 20. Dual craftsmanship quality acceptance
+
+All visually authored engineering deliverables require **independent technical and visual quality gates** bound to the same final artifact identity. Technical adequacy includes accuracy, source and domain semantics, real geometry/editability and native integrity; visual adequacy means application- and purpose-specific craftsmanship, clear presentation, appropriate detail and reference fidelity. Neither substitutes for the other; quality scores cannot override either. This cross-cutting product invariant is defined by [Dual Technical & Visual Quality Gate Policy](DUAL_QUALITY_GATE_POLICY.md), specialized by Engineering Skills, Software Operating Guides, Workflow and independent Checker evidence. It does not add a private native execution path or retroactively upgrade historical accepted runs.

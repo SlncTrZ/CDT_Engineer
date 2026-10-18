@@ -29,6 +29,7 @@ This index separates stable public product architecture/contracts from contribut
 - [Software Operating Guide Contract](SOFTWARE_OPERATING_GUIDE_CONTRACT.md)
 - [Release Scope & Semantic Dependency Policy](RELEASE_SCOPE_POLICY.md)
 - [QA / Checker Model](QA_CHECKER_MODEL.md)
+- [Dual Technical & Visual Quality Gate Policy](DUAL_QUALITY_GATE_POLICY.md) — independent finished-quality acceptance for every authored visual artifact.
 - [Standards Governance](STANDARDS_GOVERNANCE.md)
 - [Engineering Asset Catalog Contract](../catalogs/ENGINEERING_ASSET_CATALOG_CONTRACT.md)
 - [SlncTrZ-MCP Provider Standard](../MCP_PROVIDER_STANDARD.md)

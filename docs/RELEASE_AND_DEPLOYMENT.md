@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_SOFTWARE_GUIDE
 
-**Engineering OS provider package:** `0.1.1` · tag `v.0.1.1` · **independent** contract `cdt-engineer-v1-alpha7`. The `alpha7` component is the **contract identifier**, not a package release suffix; do not rename a wire contract without a compatibility review.
+**Engineering OS provider package:** `0.2.0` · tag `v.0.2.0` · **independent** contract `cdt-engineer-v1-alpha7`. The `alpha7` component is the **contract identifier**, not a package release suffix; do not rename a wire contract without a compatibility review.
 
 GitHub [source releases](https://github.com/SlncTrZ/CDT_Engineer/releases) are not proof of a running managed Gateway deployment, a native CAD/DCC installation, or professional engineering approval.
 
@@ -11,6 +11,10 @@ GitHub [source releases](https://github.com/SlncTrZ/CDT_Engineer/releases) are n
 1. Install from the selected versioned checkout into a fresh environment: `python -m pip install .`; run `cdt-engineer` with the supported authentication/transport configuration in the [Provider Standard](../MCP_PROVIDER_STANDARD.md).
 2. Call `help`, `system_status`, `system_capabilities`, verify provider and contract identity and decide which executor is actually available. CDT_Engineer does not launch or remotely control CAD/DCC applications on its own.
 3. Follow Design Basis → discipline role/skill → source evidence → runtime executor capability → independent checker before professional handoff. Missing native/standards dependencies must BLOCK or explicitly reduce scope.
+
+## Managed `.227` deployment
+
+The managed service is `cdt-engineer.service`, running an immutable wheel built from exact tag `v.0.1.1` and serving authenticated Streamable HTTP at `http://127.0.0.1:8813/mcp`. Direct Gateway-adapter acceptance discovers all 19 tools with zero normalized drift, and live Gateway routing is active over authenticated Streamable HTTP.
 
 ## Upgrade and rollback
 
