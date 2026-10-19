@@ -14,7 +14,7 @@ GitHub [source releases](https://github.com/SlncTrZ/CDT_Engineer/releases) are n
 
 ## Managed `.227` deployment
 
-The managed service is `cdt-engineer.service`, running an immutable wheel built from exact tag `v.0.1.1` and serving authenticated Streamable HTTP at `http://127.0.0.1:8813/mcp`. Direct Gateway-adapter acceptance discovers all 19 tools with zero normalized drift, and live Gateway routing is active over authenticated Streamable HTTP.
+The managed service is `cdt-engineer.service`, running an immutable wheel built from exact tag `v.0.2.0` and serving authenticated Streamable HTTP at `http://127.0.0.1:8813/mcp`. Direct Gateway-adapter acceptance discovers all 19 tools with zero normalized drift, and live Gateway routing is active over authenticated Streamable HTTP.
 
 ## Upgrade and rollback
 
