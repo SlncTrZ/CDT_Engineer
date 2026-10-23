@@ -8,7 +8,8 @@ import argparse
 import json
 from importlib import resources
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
+from pydantic import Field
 
 import yaml
 from fastmcp import FastMCP
@@ -390,37 +391,41 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
 
     @provider_tool(tags={"environment", "assessment", "read"})
     async def execution_environment_assess(
-        inventory: dict[str, Any],
-        requirements: dict[str, Any],
-        runtime_observation: dict[str, Any] | None,
-        assessment_at: str,
-        max_age_seconds: int = 300,
+        inventory: Annotated[dict[str, Any], Field(description="Collected execution environment inventory snapshot")],
+        requirements: Annotated[dict[str, Any], Field(description="Explicit environment and tool requirements schema")],
+        runtime_observation: Annotated[dict[str, Any] | None, Field(description="Optional live runtime observation snapshot")],
+        assessment_at: Annotated[str, Field(description="ISO-8601 timestamp of the assessment")],
+        max_age_seconds: Annotated[int, Field(description="Maximum allowable age of evidence in seconds (default: 300)")] = 300,
     ) -> dict[str, Any]:
         return assess_execution_environment(
             inventory, requirements, runtime_observation, assessment_at, max_age_seconds
         )
 
     @provider_tool(tags={"source", "read"})
-    async def profile_get(domain_id: str) -> dict[str, Any]:
+    async def profile_get(
+        domain_id: Annotated[str, Field(description="Canonical domain identifier (e.g. 'building_architecture', 'building_structural')")],
+    ) -> dict[str, Any]:
         return {"domain_id": domain_id, "profile": _load_profile(domain_id)}
 
     @provider_tool(tags={"source", "read"})
-    async def engine_map_get(software_id: str) -> dict[str, Any]:
+    async def engine_map_get(
+        software_id: Annotated[str, Field(description="Canonical software identifier (e.g. 'autocad', 'blender', 'kicad', 'sketchup', 'solidworks')")],
+    ) -> dict[str, Any]:
         return {"software_id": software_id, "engine_map": _load_engine_map(software_id)}
 
     @provider_tool(tags={"workflow", "read"})
     async def profile_assess(
-        profile: dict[str, Any],
-        stage_checks: dict[str, Any],
-        capabilities: dict[str, Any] | None = None,
-        capabilities_by_software: dict[str, Any] | None = None,
-        dependency_states: dict[str, Any] | None = None,
-        stage_applicability: dict[str, Any] | None = None,
-        human_deliverable_evidence: dict[str, Any] | None = None,
-        package_revision: str | None = None,
-        source_revision: str | None = None,
-        dual_quality_evidence: dict[str, Any] | None = None,
-        incremental_receipts: list[dict[str, Any]] | None = None,
+        profile: Annotated[dict[str, Any], Field(description="Loaded Agent Profile dictionary")],
+        stage_checks: Annotated[dict[str, Any], Field(description="Dictionary of completed stage checks and evidence")],
+        capabilities: Annotated[dict[str, Any] | None, Field(description="Optional flat capabilities map")] = None,
+        capabilities_by_software: Annotated[dict[str, Any] | None, Field(description="Optional capabilities map grouped by software ID")] = None,
+        dependency_states: Annotated[dict[str, Any] | None, Field(description="Optional dictionary of dependency evaluation states")] = None,
+        stage_applicability: Annotated[dict[str, Any] | None, Field(description="Optional stage applicability overrides")] = None,
+        human_deliverable_evidence: Annotated[dict[str, Any] | None, Field(description="Optional human-readable deliverable verification records")] = None,
+        package_revision: Annotated[str | None, Field(description="Optional version-controlled package revision string")] = None,
+        source_revision: Annotated[str | None, Field(description="Optional source code revision string")] = None,
+        dual_quality_evidence: Annotated[dict[str, Any] | None, Field(description="Optional dual-quality gate evaluation records")] = None,
+        incremental_receipts: Annotated[list[dict[str, Any]] | None, Field(description="Optional list of incremental construction mutation receipts")] = None,
     ) -> dict[str, Any]:
         return run_profile(
             profile,
@@ -438,19 +443,19 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
 
     @provider_tool(tags={"release", "read"})
     async def dependency_assess(
-        requested_release: str,
-        requirements: list[dict[str, Any]],
-        states: dict[str, Any],
+        requested_release: Annotated[str, Field(description="Target release scope identifier (e.g. 'production', 'candidate')")],
+        requirements: Annotated[list[dict[str, Any]], Field(description="Required dependencies and version bounds specification")],
+        states: Annotated[dict[str, Any], Field(description="Current observed dependency states mapping")],
     ) -> dict[str, Any]:
         return assess_dependencies(requested_release, requirements, states)
 
     @provider_tool(tags={"catalog", "read"})
     async def catalog_resolve(
-        catalog: dict[str, Any],
-        software_id: str,
-        required_asset_ids: list[str],
-        registry_evidence: dict[str, Any],
-        runtime_capability: dict[str, Any],
+        catalog: Annotated[dict[str, Any], Field(description="Semantic asset catalog dictionary")],
+        software_id: Annotated[str, Field(description="Target CAD/BIM software identifier")],
+        required_asset_ids: Annotated[list[str], Field(description="List of required semantic asset identifiers")],
+        registry_evidence: Annotated[dict[str, Any], Field(description="Optional registry verification evidence dictionary")],
+        runtime_capability: Annotated[dict[str, Any], Field(description="Optional runtime capability facts dictionary")],
     ) -> dict[str, Any]:
         return resolve_catalog_assets(
             catalog,
@@ -461,23 +466,25 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
         )
 
     @provider_tool(tags={"qa", "read"})
-    async def completeness_check(items: list[dict[str, Any]]) -> dict[str, Any]:
+    async def completeness_check(
+        items: Annotated[list[dict[str, Any]], Field(description="List of required items to verify for completeness invariant")],
+    ) -> dict[str, Any]:
         return assess_inventory(items)
 
     @provider_tool(tags={"qa", "read"})
     async def layer_ledger_check(
-        frozen: list[dict[str, Any]],
-        final: dict[str, Any],
+        frozen: Annotated[list[dict[str, Any]], Field(description="Frozen layered source specification ledger")],
+        final: Annotated[dict[str, Any], Field(description="Final implementation layer evidence ledger")],
     ) -> dict[str, Any]:
         return assess_layer_ledger(frozen, final)
 
     @provider_tool(tags={"qa", "release", "read"})
     async def human_deliverable_check(
-        requested_release: str,
-        requirements: list[dict[str, Any]],
-        evidence: dict[str, Any],
-        package_revision: str,
-        source_revision: str,
+        requested_release: Annotated[str, Field(description="Target release scope identifier")],
+        requirements: Annotated[list[dict[str, Any]], Field(description="Human deliverable requirements dictionary")],
+        evidence: Annotated[dict[str, Any], Field(description="Deliverable review and inspection evidence records")],
+        package_revision: Annotated[str, Field(description="Optional package revision string")],
+        source_revision: Annotated[str, Field(description="Optional source revision string")],
     ) -> dict[str, Any]:
         return assess_human_deliverables(
             requested_release,
@@ -489,19 +496,19 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
 
     @provider_tool(tags={"qa", "release", "read"})
     async def qa_check(
-        findings: list[dict[str, Any]],
-        current_artifact_sha256: str,
+        findings: Annotated[list[dict[str, Any]], Field(description="List of checker findings and defect reports")],
+        current_artifact_sha256: Annotated[str, Field(description="SHA-256 hash of the artifact under quality review")],
     ) -> dict[str, Any]:
         return checker_verdict(findings, current_artifact_sha256=current_artifact_sha256)
 
     @provider_tool(tags={"evidence", "read"})
     async def artifact_manifest(
-        run_id: str,
-        artifact_id: str,
-        sha256: str,
-        source_hashes: list[str],
-        versions: dict[str, str],
-        reopened: bool,
+        run_id: Annotated[str, Field(description="Unique execution run identifier")],
+        artifact_id: Annotated[str, Field(description="Logical artifact identifier")],
+        sha256: Annotated[str, Field(description="SHA-256 hash of the artifact content")],
+        source_hashes: Annotated[list[str], Field(description="Dictionary of source file paths to SHA-256 hashes")],
+        versions: Annotated[dict[str, str], Field(description="Software and contract version bindings dictionary")],
+        reopened: Annotated[bool, Field(description="Whether artifact was independently reopened and verified (default: False)")],
     ) -> dict[str, Any]:
         return build_artifact_manifest(
             run_id=run_id,
@@ -514,8 +521,8 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
 
     @provider_tool(tags={"evidence", "read"})
     async def evidence_stale_check(
-        evidence: dict[str, Any],
-        current_artifact_sha256: str,
+        evidence: Annotated[dict[str, Any], Field(description="Recorded verification evidence record")],
+        current_artifact_sha256: Annotated[str, Field(description="Current SHA-256 hash of the live artifact")],
     ) -> dict[str, Any]:
         stale = evidence_is_stale(evidence, current_artifact_sha256=current_artifact_sha256)
         return {
@@ -526,12 +533,12 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
 
     @provider_tool(tags={"evidence", "qa", "read"})
     async def observation_assess(
-        observation: dict[str, Any],
-        expected_semantic_id: str,
-        expected_revision: str,
-        expected_native_id: str | None = None,
-        expected_state: dict[str, Any] | None = None,
-        expect_absent: bool = False,
+        observation: Annotated[dict[str, Any], Field(description="Observed entity or document state dictionary")],
+        expected_semantic_id: Annotated[str, Field(description="Expected semantic entity identifier")],
+        expected_revision: Annotated[str, Field(description="Expected entity revision string")],
+        expected_native_id: Annotated[str | None, Field(description="Expected CAD-native handle or identifier")] = None,
+        expected_state: Annotated[dict[str, Any] | None, Field(description="Optional dictionary of expected property values")] = None,
+        expect_absent: Annotated[bool, Field(description="Whether entity is expected to be absent (deleted) (default: False)")] = False,
     ) -> dict[str, Any]:
         return assess_observation(
             observation,
@@ -544,9 +551,9 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
 
     @provider_tool(tags={"evidence", "dependency", "read"})
     async def impact_assess(
-        nodes: list[dict[str, Any]],
-        changed_ids: list[str],
-        evidence: list[dict[str, Any]] | None = None,
+        nodes: Annotated[list[dict[str, Any]], Field(description="Dependency graph nodes and edges dictionary")],
+        changed_ids: Annotated[list[str], Field(description="List of modified entity or file identifiers")],
+        evidence: Annotated[list[dict[str, Any]] | None, Field(description="Transitive evidence mapping to check for staleness")] = None,
     ) -> dict[str, Any]:
         return {
             "impact": compute_impact(nodes, changed_ids),
@@ -555,10 +562,10 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
 
     @provider_tool(tags={"domain", "qa", "handoff", "read"})
     async def architecture_structural_interface_assess(
-        records: list[dict[str, Any]],
-        current_revisions: dict[str, str],
-        expected_unit_system: str,
-        expected_coordinate_frame_id: str,
+        records: Annotated[list[dict[str, Any]], Field(description="Handoff contract records between Architecture and Structural")],
+        current_revisions: Annotated[dict[str, str], Field(description="Current revision strings for both discipline sources")],
+        expected_unit_system: Annotated[str, Field(description="Expected length unit system ('metric' or 'imperial')")],
+        expected_coordinate_frame_id: Annotated[str, Field(description="Expected shared coordinate datum identifier")],
     ) -> dict[str, Any]:
         return evaluate_architecture_structural_interfaces(
             records,
@@ -569,13 +576,13 @@ def create_mcp(settings: Settings | None = None) -> FastMCP:
 
     @provider_tool(tags={"release", "qa", "evidence", "read"})
     async def release_bundle_check(
-        bundle: dict[str, Any],
-        current_source_hashes: dict[str, str],
-        current_artifact_hashes: dict[str, str],
-        current_runtime_identity: dict[str, str],
-        evidence_records: dict[str, dict[str, Any]] | None = None,
-        current_engineer_identity: dict[str, str] | None = None,
-        current_design_basis_revision: str | None = None,
+        bundle: Annotated[dict[str, Any], Field(description="Release bundle manifest dictionary")],
+        current_source_hashes: Annotated[dict[str, str], Field(description="Current SHA-256 hashes of all bundle source inputs")],
+        current_artifact_hashes: Annotated[dict[str, str], Field(description="Current SHA-256 hashes of all deliverable artifacts")],
+        current_runtime_identity: Annotated[dict[str, str], Field(description="Verified runtime identity and environment metadata")],
+        evidence_records: Annotated[dict[str, dict[str, Any]] | None, Field(description="List of independent verification evidence records")] = None,
+        current_engineer_identity: Annotated[dict[str, str] | None, Field(description="CDT_Engineer provider identity and contract hash")] = None,
+        current_design_basis_revision: Annotated[str | None, Field(description="Version-controlled design basis revision identifier")] = None,
     ) -> dict[str, Any]:
         return assess_release_bundle(
             bundle,

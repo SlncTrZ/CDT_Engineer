@@ -1,12 +1,46 @@
 # CDT_Engineer — Engineering OS for Agents
 
-> Documentation class: PUBLIC_ENTRYPOINT
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.11 | 3.12](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](pyproject.toml)
+[![MCP Protocol](https://img.shields.io/badge/MCP-Standard-orange.svg)](https://modelcontextprotocol.io)
+[![Platform](https://img.shields.io/badge/platform-OS%20Independent-lightgrey.svg)](docs/ARCHITECTURE.md)
+[![Tools](https://img.shields.io/badge/tools-19%20callable-green.svg)](docs/TOOL_GUIDE.md)
 
 CDT_Engineer tổ chức công việc kỹ thuật cho Agent: Design Basis, domain/skill,
 tiêu chuẩn, workflow, kiểm tra độc lập và bằng chứng bàn giao.
 Native CAD/DCC execution do các CDT-* providers đảm nhiệm.
 
 Provider `0.2.0` · Contract `cdt-engineer-v1-alpha7` · 19 MCP tools.
+
+---
+
+## Quickstart / MCP Client Configuration
+
+### Claude Desktop (`claude_desktop_config.json`)
+```json
+{
+  "mcpServers": {
+    "cdt-engineer": {
+      "command": "uvx",
+      "args": ["cdt-engineer-provider"]
+    }
+  }
+}
+```
+
+### Cursor (`~/.cursor/mcp.json`)
+```json
+{
+  "mcpServers": {
+    "cdt-engineer": {
+      "command": "uvx",
+      "args": ["cdt-engineer-provider"]
+    }
+  }
+}
+```
+
+---
 
 ## Bắt đầu
 
@@ -52,3 +86,7 @@ chứng phải BLOCK hoặc giảm scope rõ ràng. Tool/runtime PASS và render
 thay domain correctness, completeness hoặc independent QA.
 Kết quả cao nhất của hệ thống là `ready_for_professional_review`;
 phê duyệt pháp lý/chuyên môn thuộc người có thẩm quyền.
+
+## License
+
+Distributed under the open-source MIT License. See [LICENSE](LICENSE).
