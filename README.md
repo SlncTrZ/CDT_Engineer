@@ -1,5 +1,7 @@
 # CDT_Engineer — Engineering OS for Agents
 
+> Documentation class: PUBLIC_ENTRYPOINT
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.11 | 3.12](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](pyproject.toml)
 [![MCP Protocol](https://img.shields.io/badge/MCP-Standard-orange.svg)](https://modelcontextprotocol.io)
@@ -17,6 +19,7 @@ Provider `0.2.0` · Contract `cdt-engineer-v1-alpha7` · 19 MCP tools.
 ## Quickstart / MCP Client Configuration
 
 ### Claude Desktop (`claude_desktop_config.json`)
+
 ```json
 {
   "mcpServers": {
@@ -29,6 +32,7 @@ Provider `0.2.0` · Contract `cdt-engineer-v1-alpha7` · 19 MCP tools.
 ```
 
 ### Cursor (`~/.cursor/mcp.json`)
+
 ```json
 {
   "mcpServers": {
