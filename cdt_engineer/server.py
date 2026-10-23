@@ -17,7 +17,7 @@ from fastmcp.server.auth import StaticTokenVerifier
 from fastmcp.server.middleware import Middleware, MiddlewareContext
 
 try:
-    from fastmcp.tools.tool import ToolResult
+    from fastmcp.tools.tool import ToolResult  # type: ignore[import-not-found,import-untyped]
 except Exception:
     from fastmcp.tools.base import ToolResult  # type: ignore
 
