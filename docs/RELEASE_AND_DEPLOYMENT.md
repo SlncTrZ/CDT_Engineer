@@ -2,7 +2,7 @@
 
 > Documentation class: PUBLIC_SOFTWARE_GUIDE
 
-**Engineering OS provider package:** `0.2.0` · tag `v.0.2.0` · **independent** contract `cdt-engineer-v1-alpha7`. The `alpha7` component is the **contract identifier**, not a package release suffix; do not rename a wire contract without a compatibility review.
+**Engineering OS provider package:** `0.2.1` · tag `v.0.2.1` · **independent** contract `cdt-engineer-v1-alpha7`. The `alpha7` component is the **contract identifier**, not a package release suffix; do not rename a wire contract without a compatibility review.
 
 GitHub [source releases](https://github.com/SlncTrZ/CDT_Engineer/releases) are not proof of a running managed Gateway deployment, a native CAD/DCC installation, or professional engineering approval.
 

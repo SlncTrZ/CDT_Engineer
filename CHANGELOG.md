@@ -1,5 +1,11 @@
 # Changelog — CDT_Engineer
 
+## [0.2.1] — 2026-10-23
+
+- Add OSI-approved MIT License and update repository package metadata.
+- Annotate all 19 tool parameters with detailed typed Field descriptions for Glama TDQS Grade A.
+- Add ready-to-install MCP client quickstart configurations (Claude Desktop & Cursor) in README.
+
 ## [0.2.0] — 2026-10-18
 
 - Feat: Dual Technical & Visual Quality Gate Policy (`docs/DUAL_QUALITY_GATE_POLICY.md`) and deterministic evaluation helper (`execution/dual_quality_gate.py`). Both gates must independently pass on the identical final artifact SHA-256 before release.
